@@ -9,6 +9,7 @@ import Login from "./pages/Login";
 import { SGRPLayout } from "./components/SGRPLayout";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
+import LeadDetail from "./pages/LeadDetail";
 import Contas from "./pages/Contas";
 import Contatos from "./pages/Contatos";
 import FunilVendas from "./pages/FunilVendas";
@@ -32,6 +33,7 @@ function Router() {
       <Route path={"/"} component={() => <SGRPLayout><Dashboard /></SGRPLayout>} />
       <Route path={"/dashboard"} component={() => <SGRPLayout><Dashboard /></SGRPLayout>} />
       <Route path={"/leads"} component={() => <SGRPLayout><Leads /></SGRPLayout>} />
+      <Route path={"/leads/:id"} component={() => <SGRPLayout><LeadDetail /></SGRPLayout>} />
       <Route path={"/contas"} component={() => <SGRPLayout><Contas /></SGRPLayout>} />
       <Route path={"/contatos"} component={() => <SGRPLayout><Contatos /></SGRPLayout>} />
       <Route path={"/funil-vendas"} component={() => <SGRPLayout><FunilVendas /></SGRPLayout>} />

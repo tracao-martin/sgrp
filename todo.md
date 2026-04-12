@@ -275,3 +275,40 @@
 - [x] Atualizar todas as páginas principais (Dashboard, Leads, Contas, Contatos, Funil, Tarefas, Calendário, Previsão, Expert) - 30 arquivos
 - [x] Atualizar todas as páginas de Configuração (Funis, Probabilidade, ICPs, Produtos, Metas, Cadências, Geral)
 - [x] Deploy no VPS e validação visual completa - CONFIRMADO 12/04/2026
+
+## Redesign Leads Page
+
+### Aba Lista (Leads Ativos - estilo Excel)
+- [ ] Header com 2 abas: Cadência (Kanban) e Leads Ativos (Lista)
+- [ ] Tabela profissional com colunas configuráveis (Nome, Telefone, Cargo, Email, Empresa, Origem, Temperatura, Status, Setor, Região, Porte, Visível Para)
+- [ ] Botão "Colunas" com popover para mostrar/ocultar colunas (salvo localStorage)
+- [ ] Busca por nome, empresa, telefone
+- [ ] Filtros avançados: Temperatura, Status, ICP, Setor, Porte, Canal de Origem, Visibilidade
+- [ ] Todos os status na mesma tabela (novo, em_contato, qualificado, convertido, desqualificado, aposentado)
+- [ ] Paginação com 10/50/100 por página
+- [ ] Checkbox de seleção individual e selecionar todos (admin)
+- [ ] Barra flutuante de seleção em massa: editar em massa, exportar Excel
+- [ ] Ações por linha: WhatsApp, Editar, Excluir
+- [ ] Botões header: Importar, Novo Lead
+- [ ] Modal Novo Lead / Editar Lead com formulário completo (Nome, Telefone, Email, Empresa, Cargo, Origem, ICP, Temperatura, Setor, Porte, Região, LinkedIn, Site, CPF/CNPJ, Cadência, Visível Para, Notas)
+
+### Página Detalhe do Lead (/leads/:id)
+- [ ] Header com nome, cargo, empresa + botões: WhatsApp, Converter em Conta, Desqualificar, Aposentar
+- [ ] Lado esquerdo: dados do contato com edição inline ("Clique para editar")
+- [ ] Campos: Nome, Cargo, ICP, Telefone, Email, Empresa, LinkedIn, Site, CPF/CNPJ, Canal de Origem, Cadência, Fase da Cadência, Visível Para, Observações, Temperatura (Frio/Morno/Quente)
+- [ ] Lado direito: Timeline de Atividades com "Nova Agenda" e "Nova Atividade"
+- [ ] Ação Converter em Conta: cria conta/empresa, muda status para convertido
+- [ ] Ação Desqualificar: pede motivo, muda status
+- [ ] Ação Aposentar: pede motivo, muda status
+- [ ] Ação Reativar: volta para ativo (se desqualificado/aposentado)
+
+### Aba Cadência (Kanban)
+- [ ] Kanban agrupado por fase da cadência
+- [ ] Coluna "Sem Cadência" para leads não vinculados
+- [ ] Cards com: nome, empresa, temperatura badge, ações rápidas (WhatsApp, editar)
+- [ ] Dados mockados de cadências para visualização
+
+### Integração
+- [ ] Rota /leads/:id registrada no App.tsx
+- [ ] Build sem erros
+- [ ] Deploy no VPS
