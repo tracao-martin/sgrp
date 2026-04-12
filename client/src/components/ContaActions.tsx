@@ -31,21 +31,25 @@ export function ContaActions({ conta, onSuccess }: ContaActionsProps) {
     status: conta.status || "prospect",
   });
 
+  const utils = trpc.useUtils();
+
   const updateMutation = trpc.crm.companies.update.useMutation({
     onSuccess: () => {
       toast.success("Conta atualizada com sucesso!");
       setOpenEdit(false);
+      utils.crm.companies.list.invalidate();
       onSuccess?.();
     },
-    onError: (error) => {
+    onError: (error: any) => {
       toast.error(`Erro ao atualizar conta: ${error.message}`);
     },
   });
 
-  const deleteMutation = trpc.crm.companies.update.useMutation({
+  const deleteMutation = trpc.crm.companies.delete.useMutation({
     onSuccess: () => {
       toast.success("Conta deletada com sucesso!");
       setOpenDelete(false);
+      utils.crm.companies.list.invalidate();
       onSuccess?.();
     },
     onError: (error: any) => {
@@ -63,12 +67,7 @@ export function ContaActions({ conta, onSuccess }: ContaActionsProps) {
   };
 
   const handleDelete = () => {
-    // Simular delete marcando como inativo
-    updateMutation.mutate({
-      id: conta.id,
-      ...formData,
-      status: "inativa",
-    } as any);
+    deleteMutation.mutate({ id: conta.id });
   };
 
   return (

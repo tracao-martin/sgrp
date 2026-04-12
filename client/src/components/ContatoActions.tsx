@@ -22,10 +22,13 @@ export function ContatoActions({ contato, onSuccess }: ContatoActionsProps) {
     cargo: contato.cargo || "",
   });
 
-  const updateMutation = trpc.crm.contacts.create.useMutation({
+  const utils = trpc.useUtils();
+
+  const updateMutation = trpc.crm.contacts.update.useMutation({
     onSuccess: () => {
       toast.success("Contato atualizado com sucesso!");
       setOpenEdit(false);
+      utils.crm.contacts.list.invalidate();
       onSuccess?.();
     },
     onError: (error: any) => {
@@ -33,18 +36,28 @@ export function ContatoActions({ contato, onSuccess }: ContatoActionsProps) {
     },
   });
 
+  const deleteMutation = trpc.crm.contacts.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Contato deletado com sucesso!");
+      setOpenDelete(false);
+      utils.crm.contacts.list.invalidate();
+      onSuccess?.();
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao deletar contato: ${error.message}`);
+    },
+  });
+
   const handleUpdate = (e: React.FormEvent) => {
     e.preventDefault();
     updateMutation.mutate({
+      id: contato.id,
       ...formData,
-      company_id: 1,
-    } as any);
+    });
   };
 
   const handleDelete = () => {
-    toast.success("Contato deletado com sucesso!");
-    setOpenDelete(false);
-    onSuccess?.();
+    deleteMutation.mutate({ id: contato.id });
   };
 
   return (
@@ -161,7 +174,8 @@ export function ContatoActions({ contato, onSuccess }: ContatoActionsProps) {
             <Button type="button" variant="outline" onClick={() => setOpenDelete(false)} className="border-gray-600">
               Cancelar
             </Button>
-            <Button type="button" className="bg-red-600 hover:bg-red-700" onClick={handleDelete}>
+            <Button type="button" className="bg-red-600 hover:bg-red-700" onClick={handleDelete} disabled={deleteMutation.isPending}>
+              {deleteMutation.isPending ? <Loader className="w-4 h-4 animate-spin mr-2" /> : null}
               Deletar
             </Button>
           </div>

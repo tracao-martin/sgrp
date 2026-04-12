@@ -23,14 +23,29 @@ export function LeadActions({ lead, onSuccess }: LeadActionsProps) {
     valor_estimado: lead.valor_estimado || "",
   });
 
-  const updateMutation = trpc.crm.leads.create.useMutation({
+  const utils = trpc.useUtils();
+
+  const updateMutation = trpc.crm.leads.update.useMutation({
     onSuccess: () => {
       toast.success("Lead atualizado com sucesso!");
       setOpenEdit(false);
+      utils.crm.leads.list.invalidate();
       onSuccess?.();
     },
     onError: (error: any) => {
       toast.error(`Erro ao atualizar lead: ${error.message}`);
+    },
+  });
+
+  const deleteMutation = trpc.crm.leads.delete.useMutation({
+    onSuccess: () => {
+      toast.success("Lead deletado com sucesso!");
+      setOpenDelete(false);
+      utils.crm.leads.list.invalidate();
+      onSuccess?.();
+    },
+    onError: (error: any) => {
+      toast.error(`Erro ao deletar lead: ${error.message}`);
     },
   });
 
@@ -40,14 +55,11 @@ export function LeadActions({ lead, onSuccess }: LeadActionsProps) {
       id: lead.id,
       ...formData,
       valor_estimado: formData.valor_estimado ? parseInt(formData.valor_estimado) : undefined,
-    } as any);
+    });
   };
 
   const handleDelete = () => {
-    // Simular delete
-    toast.success("Lead deletado com sucesso!");
-    setOpenDelete(false);
-    onSuccess?.();
+    deleteMutation.mutate({ id: lead.id });
   };
 
   return (
