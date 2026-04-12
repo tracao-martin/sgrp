@@ -525,12 +525,21 @@ export const opportunitiesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+
+      // Get stage probability for auto-probability
+      const stage = await db.select().from(pipelineStages).where(
+        and(eq(pipelineStages.id, input.stage_id), eq(pipelineStages.organizationId, orgId(ctx)))
+      ).limit(1);
+      const probAuto = stage[0]?.probabilidade_fechamento ?? 0;
+
       await db.insert(opportunities).values({
         ...input,
         organizationId: orgId(ctx),
         data_fechamento_prevista: input.data_fechamento_prevista ? new Date(input.data_fechamento_prevista) : undefined,
         responsavel_id: ctx.user.id,
         status: "aberta",
+        probabilidadeAuto: probAuto,
+        probabilidade: probAuto,
       });
       return { success: true };
     }),
@@ -544,17 +553,61 @@ export const opportunitiesRouter = router({
         valor: z.string().optional(),
         stage_id: z.number().optional(),
         probabilidade: z.number().optional(),
+        probabilidadeManual: z.number().nullable().optional(),
         status: z.enum(["aberta", "ganha", "perdida", "cancelada"]).optional(),
         motivo_ganho: z.string().optional(),
         motivo_perda: z.string().optional(),
         data_fechamento_prevista: z.string().optional(),
+        // SPIN fields
+        spinSituacao: z.string().nullable().optional(),
+        spinProblema: z.string().nullable().optional(),
+        spinImplicacao: z.string().nullable().optional(),
+        spinNecessidade: z.string().nullable().optional(),
+        // Qualification checkboxes
+        qualTemBudget: z.boolean().optional(),
+        qualTemAutoridade: z.boolean().optional(),
+        qualTemNecessidade: z.boolean().optional(),
+        qualTemTiming: z.boolean().optional(),
+        qualTemConcorrente: z.boolean().optional(),
+        qualTemProximoPasso: z.boolean().optional(),
+        qualTemCriterioDecisao: z.boolean().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      const { id, ...updateData } = input;
-      await db.update(opportunities).set(updateData as any).where(
+      const { id, data_fechamento_prevista, ...rest } = input;
+      const updateData: any = { ...rest };
+      if (data_fechamento_prevista !== undefined) {
+        updateData.data_fechamento_prevista = data_fechamento_prevista ? new Date(data_fechamento_prevista) : null;
+      }
+
+      // If stage changed, recalculate auto probability
+      if (updateData.stage_id) {
+        const stage = await db.select().from(pipelineStages).where(
+          and(eq(pipelineStages.id, updateData.stage_id), eq(pipelineStages.organizationId, orgId(ctx)))
+        ).limit(1);
+        if (stage[0]) {
+          updateData.probabilidadeAuto = stage[0].probabilidade_fechamento ?? 0;
+          // If no manual override, update the main probability too
+          if (updateData.probabilidadeManual === undefined || updateData.probabilidadeManual === null) {
+            // Check if there's already a manual override
+            const current = await db.select().from(opportunities).where(
+              and(eq(opportunities.id, id), eq(opportunities.organizationId, orgId(ctx)))
+            ).limit(1);
+            if (current[0] && current[0].probabilidadeManual === null) {
+              updateData.probabilidade = updateData.probabilidadeAuto;
+            }
+          }
+        }
+      }
+
+      // If manual probability is explicitly set, use it as the main probability
+      if (updateData.probabilidadeManual !== undefined && updateData.probabilidadeManual !== null) {
+        updateData.probabilidade = updateData.probabilidadeManual;
+      }
+
+      await db.update(opportunities).set(updateData).where(
         and(eq(opportunities.id, id), eq(opportunities.organizationId, orgId(ctx)))
       );
       return { success: true };
@@ -565,7 +618,29 @@ export const opportunitiesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      await db.update(opportunities).set({ stage_id: input.stage_id }).where(
+
+      // Get stage probability for auto-update
+      const stage = await db.select().from(pipelineStages).where(
+        and(eq(pipelineStages.id, input.stage_id), eq(pipelineStages.organizationId, orgId(ctx)))
+      ).limit(1);
+      const probAuto = stage[0]?.probabilidade_fechamento ?? 0;
+
+      // Check if there's a manual override
+      const current = await db.select().from(opportunities).where(
+        and(eq(opportunities.id, input.id), eq(opportunities.organizationId, orgId(ctx)))
+      ).limit(1);
+
+      const updateFields: any = {
+        stage_id: input.stage_id,
+        probabilidadeAuto: probAuto,
+      };
+
+      // Only update main probability if no manual override
+      if (current[0] && current[0].probabilidadeManual === null) {
+        updateFields.probabilidade = probAuto;
+      }
+
+      await db.update(opportunities).set(updateFields).where(
         and(eq(opportunities.id, input.id), eq(opportunities.organizationId, orgId(ctx)))
       );
       return { success: true };

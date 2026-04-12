@@ -4,14 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { trpc } from "@/lib/trpc";
 import { Loader, TrendingUp, Target, DollarSign, BarChart3 } from "lucide-react";
 
-const STAGE_PROBABILITY: Record<string, number> = {
-  "Prospecção": 10,
-  "Qualificação": 25,
-  "Proposta": 50,
-  "Negociação": 75,
-  "Fechamento": 90,
-};
-
 const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 export default function PrevisaoReceita() {
@@ -24,32 +16,44 @@ export default function PrevisaoReceita() {
   const analysis = useMemo(() => {
     if (!opportunities.length) return null;
 
-    // Build stage map
-    const stageMap: Record<number, string> = {};
-    stages.forEach((s: any) => { stageMap[s.id] = s.nome; });
+    // Build stage map with real probabilities from DB
+    const stageMap: Record<number, { nome: string; probabilidade: number }> = {};
+    stages.forEach((s: any) => {
+      stageMap[s.id] = { nome: s.nome, probabilidade: s.probabilidade_fechamento ?? 0 };
+    });
 
-    // Calculate weighted pipeline
+    // Only open deals for pipeline analysis
+    const openDeals = opportunities.filter((d: any) => d.status === "aberta");
+
+    // Calculate weighted pipeline using real per-deal probability
     let totalPipeline = 0;
     let totalWeighted = 0;
-    const byStage: Record<string, { count: number; value: number; weighted: number }> = {};
+    const byStage: Record<string, { count: number; value: number; weighted: number; prob: number }> = {};
 
-    opportunities.forEach((opp: any) => {
-      const stageName = stageMap[opp.stage_id] || "Desconhecido";
+    openDeals.forEach((opp: any) => {
+      const stageInfo = stageMap[opp.stage_id] || { nome: "Desconhecido", probabilidade: 0 };
+      const stageName = stageInfo.nome;
       const value = parseFloat(String(opp.valor || "0")) || 0;
-      const prob = STAGE_PROBABILITY[stageName] || 50;
+      // Use deal's effective probability (manual override > auto > stage default)
+      const prob = opp.probabilidadeManual ?? opp.probabilidadeAuto ?? opp.probabilidade ?? stageInfo.probabilidade;
       const weighted = value * (prob / 100);
 
       totalPipeline += value;
       totalWeighted += weighted;
 
-      if (!byStage[stageName]) byStage[stageName] = { count: 0, value: 0, weighted: 0 };
+      if (!byStage[stageName]) byStage[stageName] = { count: 0, value: 0, weighted: 0, prob: stageInfo.probabilidade };
       byStage[stageName].count++;
       byStage[stageName].value += value;
       byStage[stageName].weighted += weighted;
     });
 
     // Forecast by month (distribute weighted value over next 6 months)
-    const months = ["Abr", "Mai", "Jun", "Jul", "Ago", "Set"];
+    const now = new Date();
+    const months: string[] = [];
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      months.push(d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", ""));
+    }
     const monthlyWeights = [0.3, 0.25, 0.2, 0.12, 0.08, 0.05];
     const forecastData = months.map((month, i) => ({
       month,
@@ -76,14 +80,23 @@ export default function PrevisaoReceita() {
       ? Math.round((totalWeighted / totalPipeline) * 100)
       : 0;
 
+    // Stage probabilities from real DB data (for premissas section)
+    const stageProbabilities = stages
+      .sort((a: any, b: any) => a.ordem - b.ordem)
+      .map((s: any) => ({
+        nome: s.nome,
+        probabilidade: s.probabilidade_fechamento ?? 0,
+      }));
+
     return {
       totalPipeline,
       totalWeighted,
       avgProbability,
-      dealCount: opportunities.length,
+      dealCount: openDeals.length,
       forecastData,
       pieData,
       barData,
+      stageProbabilities,
     };
   }, [opportunities, stages]);
 
@@ -109,7 +122,7 @@ export default function PrevisaoReceita() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Previsão de Receita</h1>
-        <p className="text-gray-400 mt-1">Projeção baseada em {analysis.dealCount} deals no pipeline</p>
+        <p className="text-gray-400 mt-1">Projeção baseada em {analysis.dealCount} deals abertos no pipeline</p>
       </div>
 
       {/* KPI Cards */}
@@ -164,7 +177,7 @@ export default function PrevisaoReceita() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{analysis.dealCount}</p>
-                <p className="text-xs text-gray-400">Deals Ativos</p>
+                <p className="text-xs text-gray-400">Deals Abertos</p>
               </div>
             </div>
           </CardContent>
@@ -254,31 +267,32 @@ export default function PrevisaoReceita() {
           </CardContent>
         </Card>
 
-        {/* Premissas */}
+        {/* Premissas - now using real stage data */}
         <Card className="bg-gray-800 border-gray-700">
           <CardHeader>
             <CardTitle>Premissas da Previsão</CardTitle>
-            <CardDescription>Probabilidades por estágio do funil</CardDescription>
+            <CardDescription>Probabilidades por estágio do funil (dados reais)</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {Object.entries(STAGE_PROBABILITY).map(([stage, prob]) => (
-                <div key={stage} className="flex items-center gap-3">
-                  <div className="w-32 text-sm text-gray-300">{stage}</div>
+              {analysis.stageProbabilities.map((stage) => (
+                <div key={stage.nome} className="flex items-center gap-3">
+                  <div className="w-32 text-sm text-gray-300">{stage.nome}</div>
                   <div className="flex-1 bg-gray-700 rounded-full h-3">
                     <div
                       className="bg-blue-500 h-3 rounded-full transition-all"
-                      style={{ width: `${prob}%` }}
+                      style={{ width: `${stage.probabilidade}%` }}
                     />
                   </div>
-                  <div className="w-12 text-sm text-right font-medium">{prob}%</div>
+                  <div className="w-12 text-sm text-right font-medium">{stage.probabilidade}%</div>
                 </div>
               ))}
             </div>
             <div className="mt-6 pt-4 border-t border-gray-700">
               <h4 className="text-sm font-medium mb-2 text-gray-300">Metodologia</h4>
               <ul className="space-y-1 text-xs text-gray-400">
-                <li>- Receita ponderada = Valor x Probabilidade do estágio</li>
+                <li>- Receita ponderada = Valor x Probabilidade efetiva do deal</li>
+                <li>- Probabilidade: manual (se definida) ou automática (do estágio)</li>
                 <li>- Cenário otimista: +30% sobre realista</li>
                 <li>- Cenário pessimista: -40% sobre realista</li>
                 <li>- Distribuição temporal: 30/25/20/12/8/5%</li>

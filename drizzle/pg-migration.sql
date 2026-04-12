@@ -258,3 +258,26 @@ CREATE INDEX IF NOT EXISTS idx_notifications_user ON notifications(usuario_id, l
 CREATE INDEX IF NOT EXISTS idx_email_logs_org ON email_logs(organization_id);
 CREATE INDEX IF NOT EXISTS idx_ai_insights_org ON ai_insights(organization_id);
 CREATE INDEX IF NOT EXISTS idx_organizations_slug ON organizations(slug);
+
+-- ============================================================================
+-- Sprint 2: SPIN Selling + Qualification + Auto-Probability
+-- ============================================================================
+
+-- SPIN Selling fields
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS spin_situacao TEXT;
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS spin_problema TEXT;
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS spin_implicacao TEXT;
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS spin_necessidade TEXT;
+
+-- Qualification checkboxes (7 criteria)
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS qual_tem_budget BOOLEAN DEFAULT false;
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS qual_tem_autoridade BOOLEAN DEFAULT false;
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS qual_tem_necessidade BOOLEAN DEFAULT false;
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS qual_tem_timing BOOLEAN DEFAULT false;
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS qual_tem_concorrente BOOLEAN DEFAULT false;
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS qual_tem_proximo_passo BOOLEAN DEFAULT false;
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS qual_tem_criterio_decisao BOOLEAN DEFAULT false;
+
+-- Probability: auto (from stage) vs manual override
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS probabilidade_auto INTEGER DEFAULT 0;
+ALTER TABLE opportunities ADD COLUMN IF NOT EXISTS probabilidade_manual INTEGER;

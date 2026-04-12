@@ -6,13 +6,17 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Plus, GripVertical, Building2, User, DollarSign, Calendar, Target, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Plus, Building2, DollarSign, Target, ChevronRight, CheckCircle2, Trophy, Ban } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
+import DealDetailSheet from "@/components/DealDetailSheet";
 
 export default function FunilVendas() {
   const [showNewDeal, setShowNewDeal] = useState(false);
   const [draggedDeal, setDraggedDeal] = useState<number | null>(null);
+  const [selectedDealId, setSelectedDealId] = useState<number | null>(null);
+  const [showDealDetail, setShowDealDetail] = useState(false);
 
   // Fetch real data
   const { data: stages = [], isLoading: loadingStages } = trpc.crm.pipelineStages.list.useQuery();
@@ -35,6 +39,7 @@ export default function FunilVendas() {
       utils.crm.opportunities.list.invalidate();
       setShowNewDeal(false);
       toast.success("Deal criado com sucesso!");
+      setNewDeal({ titulo: "", descricao: "", valor: "", company_id: "", stage_id: "" });
     },
   });
 
@@ -42,7 +47,7 @@ export default function FunilVendas() {
   const dealsByStage = useMemo(() => {
     const grouped: Record<number, typeof deals> = {};
     for (const stage of stages) {
-      grouped[stage.id] = deals.filter((d: any) => d.stage_id === stage.id);
+      grouped[stage.id] = deals.filter((d: any) => d.stage_id === stage.id && d.status === "aberta");
     }
     return grouped;
   }, [stages, deals]);
@@ -56,16 +61,25 @@ export default function FunilVendas() {
     const lostDeals = deals.filter((d: any) => d.status === "perdida");
     const lostValue = lostDeals.reduce((sum: number, d: any) => sum + parseFloat(d.valor || "0"), 0);
     const conversionRate = deals.length > 0 ? Math.round((wonDeals.length / deals.length) * 100) : 0;
-    return { total: openDeals.length, totalValue, wonValue, lostValue, conversionRate };
+
+    // Weighted pipeline value
+    const weightedValue = openDeals.reduce((sum: number, d: any) => {
+      const prob = d.probabilidadeManual ?? d.probabilidadeAuto ?? d.probabilidade ?? 0;
+      return sum + parseFloat(d.valor || "0") * prob / 100;
+    }, 0);
+
+    return { total: openDeals.length, totalValue, weightedValue, wonValue, lostValue, conversionRate, wonCount: wonDeals.length, lostCount: lostDeals.length };
   }, [deals]);
 
   // Drag and drop handlers
-  const handleDragStart = (dealId: number) => {
+  const handleDragStart = (e: React.DragEvent, dealId: number) => {
     setDraggedDeal(dealId);
+    e.dataTransfer.effectAllowed = "move";
   };
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
   };
 
   const handleDrop = (stageId: number) => {
@@ -73,6 +87,11 @@ export default function FunilVendas() {
       updateStage.mutate({ id: draggedDeal, stage_id: stageId });
       setDraggedDeal(null);
     }
+  };
+
+  const handleDealClick = (dealId: number) => {
+    setSelectedDealId(dealId);
+    setShowDealDetail(true);
   };
 
   // Stage colors
@@ -84,8 +103,22 @@ export default function FunilVendas() {
 
   const formatCurrency = (value: string | number) => {
     const num = typeof value === "string" ? parseFloat(value) : value;
+    if (num >= 1000000) return `R$ ${(num / 1000000).toFixed(1)}M`;
     if (num >= 1000) return `R$ ${(num / 1000).toFixed(0)}K`;
     return `R$ ${num.toLocaleString("pt-BR")}`;
+  };
+
+  // Qualification score helper
+  const getQualScore = (deal: any) => {
+    let score = 0;
+    if (deal.qualTemBudget) score++;
+    if (deal.qualTemAutoridade) score++;
+    if (deal.qualTemNecessidade) score++;
+    if (deal.qualTemTiming) score++;
+    if (deal.qualTemConcorrente) score++;
+    if (deal.qualTemProximoPasso) score++;
+    if (deal.qualTemCriterioDecisao) score++;
+    return score;
   };
 
   // New deal form
@@ -125,7 +158,7 @@ export default function FunilVendas() {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold">Funil de Vendas</h1>
-          <p className="text-gray-400 mt-1">Pipeline Kanban - Arraste os deals entre estágios</p>
+          <p className="text-gray-400 mt-1">Pipeline Kanban — Arraste os deals entre estágios. Clique para abrir detalhes SPIN.</p>
         </div>
         <Dialog open={showNewDeal} onOpenChange={setShowNewDeal}>
           <DialogTrigger asChild>
@@ -203,7 +236,7 @@ export default function FunilVendas() {
 
       {/* Stage Legend */}
       <div className="flex flex-wrap gap-4">
-        {stages.map((stage: any, i: number) => (
+        {stages.map((stage: any) => (
           <div key={stage.id} className="flex items-center gap-2">
             <div className={`w-3 h-3 rounded-full ${stageColors[stage.id]}`} />
             <span className="text-sm text-gray-300">{stage.nome}</span>
@@ -244,12 +277,17 @@ export default function FunilVendas() {
                 <div className={`bg-gray-800/50 rounded-lg p-3 min-h-[400px] space-y-3 border-2 border-transparent ${draggedDeal !== null ? "border-dashed border-gray-600" : ""}`}>
                   {stageDeals.map((deal: any) => {
                     const company = companiesList.find((c: any) => c.id === deal.company_id);
+                    const prob = deal.probabilidadeManual ?? deal.probabilidadeAuto ?? deal.probabilidade ?? 0;
+                    const qualScore = getQualScore(deal);
+                    const hasManualProb = deal.probabilidadeManual !== null && deal.probabilidadeManual !== undefined;
+
                     return (
                       <Card
                         key={deal.id}
                         draggable
-                        onDragStart={() => handleDragStart(deal.id)}
-                        className={`bg-gray-700 border-gray-600 cursor-grab hover:shadow-lg hover:shadow-blue-500/10 transition-all active:cursor-grabbing ${draggedDeal === deal.id ? "opacity-50" : ""}`}
+                        onDragStart={(e) => handleDragStart(e, deal.id)}
+                        onClick={() => handleDealClick(deal.id)}
+                        className={`bg-gray-700 border-gray-600 cursor-pointer hover:shadow-lg hover:shadow-blue-500/10 hover:border-blue-500/30 transition-all active:cursor-grabbing ${draggedDeal === deal.id ? "opacity-50" : ""}`}
                       >
                         <CardContent className="p-3">
                           <div className="space-y-2">
@@ -260,22 +298,36 @@ export default function FunilVendas() {
                                 <p className="text-xs text-gray-400">{company?.nome || "—"}</p>
                               </div>
                             </div>
-                            {deal.probabilidade > 0 && (
+
+                            {/* Probability bar */}
+                            {prob > 0 && (
                               <div className="w-full bg-gray-600 rounded-full h-1.5">
                                 <div
-                                  className="bg-blue-500 h-1.5 rounded-full"
-                                  style={{ width: `${deal.probabilidade}%` }}
+                                  className={`h-1.5 rounded-full ${hasManualProb ? "bg-amber-500" : "bg-blue-500"}`}
+                                  style={{ width: `${prob}%` }}
                                 />
                               </div>
                             )}
+
+                            {/* Bottom row: value + indicators */}
                             <div className="flex justify-between items-center pt-2 border-t border-gray-600">
-                              <span className="font-bold text-green-400 text-sm">
-                                {formatCurrency(deal.valor)}
+                              <span className="text-xs font-medium text-blue-400">
+                                <DollarSign className="w-3 h-3 inline" />
+                                {formatCurrency(deal.valor || "0")}
                               </span>
-                              <div className="flex items-center gap-1">
-                                {deal.probabilidade > 0 && (
-                                  <span className="text-xs text-gray-400">{deal.probabilidade}%</span>
+                              <div className="flex items-center gap-1.5">
+                                {/* Qualification indicator */}
+                                {qualScore > 0 && (
+                                  <Badge variant="outline" className={`text-[10px] px-1 py-0 h-4 ${
+                                    qualScore >= 5 ? "border-green-600 text-green-400" : qualScore >= 3 ? "border-amber-600 text-amber-400" : "border-gray-600 text-gray-400"
+                                  }`}>
+                                    <CheckCircle2 className="w-2.5 h-2.5 mr-0.5" />{qualScore}/7
+                                  </Badge>
                                 )}
+                                {/* Probability */}
+                                <span className={`text-xs ${hasManualProb ? "text-amber-400" : "text-gray-400"}`}>
+                                  {prob}%
+                                </span>
                                 <Target className="w-3 h-3 text-gray-500" />
                               </div>
                             </div>
@@ -301,30 +353,45 @@ export default function FunilVendas() {
       {/* Summary */}
       <Card className="bg-gray-800 border-gray-700">
         <CardContent className="pt-6">
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
             <div>
-              <p className="text-xs text-gray-400 mb-1">Total de Deals</p>
+              <p className="text-xs text-gray-400 mb-1">Deals Abertos</p>
               <p className="text-2xl font-bold">{summary.total}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Valor Total</p>
+              <p className="text-xs text-gray-400 mb-1">Valor Pipeline</p>
               <p className="text-2xl font-bold">{formatCurrency(summary.totalValue)}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Valor Ponderado</p>
+              <p className="text-2xl font-bold text-blue-400">{formatCurrency(summary.weightedValue)}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Taxa Conversão</p>
               <p className="text-2xl font-bold">{summary.conversionRate}%</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Ganhos (Mês)</p>
+              <p className="text-xs text-gray-400 mb-1">
+                <Trophy className="w-3 h-3 inline mr-1 text-green-400" />Ganhos
+              </p>
               <p className="text-2xl font-bold text-green-400">{formatCurrency(summary.wonValue)}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Perdidos (Mês)</p>
+              <p className="text-xs text-gray-400 mb-1">
+                <Ban className="w-3 h-3 inline mr-1 text-red-400" />Perdidos
+              </p>
               <p className="text-2xl font-bold text-red-400">{formatCurrency(summary.lostValue)}</p>
             </div>
           </div>
         </CardContent>
       </Card>
+
+      {/* Deal Detail Sheet */}
+      <DealDetailSheet
+        dealId={selectedDealId}
+        open={showDealDetail}
+        onOpenChange={setShowDealDetail}
+      />
     </div>
   );
 }

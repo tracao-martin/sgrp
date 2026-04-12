@@ -184,6 +184,22 @@ export const opportunities = pgTable("opportunities", {
   motivo_ganho: varchar("motivo_ganho", { length: 255 }),
   motivo_perda: varchar("motivo_perda", { length: 255 }),
   status: opportunityStatusEnum("status").default("aberta"),
+  // SPIN Selling fields
+  spinSituacao: text("spin_situacao"),
+  spinProblema: text("spin_problema"),
+  spinImplicacao: text("spin_implicacao"),
+  spinNecessidade: text("spin_necessidade"),
+  // Qualification checkboxes (7 criteria)
+  qualTemBudget: boolean("qual_tem_budget").default(false),
+  qualTemAutoridade: boolean("qual_tem_autoridade").default(false),
+  qualTemNecessidade: boolean("qual_tem_necessidade").default(false),
+  qualTemTiming: boolean("qual_tem_timing").default(false),
+  qualTemConcorrente: boolean("qual_tem_concorrente").default(false),
+  qualTemProximoPasso: boolean("qual_tem_proximo_passo").default(false),
+  qualTemCriterioDecisao: boolean("qual_tem_criterio_decisao").default(false),
+  // Probability: auto (from stage) vs manual override
+  probabilidadeAuto: integer("probabilidade_auto").default(0),
+  probabilidadeManual: integer("probabilidade_manual"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

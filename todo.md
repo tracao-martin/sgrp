@@ -165,3 +165,24 @@
 - [x] Testar login como usuário da nova org (João Silva logou, dashboard limpo)
 - [x] Validar isolamento multi-tenant (org 2 não vê dados da org 1) - CONFIRMADO em 12/04/2026
 - [x] Testar CRUD básico (lead/conta) dentro do tenant (lead criado como org 2, não visível em org 1)
+
+## Sprint 2 - SPIN Methodology & Qualificação de Deals
+### Schema & Backend
+- [ ] Adicionar campos SPIN na tabela opportunities (spin_situacao, spin_problema, spin_implicacao, spin_necessidade)
+- [ ] Adicionar 7 checkboxes de qualificação na tabela opportunities (tem_budget, tem_autoridade, tem_necessidade, tem_timing, tem_concorrente, tem_proximo_passo, tem_criterio_decisao)
+- [ ] Adicionar campo probabilidade_auto (calculada pelo estágio) vs probabilidade_manual
+- [ ] Adicionar campos motivo_ganho e motivo_perda (já existem no schema)
+- [ ] Atualizar procedures tRPC para suportar os novos campos
+- [ ] Implementar cálculo automático de probabilidade baseado no estágio do pipeline
+
+### Frontend
+- [ ] Criar aba/seção SPIN no detalhe da oportunidade
+- [ ] Criar seção de qualificação com 7 checkboxes no detalhe da oportunidade
+- [ ] Mostrar probabilidade automática (por estágio) com opção de override manual
+- [ ] Implementar modal de ganho/perda com campo de motivo obrigatório
+- [ ] Atualizar Kanban do Funil para mostrar indicadores SPIN e qualificação
+
+### Testes & Deploy
+- [ ] Escrever testes vitest para os novos campos SPIN e qualificação
+- [ ] Deploy no VPS com migração de schema
+- [ ] Testar fluxo completo no browser
