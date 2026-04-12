@@ -188,14 +188,14 @@
 - [ ] Testar fluxo completo no browser (pendente validação pelo usuário)
 
 ## Configurações - ICP (Perfil de Cliente Ideal)
-- [ ] Criar tabela icps no schema Drizzle (id, organization_id, nome, descricao, segmentos, portes, faixa_receita_min, faixa_receita_max, cargos_decisor, localizacoes, criterios_custom, ativo, created_at, updated_at)
-- [ ] Gerar e aplicar migração SQL no VPS
-- [ ] Criar procedures tRPC para CRUD de ICPs (list, create, update, delete)
-- [ ] Criar página frontend /configuracoes/icps com listagem de ICPs
-- [ ] Implementar formulário Novo ICP com campos: Nome, Descrição, Segmentos, Portes, Faixa de Receita, Cargos Decisor, Localizações, Critérios Customizados
-- [ ] Implementar edição inline ou modal de ICP existente
-- [ ] Implementar exclusão de ICP com confirmação
-- [ ] Integrar rota /configuracoes/icps no menu Configurações do sidebar
-- [ ] Garantir isolamento multi-tenant (org_id filter)
-- [ ] Escrever testes vitest para procedures ICP
-- [ ] Deploy no VPS e testar
+- [x] Criar tabela icps no schema Drizzle (id, organization_id, nome, descricao, segmentos, portes, faixa_receita_min, faixa_receita_max, cargos_decisor, localizacoes, criterios_custom, ativo, created_at, updated_at)
+- [x] Gerar e aplicar migração SQL no VPS
+- [x] Criar procedures tRPC para CRUD de ICPs (list, create, update, delete)
+- [x] Criar página frontend /configuracoes/icps com listagem de ICPs
+- [x] Implementar formulário Novo ICP com campos: Nome, Descrição, Segmentos, Portes, Faixa de Receita, Cargos Decisor, Localizações, Critérios Customizados
+- [x] Implementar edição inline ou modal de ICP existente
+- [x] Implementar exclusão de ICP com confirmação
+- [x] Integrar rota /configuracoes/icps no menu Configurações do sidebar
+- [x] Garantir isolamento multi-tenant (org_id filter)
+- [x] Escrever testes vitest para procedures ICP (14 testes)
+- [x] Deploy no VPS e testar - ICP criado com sucesso 12/04/2026
