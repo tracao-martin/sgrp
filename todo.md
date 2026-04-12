@@ -91,3 +91,12 @@
 - [x] Salvar checkpoint final do sistema funcional
 - [x] Fortalecer validação do chat Expert: exigir message não vazia (z.string().min(1))
 - [x] Testar CRUD end-to-end via browser (criar, editar, deletar lead testado com sucesso)
+
+## Deploy VPS Hostinger
+- [ ] Conectar ao VPS e instalar Node.js, pnpm, Nginx, PM2, Certbot
+- [ ] Exportar código para GitHub (tracao-martin/sgrp)
+- [ ] Clonar repositório no VPS e fazer build
+- [ ] Configurar variáveis de ambiente e banco de dados
+- [ ] Configurar Nginx reverse proxy + SSL Let's Encrypt
+- [ ] Iniciar aplicação com PM2
+- [ ] Testar acesso via dev.sgrp.tracaocomercial.com.br
