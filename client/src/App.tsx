@@ -7,21 +7,30 @@ import { ThemeProvider } from "./contexts/ThemeContext";
 import Home from "./pages/Home";
 import Login from "./pages/Login";
 import { SGRPLayout } from "./components/SGRPLayout";
+import Dashboard from "./pages/Dashboard";
+import Leads from "./pages/Leads";
+import Contas from "./pages/Contas";
+import Contatos from "./pages/Contatos";
+import FunilVendas from "./pages/FunilVendas";
+import Tarefas from "./pages/Tarefas";
+import Calendario from "./pages/Calendario";
+import PrevisaoReceita from "./pages/PrevisaoReceita";
+import ExpertComercial from "./pages/ExpertComercial";
 
 function Router() {
   return (
     <Switch>
       <Route path={"/login"} component={Login} />
-      <Route path={"/"} component={() => <SGRPLayout><Home /></SGRPLayout>} />
-      <Route path={"/dashboard"} component={() => <SGRPLayout><Home /></SGRPLayout>} />
-      <Route path={"/leads"} component={() => <SGRPLayout><Home /></SGRPLayout>} />
-      <Route path={"/contas"} component={() => <SGRPLayout><Home /></SGRPLayout>} />
-      <Route path={"/contatos"} component={() => <SGRPLayout><Home /></SGRPLayout>} />
-      <Route path={"/funil-vendas"} component={() => <SGRPLayout><Home /></SGRPLayout>} />
-      <Route path={"/tarefas"} component={() => <SGRPLayout><Home /></SGRPLayout>} />
-      <Route path={"/calendario"} component={() => <SGRPLayout><Home /></SGRPLayout>} />
-      <Route path={"/previsao-receita"} component={() => <SGRPLayout><Home /></SGRPLayout>} />
-      <Route path={"/expert-comercial"} component={() => <SGRPLayout><Home /></SGRPLayout>} />
+      <Route path={"/"} component={() => <SGRPLayout><Dashboard /></SGRPLayout>} />
+      <Route path={"/dashboard"} component={() => <SGRPLayout><Dashboard /></SGRPLayout>} />
+      <Route path={"/leads"} component={() => <SGRPLayout><Leads /></SGRPLayout>} />
+      <Route path={"/contas"} component={() => <SGRPLayout><Contas /></SGRPLayout>} />
+      <Route path={"/contatos"} component={() => <SGRPLayout><Contatos /></SGRPLayout>} />
+      <Route path={"/funil-vendas"} component={() => <SGRPLayout><FunilVendas /></SGRPLayout>} />
+      <Route path={"/tarefas"} component={() => <SGRPLayout><Tarefas /></SGRPLayout>} />
+      <Route path={"/calendario"} component={() => <SGRPLayout><Calendario /></SGRPLayout>} />
+      <Route path={"/previsao-receita"} component={() => <SGRPLayout><PrevisaoReceita /></SGRPLayout>} />
+      <Route path={"/expert-comercial"} component={() => <SGRPLayout><ExpertComercial /></SGRPLayout>} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>
@@ -33,7 +42,7 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider defaultTheme="dark">
         <TooltipProvider>
-          <Toaster />
+          <Toaster position="top-right" />
           <Router />
         </TooltipProvider>
       </ThemeProvider>
