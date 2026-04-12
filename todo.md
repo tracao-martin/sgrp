@@ -345,3 +345,62 @@
 - [x] Corrigir bug NaN no pageSize do localStorage
 - [x] Testar criação de lead end-to-end com todos os campos - CONFIRMADO: 16 campos salvos corretamente
 - [x] Deploy no VPS e validar - CONFIRMADO 12/04/2026
+
+## Sprint 1: Contacts/Leads 100% Completo
+
+### GAP 9: Conectar ICPs ao backend real
+- [ ] Substituir MOCK_ICPS por query trpc.crm.icps.list no Leads.tsx
+- [ ] Substituir MOCK_ICPS no formulário de criação/edição de lead
+
+### GAP 1: Cadências persistidas no DB
+- [ ] Criar tabela lead_cadences no schema (id, org_id, nome, descricao, etapas jsonb, ativo, created_at, updated_at)
+- [ ] Criar migration SQL e aplicar no DB
+- [ ] Criar router tRPC CRUD para lead_cadences
+- [ ] Conectar ConfigCadencias.tsx ao backend real (remover useState mock)
+- [ ] Substituir CADENCE_PHASES e MOCK_CADENCES no Leads.tsx por dados do DB
+- [ ] Kanban de cadência usa etapas reais da cadência selecionada
+
+### GAP 2: Motivos de Desqualificação
+- [ ] Criar tabela disqualify_reasons no schema (id, org_id, nome, created_at)
+- [ ] Criar migration SQL e aplicar no DB
+- [ ] Criar router tRPC CRUD para disqualify_reasons
+- [ ] Adicionar select de motivo no modal de desqualificação do LeadDetail
+- [ ] Salvar motivo_desqualificacao no lead ao desqualificar
+
+### GAP 3: Bulk Edit real (persistir no DB)
+- [ ] Criar mutation tRPC bulkUpdate para leads (aceita array de IDs + campos a alterar)
+- [ ] Conectar handleBulkEdit ao backend real
+- [ ] Adicionar campo cadência e vendedor no BulkEditModal
+
+### GAP 4: Export Excel funcional
+- [ ] Instalar xlsx (SheetJS) no frontend
+- [ ] Implementar handleExportExcel gerando arquivo .xlsx com leads filtrados
+- [ ] Incluir todas as colunas visíveis na exportação
+
+### GAP 7: ActivityTimeline completa no LeadDetail
+- [ ] Adicionar formulário de nova atividade (tipo, título, descrição, data)
+- [ ] Tipos visuais com ícones: ligação, reunião, email, whatsapp, visita, nota
+- [ ] Editar atividade existente
+- [ ] Excluir atividade
+- [ ] Vincular atividade a deal (opcional, select de opportunities do lead)
+
+### GAP 8: Lead Score Card
+- [ ] Criar função calcLeadScore(lead) → score 0-100%
+- [ ] Checklist: nome, email, telefone, empresa, CNPJ, setor, porte, região, canal, cadência
+- [ ] Card visual no LeadDetail com barra de progresso circular
+- [ ] Lista de itens faltantes com sugestão
+
+### GAP 6: Filtros avançados
+- [ ] Adicionar filtros: cadência, fase_cadencia, vendedor, data criação (range), região
+- [ ] Persistir filtros na URL (query params)
+- [ ] Contador de filtros ativos no botão de filtros
+
+### GAP 5: Import Excel
+- [ ] Instalar xlsx (SheetJS) no frontend
+- [ ] Componente ImportLeadsModal com 4 steps: Upload → Mapeamento → Preview → Resultado
+- [ ] Auto-mapeamento de colunas por similaridade
+- [ ] Mapeamento manual ajustável
+- [ ] Validação de campos obrigatórios antes de importar
+- [ ] Download de modelo Excel
+- [ ] Backend: mutation bulkCreate para leads
+- [ ] Feedback: X importados, Y erros com detalhes

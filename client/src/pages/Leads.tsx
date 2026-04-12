@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useCallback, useEffect } from "react";
+import React, { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -17,9 +17,11 @@ import {
   ChevronLeft, ChevronRight, X, Download, Edit,
   LayoutGrid, List, Phone, Mail, Building2, MapPin,
   Thermometer, Target, UserCheck, Globe, Linkedin,
-  GripVertical, ArrowRight,
+  GripVertical, ArrowRight, FileSpreadsheet, AlertCircle,
+  CheckCircle2,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import * as XLSX from "xlsx";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -117,19 +119,6 @@ const CADENCE_PHASES = [
   { id: "followup_2", nome: "Follow-up 2", cor: "#f97316" },
   { id: "qualificacao", nome: "Qualificação", cor: "#22c55e" },
   { id: "apresentacao", nome: "Apresentação", cor: "#3b82f6" },
-];
-
-// Mock ICPs
-const MOCK_ICPS = [
-  { id: "icp-1", nome: "Diretor de TI em SaaS B2B" },
-  { id: "icp-2", nome: "CEO de PME Industrial" },
-  { id: "icp-3", nome: "Head Comercial Varejo" },
-];
-
-// Mock cadences
-const MOCK_CADENCES = [
-  { id: "cad-1", nome: "Outbound B2B" },
-  { id: "cad-2", nome: "Inbound" },
 ];
 
 // ============================================================================
@@ -250,7 +239,7 @@ function ColumnManager({ visibleColumns, onChange }: { visibleColumns: string[];
 }
 
 // ============================================================================
-// CONTACT FILTERS POPOVER
+// CONTACT FILTERS POPOVER (with advanced filters)
 // ============================================================================
 interface Filters {
   temperatura: string[];
@@ -259,6 +248,8 @@ interface Filters {
   setor: string;
   porte: string;
   origem: string[];
+  cadencia: string;
+  regiao: string;
 }
 
 const EMPTY_FILTERS: Filters = {
@@ -268,12 +259,16 @@ const EMPTY_FILTERS: Filters = {
   setor: "",
   porte: "",
   origem: [],
+  cadencia: "",
+  regiao: "",
 };
 
-function ContactFilters({ filters, onChange, onClear }: {
+function ContactFilters({ filters, onChange, onClear, icps, cadences }: {
   filters: Filters;
   onChange: (f: Filters) => void;
   onClear: () => void;
+  icps: { id: number; nome: string }[];
+  cadences: { id: number; nome: string }[];
 }) {
   const activeCount = [
     filters.temperatura.length > 0,
@@ -282,6 +277,8 @@ function ContactFilters({ filters, onChange, onClear }: {
     !!filters.setor,
     !!filters.porte,
     filters.origem.length > 0,
+    !!filters.cadencia,
+    !!filters.regiao,
   ].filter(Boolean).length;
 
   return (
@@ -297,7 +294,7 @@ function ContactFilters({ filters, onChange, onClear }: {
           )}
         </Button>
       </PopoverTrigger>
-      <PopoverContent className="w-80 bg-card border-border p-4" align="end">
+      <PopoverContent className="w-80 bg-card border-border p-4 max-h-[70vh] overflow-y-auto" align="end">
         <div className="flex items-center justify-between mb-3">
           <p className="text-sm font-medium">Filtros avançados</p>
           {activeCount > 0 && (
@@ -371,6 +368,34 @@ function ContactFilters({ filters, onChange, onClear }: {
               ))}
             </div>
           </div>
+          {/* ICP */}
+          {icps.length > 0 && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">ICP</label>
+              <select
+                className="w-full bg-[#333] border border-border rounded-md px-3 py-1.5 text-sm"
+                value={filters.icp}
+                onChange={e => onChange({ ...filters, icp: e.target.value })}
+              >
+                <option value="">Todos</option>
+                {icps.map(i => <option key={i.id} value={i.nome}>{i.nome}</option>)}
+              </select>
+            </div>
+          )}
+          {/* Cadência */}
+          {cadences.length > 0 && (
+            <div>
+              <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Cadência</label>
+              <select
+                className="w-full bg-[#333] border border-border rounded-md px-3 py-1.5 text-sm"
+                value={filters.cadencia}
+                onChange={e => onChange({ ...filters, cadencia: e.target.value })}
+              >
+                <option value="">Todas</option>
+                {cadences.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+              </select>
+            </div>
+          )}
           {/* Porte */}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Porte</label>
@@ -383,6 +408,26 @@ function ContactFilters({ filters, onChange, onClear }: {
               {COMPANY_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
+          {/* Região */}
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Região</label>
+            <input
+              className="w-full bg-[#333] border border-border rounded-md px-3 py-1.5 text-sm"
+              placeholder="Filtrar por região..."
+              value={filters.regiao}
+              onChange={e => onChange({ ...filters, regiao: e.target.value })}
+            />
+          </div>
+          {/* Setor */}
+          <div>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Setor</label>
+            <input
+              className="w-full bg-[#333] border border-border rounded-md px-3 py-1.5 text-sm"
+              placeholder="Filtrar por setor..."
+              value={filters.setor}
+              onChange={e => onChange({ ...filters, setor: e.target.value })}
+            />
+          </div>
         </div>
       </PopoverContent>
     </Popover>
@@ -390,14 +435,16 @@ function ContactFilters({ filters, onChange, onClear }: {
 }
 
 // ============================================================================
-// LEAD FORM DIALOG (Create / Edit)
+// LEAD FORM DIALOG (Create / Edit) — uses real ICPs & Cadences
 // ============================================================================
-function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
+function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving, icps, cadences }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   editLead: LeadRow | null;
   onSave: (data: LeadFormData) => void;
   isSaving: boolean;
+  icps: { id: number; nome: string }[];
+  cadences: { id: number; nome: string }[];
 }) {
   const [form, setForm] = useState<LeadFormData>({
     nome: "", cargo: "", telefone: "", email: "", empresa: "", origem: "",
@@ -490,7 +537,7 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
             <label className="text-xs font-medium text-muted-foreground">ICP</label>
             <select className={inputClass("icp")} value={form.icp} onChange={e => update("icp", e.target.value)}>
               <option value="">Selecione o ICP...</option>
-              {MOCK_ICPS.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
+              {icps.map(i => <option key={i.id} value={i.nome}>{i.nome}</option>)}
             </select>
           </div>
           <div>
@@ -548,7 +595,7 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
             <label className="text-xs font-medium text-muted-foreground">Cadência</label>
             <select className={inputClass("cadencia")} value={form.cadencia} onChange={e => update("cadencia", e.target.value)}>
               <option value="">Sem cadência</option>
-              {MOCK_CADENCES.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
+              {cadences.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
             </select>
           </div>
           <div>
@@ -582,15 +629,20 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
 }
 
 // ============================================================================
-// BULK EDIT MODAL
+// BULK EDIT MODAL — calls real backend bulkUpdate
 // ============================================================================
-function BulkEditModal({ open, onClose, selectedCount, onConfirm }: {
+function BulkEditModal({ open, onClose, selectedCount, onConfirm, cadences }: {
   open: boolean;
   onClose: () => void;
   selectedCount: number;
-  onConfirm: (changes: { temperatura?: string; status?: string; origem?: string }) => void;
+  onConfirm: (changes: { temperatura?: string; status?: string; origem?: string; cadencia?: string }) => void;
+  cadences: { id: number; nome: string }[];
 }) {
-  const [changes, setChanges] = useState<{ temperatura?: string; status?: string; origem?: string }>({});
+  const [changes, setChanges] = useState<{ temperatura?: string; status?: string; origem?: string; cadencia?: string }>({});
+
+  useEffect(() => {
+    if (open) setChanges({});
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -632,11 +684,209 @@ function BulkEditModal({ open, onClose, selectedCount, onConfirm }: {
               {LEAD_SOURCES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
+          <div>
+            <label className="text-xs font-medium text-muted-foreground">Cadência</label>
+            <select
+              className="w-full bg-[#333] border border-border rounded-md px-3 py-2 text-sm mt-1"
+              value={changes.cadencia || ""}
+              onChange={e => setChanges({ ...changes, cadencia: e.target.value || undefined })}
+            >
+              <option value="">Não alterar</option>
+              <option value="__remove__">Remover cadência</option>
+              {cadences.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+            </select>
+          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="border-border">Cancelar</Button>
           <Button onClick={() => onConfirm(changes)} className="bg-primary hover:bg-primary/90 text-primary-foreground">
             Aplicar Alterações
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================================
+// IMPORT EXCEL DIALOG
+// ============================================================================
+function ImportExcelDialog({ open, onClose, onImport }: {
+  open: boolean;
+  onClose: () => void;
+  onImport: (leads: any[]) => void;
+}) {
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [parsedData, setParsedData] = useState<any[]>([]);
+  const [fileName, setFileName] = useState("");
+  const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (open) {
+      setParsedData([]);
+      setFileName("");
+      setError("");
+    }
+  }, [open]);
+
+  const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileName(file.name);
+    setError("");
+
+    const reader = new FileReader();
+    reader.onload = (evt) => {
+      try {
+        const data = new Uint8Array(evt.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: "array" });
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+        const json = XLSX.utils.sheet_to_json(sheet);
+
+        if (json.length === 0) {
+          setError("Planilha vazia. Verifique o arquivo.");
+          return;
+        }
+
+        // Map common column names to our fields
+        const columnMap: Record<string, string> = {
+          "nome": "titulo", "name": "titulo", "titulo": "titulo", "lead": "titulo",
+          "telefone": "telefone", "phone": "telefone", "tel": "telefone", "celular": "telefone",
+          "email": "email", "e-mail": "email",
+          "cargo": "cargo", "title": "cargo", "position": "cargo", "título": "cargo",
+          "empresa": "empresa", "company": "empresa", "organização": "empresa", "organizacao": "empresa",
+          "origem": "origem", "source": "origem", "canal": "origem",
+          "setor": "setor", "industry": "setor", "indústria": "setor",
+          "região": "regiao", "regiao": "regiao", "estado": "regiao", "uf": "regiao", "region": "regiao",
+          "porte": "porte", "size": "porte", "tamanho": "porte",
+          "linkedin": "linkedin",
+          "site": "site", "website": "site",
+          "cpf": "cpf_cnpj", "cnpj": "cpf_cnpj", "cpf_cnpj": "cpf_cnpj", "cpf/cnpj": "cpf_cnpj",
+          "notas": "notas", "observações": "notas", "observacoes": "notas", "notes": "notas",
+        };
+
+        const mapped = json.map((row: any) => {
+          const lead: Record<string, string> = {};
+          for (const [key, val] of Object.entries(row)) {
+            const normalizedKey = key.toLowerCase().trim();
+            const mappedKey = columnMap[normalizedKey];
+            if (mappedKey && val) {
+              lead[mappedKey] = String(val).trim();
+            }
+          }
+          return lead;
+        }).filter((l: any) => l.titulo);
+
+        if (mapped.length === 0) {
+          setError("Nenhum lead válido encontrado. A planilha precisa ter pelo menos uma coluna 'Nome' ou 'Titulo'.");
+          return;
+        }
+
+        setParsedData(mapped);
+      } catch (err) {
+        setError("Erro ao ler o arquivo. Verifique se é um arquivo Excel válido (.xlsx, .xls, .csv).");
+      }
+    };
+    reader.readAsArrayBuffer(file);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-card border-border max-w-lg">
+        <DialogHeader>
+          <DialogTitle className="flex items-center gap-2">
+            <FileSpreadsheet className="w-5 h-5 text-green-400" />
+            Importar Leads via Excel
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-2">
+          <p className="text-sm text-muted-foreground">
+            Faça upload de um arquivo Excel (.xlsx, .xls) ou CSV com os leads.
+            As colunas serão mapeadas automaticamente.
+          </p>
+
+          <div className="bg-[#333]/50 border border-dashed border-border rounded-lg p-6 text-center">
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept=".xlsx,.xls,.csv"
+              className="hidden"
+              onChange={handleFile}
+            />
+            <Button
+              variant="outline"
+              className="border-border gap-2"
+              onClick={() => fileInputRef.current?.click()}
+            >
+              <Upload className="w-4 h-4" />
+              Selecionar Arquivo
+            </Button>
+            {fileName && (
+              <p className="text-sm text-foreground mt-2">{fileName}</p>
+            )}
+          </div>
+
+          {error && (
+            <div className="flex items-start gap-2 text-red-400 text-sm bg-red-500/10 border border-red-500/20 rounded-lg p-3">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              {error}
+            </div>
+          )}
+
+          {parsedData.length > 0 && (
+            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-3">
+              <div className="flex items-center gap-2 text-green-400 text-sm mb-2">
+                <CheckCircle2 className="w-4 h-4" />
+                <span className="font-medium">{parsedData.length} leads encontrados</span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Colunas detectadas: {Object.keys(parsedData[0] || {}).join(", ")}
+              </p>
+              <div className="mt-2 max-h-32 overflow-y-auto">
+                <table className="w-full text-xs">
+                  <thead>
+                    <tr className="border-b border-border">
+                      <th className="text-left py-1 text-muted-foreground">Nome</th>
+                      <th className="text-left py-1 text-muted-foreground">Empresa</th>
+                      <th className="text-left py-1 text-muted-foreground">Email</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parsedData.slice(0, 5).map((l, i) => (
+                      <tr key={i} className="border-b border-border/50">
+                        <td className="py-1">{l.titulo}</td>
+                        <td className="py-1">{l.empresa || "—"}</td>
+                        <td className="py-1">{l.email || "—"}</td>
+                      </tr>
+                    ))}
+                    {parsedData.length > 5 && (
+                      <tr><td colSpan={3} className="py-1 text-muted-foreground">... e mais {parsedData.length - 5} leads</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          <div className="bg-[#333]/30 rounded-lg p-3">
+            <p className="text-xs font-medium text-muted-foreground mb-1">Colunas aceitas:</p>
+            <p className="text-xs text-muted-foreground">
+              Nome*, Telefone, Email, Cargo, Empresa, Origem, Setor, Região, Porte, LinkedIn, Site, CPF/CNPJ, Notas
+            </p>
+          </div>
+        </div>
+
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} className="border-border">Cancelar</Button>
+          <Button
+            onClick={() => onImport(parsedData)}
+            className="bg-green-600 hover:bg-green-700 text-white gap-1.5"
+            disabled={parsedData.length === 0}
+          >
+            <Upload className="w-4 h-4" />
+            Importar {parsedData.length} Leads
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -701,7 +951,6 @@ function KanbanColumn({ phase, leads, isOver, onDragOver, onDrop, onDragLeave, o
       onDrop={onDrop}
       onDragLeave={onDragLeave}
     >
-      {/* Column header */}
       <div className="rounded-lg p-3 mb-2" style={{ backgroundColor: `${phase.cor}15` }}>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -711,8 +960,6 @@ function KanbanColumn({ phase, leads, isOver, onDragOver, onDrop, onDragLeave, o
           <Badge variant="secondary" className="text-xs">{leads.length}</Badge>
         </div>
       </div>
-
-      {/* Drop zone */}
       <div
         className={`space-y-2 min-h-[100px] max-h-[calc(100vh-300px)] overflow-y-auto rounded-lg p-1 transition-colors ${
           isOver ? "bg-primary/5 ring-2 ring-primary/30 ring-dashed" : ""
@@ -737,25 +984,12 @@ function KanbanColumn({ phase, leads, isOver, onDragOver, onDrop, onDragLeave, o
 }
 
 // ============================================================================
-// ACTIVITY LOG ENTRY (for Kanban moves)
-// ============================================================================
-interface ActivityLogEntry {
-  id: string;
-  leadId: number;
-  leadNome: string;
-  usuario: string;
-  data: string;
-  faseAnterior: string;
-  faseNova: string;
-}
-
-// ============================================================================
 // KANBAN VIEW (with drag-and-drop + activity logging)
 // ============================================================================
 function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (lead: LeadRow) => void }) {
   const [draggedLeadId, setDraggedLeadId] = useState<number | null>(null);
   const [overPhaseId, setOverPhaseId] = useState<string | null>(null);
-  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
+  const [activityLog, setActivityLog] = useState<{ id: string; leadNome: string; usuario: string; data: string; faseAnterior: string; faseNova: string }[]>([]);
   const [showLog, setShowLog] = useState(false);
 
   const utils = trpc.useUtils();
@@ -767,17 +1001,13 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
     onError: (err: any) => toast.error(`Erro ao salvar movimentação: ${err.message}`),
   });
 
-  // Helper: map a lead's faseCadencia string to a CADENCE_PHASES id
   const mapFaseToPhaseId = useCallback((faseCadencia: string): string => {
     if (!faseCadencia) return "sem_cadencia";
     const lower = faseCadencia.toLowerCase().trim();
-    // Try exact match first
     const exact = CADENCE_PHASES.find(p => p.nome.toLowerCase() === lower);
     if (exact) return exact.id;
-    // Try id match
     const byId = CADENCE_PHASES.find(p => p.id === lower);
     if (byId) return byId.id;
-    // Try partial match (phase name contains faseCadencia or vice versa)
     const partial = CADENCE_PHASES.find(p =>
       p.nome.toLowerCase().includes(lower) || lower.includes(p.nome.toLowerCase())
     );
@@ -785,42 +1015,30 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
     return "sem_cadencia";
   }, []);
 
-  // Track lead-to-phase assignments, always synced from DB data
   const [leadPhases, setLeadPhases] = useState<Record<number, string>>({});
 
-  // Sync leadPhases from DB whenever leads data changes
   useEffect(() => {
     const newPhases: Record<number, string> = {};
     leads.forEach(lead => {
-      if (lead.faseCadencia) {
-        newPhases[lead.id] = mapFaseToPhaseId(lead.faseCadencia);
-      } else {
-        newPhases[lead.id] = "sem_cadencia";
-      }
+      newPhases[lead.id] = lead.faseCadencia ? mapFaseToPhaseId(lead.faseCadencia) : "sem_cadencia";
     });
     setLeadPhases(newPhases);
   }, [leads, mapFaseToPhaseId]);
 
-  // Group leads by phase
   const leadsByPhase = useMemo(() => {
     const grouped: Record<string, LeadRow[]> = {};
     CADENCE_PHASES.forEach(p => { grouped[p.id] = []; });
     leads.forEach(lead => {
       const phaseId = leadPhases[lead.id] || "sem_cadencia";
-      if (grouped[phaseId]) {
-        grouped[phaseId].push(lead);
-      } else {
-        grouped["sem_cadencia"].push(lead);
-      }
+      if (grouped[phaseId]) grouped[phaseId].push(lead);
+      else grouped["sem_cadencia"].push(lead);
     });
     return grouped;
   }, [leads, leadPhases]);
 
-  // Drag handlers
   const handleDragStart = (e: React.DragEvent, leadId: number) => {
     setDraggedLeadId(leadId);
     e.dataTransfer.effectAllowed = "move";
-    // Set transparent drag image
     const el = document.createElement("div");
     el.style.opacity = "0";
     document.body.appendChild(el);
@@ -837,38 +1055,23 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
   const handleDrop = (e: React.DragEvent, targetPhaseId: string) => {
     e.preventDefault();
     setOverPhaseId(null);
-
     if (draggedLeadId === null) return;
-
     const currentPhaseId = leadPhases[draggedLeadId] || "sem_cadencia";
-    if (currentPhaseId === targetPhaseId) {
-      setDraggedLeadId(null);
-      return;
-    }
-
+    if (currentPhaseId === targetPhaseId) { setDraggedLeadId(null); return; }
     const lead = leads.find(l => l.id === draggedLeadId);
-    if (!lead) {
-      setDraggedLeadId(null);
-      return;
-    }
-
+    if (!lead) { setDraggedLeadId(null); return; }
     const fromPhase = CADENCE_PHASES.find(p => p.id === currentPhaseId);
     const toPhase = CADENCE_PHASES.find(p => p.id === targetPhaseId);
 
-    // Move the lead (optimistic local update)
     setLeadPhases(prev => ({ ...prev, [draggedLeadId!]: targetPhaseId }));
-
-    // Persist to database via tRPC
     movePhaseMutation.mutate({
       leadId: lead.id,
       faseAnterior: fromPhase?.nome || "Sem Cadência",
       faseNova: toPhase?.nome || targetPhaseId,
     });
 
-    // Log the activity locally for immediate UI feedback
-    const newEntry: ActivityLogEntry = {
+    const newEntry = {
       id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      leadId: lead.id,
       leadNome: lead.nome,
       usuario: "Administrador",
       data: new Date().toISOString(),
@@ -876,19 +1079,13 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
       faseNova: toPhase?.nome || "Desconhecida",
     };
     setActivityLog(prev => [newEntry, ...prev]);
-
     toast.success(
       <div className="flex items-center gap-2">
         <ArrowRight className="w-4 h-4 text-primary" />
         <span><strong>{lead.nome}</strong> movido para <strong>{toPhase?.nome}</strong></span>
       </div>
     );
-
     setDraggedLeadId(null);
-  };
-
-  const handleDragLeave = () => {
-    setOverPhaseId(null);
   };
 
   const formatDate = (iso: string) => {
@@ -899,23 +1096,16 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
 
   return (
     <div className="space-y-4">
-      {/* Activity log toggle */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-muted-foreground">
           Arraste os cards entre as fases para movimentar os leads na cadência
         </p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="border-border gap-1.5"
-          onClick={() => setShowLog(!showLog)}
-        >
+        <Button variant="outline" size="sm" className="border-border gap-1.5" onClick={() => setShowLog(!showLog)}>
           <RotateCcw className="w-3.5 h-3.5" />
           Histórico ({activityLog.length})
         </Button>
       </div>
 
-      {/* Activity log panel */}
       {showLog && activityLog.length > 0 && (
         <div className="bg-card border border-border rounded-lg p-4 max-h-60 overflow-y-auto">
           <h4 className="text-sm font-medium mb-3">Timeline de Movimentações</h4>
@@ -947,7 +1137,6 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
         </div>
       )}
 
-      {/* Kanban columns */}
       <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
         {CADENCE_PHASES.map(phase => (
           <KanbanColumn
@@ -957,7 +1146,7 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
             isOver={overPhaseId === phase.id}
             onDragOver={(e) => handleDragOver(e, phase.id)}
             onDrop={(e) => handleDrop(e, phase.id)}
-            onDragLeave={handleDragLeave}
+            onDragLeave={() => setOverPhaseId(null)}
             onClickLead={onClickLead}
             onDragStartLead={handleDragStart}
           />
@@ -985,6 +1174,7 @@ export default function Leads() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [editingLead, setEditingLead] = useState<LeadRow | null>(null);
   const [showBulkEdit, setShowBulkEdit] = useState(false);
+  const [showImport, setShowImport] = useState(false);
 
   // Column preferences
   const [visibleColumns, setVisibleColumns] = useState<string[]>(() => {
@@ -993,7 +1183,6 @@ export default function Leads() {
     return ALL_COLUMNS.filter(c => c.defaultVisible).map(c => c.key);
   });
 
-  // Save column prefs
   useEffect(() => {
     localStorage.setItem("leads_columns", JSON.stringify(visibleColumns));
   }, [visibleColumns]);
@@ -1002,11 +1191,30 @@ export default function Leads() {
     localStorage.setItem("leads_pageSize", pageSize.toString());
   }, [pageSize]);
 
-  // Fetch leads from backend
+  // ========== BACKEND QUERIES ==========
   const utils = trpc.useUtils();
   const leadsQuery = trpc.crm.leads.list.useQuery({ limit: 500 });
   const rawLeads = leadsQuery.data || [];
 
+  // Real ICPs from backend
+  const icpsQuery = trpc.crm.icps.list.useQuery();
+  const icps = useMemo(() => {
+    return (icpsQuery.data || []).filter((i: any) => i.ativa !== false).map((i: any) => ({
+      id: i.id,
+      nome: i.nome,
+    }));
+  }, [icpsQuery.data]);
+
+  // Real Cadences from backend
+  const cadencesQuery = trpc.crm.cadences.list.useQuery();
+  const cadences = useMemo(() => {
+    return (cadencesQuery.data || []).filter((c: any) => c.ativa !== false).map((c: any) => ({
+      id: c.id,
+      nome: c.nome,
+    }));
+  }, [cadencesQuery.data]);
+
+  // ========== MUTATIONS ==========
   const createMutation = trpc.crm.leads.create.useMutation({
     onSuccess: () => {
       toast.success("Lead criado com sucesso!");
@@ -1033,6 +1241,28 @@ export default function Leads() {
     onError: (err: any) => toast.error(`Erro: ${err.message}`),
   });
 
+  const bulkUpdateMutation = trpc.crm.leads.bulkUpdate.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(`${data.updated} leads atualizados em massa!`);
+      setShowBulkEdit(false);
+      setSelected(new Set());
+      utils.crm.leads.list.invalidate();
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const bulkCreateMutation = trpc.crm.leads.bulkCreate.useMutation({
+    onSuccess: (data: any) => {
+      toast.success(`${data.created} leads importados com sucesso!`);
+      if (data.errors?.length > 0) {
+        toast.warning(`${data.errors.length} leads com erro na importação`);
+      }
+      setShowImport(false);
+      utils.crm.leads.list.invalidate();
+    },
+    onError: (err: any) => toast.error(`Erro na importação: ${err.message}`),
+  });
+
   // Map backend data to rows
   const allLeads = useMemo(() => rawLeads.map(mapLeadToRow), [rawLeads]);
 
@@ -1048,7 +1278,7 @@ export default function Leads() {
     );
   }, [allLeads, searchTerm]);
 
-  // Apply filters
+  // Apply filters (including new advanced filters)
   const filteredLeads = useMemo(() => {
     return searchedLeads.filter(l => {
       if (filters.temperatura.length > 0 && !filters.temperatura.includes(l.temperatura)) return false;
@@ -1057,6 +1287,8 @@ export default function Leads() {
       if (filters.porte && l.porte !== filters.porte) return false;
       if (filters.icp && l.icp !== filters.icp) return false;
       if (filters.setor && !l.setor.toLowerCase().includes(filters.setor.toLowerCase())) return false;
+      if (filters.cadencia && l.cadencia !== filters.cadencia) return false;
+      if (filters.regiao && !l.regiao.toLowerCase().includes(filters.regiao.toLowerCase())) return false;
       return true;
     });
   }, [searchedLeads, filters]);
@@ -1068,7 +1300,6 @@ export default function Leads() {
     return filteredLeads.slice(start, start + pageSize);
   }, [filteredLeads, page, pageSize]);
 
-  // Reset page on filter change
   useEffect(() => { setPage(1); }, [searchTerm, filters, pageSize]);
 
   // Selection
@@ -1091,7 +1322,7 @@ export default function Leads() {
     setSelected(newSelected);
   };
 
-  // Handlers
+  // ========== HANDLERS ==========
   const handleCreateLead = (data: LeadFormData) => {
     createMutation.mutate({
       titulo: data.nome,
@@ -1111,6 +1342,7 @@ export default function Leads() {
       porte: data.porte || undefined,
       cadencia: data.cadencia || undefined,
       notas: data.notas || undefined,
+      icp: data.icp || undefined,
     } as any);
   };
 
@@ -1144,14 +1376,57 @@ export default function Leads() {
     }
   };
 
-  const handleBulkEdit = (changes: { temperatura?: string; status?: string; origem?: string }) => {
-    toast.success(`${selected.size} leads atualizados em massa`);
-    setShowBulkEdit(false);
-    setSelected(new Set());
+  const handleBulkEdit = (changes: { temperatura?: string; status?: string; origem?: string; cadencia?: string }) => {
+    const ids = Array.from(selected);
+    const payload: any = { ids };
+    if (changes.temperatura) payload.qualificacao = changes.temperatura;
+    if (changes.status) payload.status = changes.status;
+    if (changes.origem) payload.origem = changes.origem;
+    if (changes.cadencia === "__remove__") {
+      payload.cadencia = null;
+    } else if (changes.cadencia) {
+      payload.cadencia = changes.cadencia;
+    }
+    bulkUpdateMutation.mutate(payload);
+  };
+
+  const handleImport = (leads: any[]) => {
+    bulkCreateMutation.mutate({ leads });
   };
 
   const handleExportExcel = () => {
-    toast.success("Exportação iniciada (funcionalidade será conectada ao backend)");
+    const leadsToExport = selected.size > 0
+      ? allLeads.filter(l => selected.has(l.id))
+      : filteredLeads;
+
+    const data = leadsToExport.map(l => ({
+      "Nome": l.nome,
+      "Cargo": l.cargo,
+      "Telefone": l.telefone,
+      "Email": l.email,
+      "Empresa": l.empresa,
+      "Canal de Origem": l.origem,
+      "Temperatura": l.temperatura,
+      "Status": l.status,
+      "Setor": l.setor,
+      "Região": l.regiao,
+      "Porte": l.porte,
+      "ICP": l.icp,
+      "Cadência": l.cadencia,
+      "Fase Cadência": l.faseCadencia,
+      "LinkedIn": l.linkedin,
+      "Site": l.site,
+      "CPF/CNPJ": l.cpfCnpj,
+      "Valor Estimado": l.valor_estimado,
+      "Observações": l.notas,
+      "Data Criação": l.createdAt ? new Date(l.createdAt).toLocaleDateString("pt-BR") : "",
+    }));
+
+    const ws = XLSX.utils.json_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Leads");
+    XLSX.writeFile(wb, `leads_export_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    toast.success(`${leadsToExport.length} leads exportados com sucesso!`);
   };
 
   // Render cell value
@@ -1210,7 +1485,11 @@ export default function Leads() {
           <p className="text-sm text-muted-foreground">{filteredLeads.length} leads</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" className="border-border gap-2" onClick={() => toast.info("Importação será implementada em breve")}>
+          <Button variant="outline" size="sm" className="border-border gap-2" onClick={handleExportExcel}>
+            <Download className="w-4 h-4" />
+            Exportar
+          </Button>
+          <Button variant="outline" size="sm" className="border-border gap-2" onClick={() => setShowImport(true)}>
             <Upload className="w-4 h-4" />
             Importar
           </Button>
@@ -1221,7 +1500,7 @@ export default function Leads() {
         </div>
       </div>
 
-      {/* Tabs — Leads Ativos FIRST, Cadência SECOND */}
+      {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between">
           <TabsList>
@@ -1237,13 +1516,19 @@ export default function Leads() {
 
           {activeTab === "lista" && (
             <div className="flex items-center gap-2">
-              <ContactFilters filters={filters} onChange={setFilters} onClear={() => setFilters(EMPTY_FILTERS)} />
+              <ContactFilters
+                filters={filters}
+                onChange={setFilters}
+                onClear={() => setFilters(EMPTY_FILTERS)}
+                icps={icps}
+                cadences={cadences}
+              />
               <ColumnManager visibleColumns={visibleColumns} onChange={setVisibleColumns} />
             </div>
           )}
         </div>
 
-        {/* Search bar (both tabs) */}
+        {/* Search bar */}
         <div className="relative mt-3">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
@@ -1262,7 +1547,7 @@ export default function Leads() {
           )}
         </div>
 
-        {/* LIST TAB (first / default) */}
+        {/* LIST TAB */}
         <TabsContent value="lista" className="mt-4">
           <div className="bg-card border border-border rounded-lg overflow-hidden">
             <Table>
@@ -1367,7 +1652,7 @@ export default function Leads() {
           </div>
         </TabsContent>
 
-        {/* KANBAN TAB (second) */}
+        {/* KANBAN TAB */}
         <TabsContent value="cadencia" className="mt-4">
           <LeadKanban leads={filteredLeads} onClickLead={(lead) => navigate(`/leads/${lead.id}`)} />
         </TabsContent>
@@ -1404,6 +1689,8 @@ export default function Leads() {
         editLead={editingLead}
         onSave={editingLead ? handleEditLead : handleCreateLead}
         isSaving={createMutation.isPending || updateMutation.isPending}
+        icps={icps}
+        cadences={cadences}
       />
 
       {/* Bulk Edit Modal */}
@@ -1412,6 +1699,14 @@ export default function Leads() {
         onClose={() => setShowBulkEdit(false)}
         selectedCount={selected.size}
         onConfirm={handleBulkEdit}
+        cadences={cadences}
+      />
+
+      {/* Import Excel Dialog */}
+      <ImportExcelDialog
+        open={showImport}
+        onClose={() => setShowImport(false)}
+        onImport={handleImport}
       />
     </div>
   );

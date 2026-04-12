@@ -14,6 +14,7 @@ import {
   icps,
 } from "../../drizzle/schema";
 import { icpsRouter } from "./icps";
+import { leadCadencesRouter, disqualifyReasonsRouter } from "./cadences";
 import { eq, desc, and, asc, lte } from "drizzle-orm";
 
 // Helper to get orgId from context user
@@ -399,6 +400,8 @@ export const leadsRouter = router({
         cadencia: z.string().nullable().optional(),
         fase_cadencia: z.string().nullable().optional(),
         notas: z.string().optional(),
+        motivo_desqualificacao: z.string().nullable().optional(),
+        cadencia_id: z.number().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -408,6 +411,83 @@ export const leadsRouter = router({
       const { id, ...updateData } = input;
       await db.update(leads).set({ ...updateData, updatedAt: new Date() } as any).where(and(eq(leads.id, id), eq(leads.organizationId, orgId(ctx))));
       return { success: true };
+    }),
+
+  bulkUpdate: protectedProcedure
+    .input(
+      z.object({
+        ids: z.array(z.number()).min(1),
+        status: z.string().optional(),
+        qualificacao: z.enum(["frio", "morno", "quente", "qualificado"]).optional(),
+        cadencia: z.string().nullable().optional(),
+        cadencia_id: z.number().nullable().optional(),
+        fase_cadencia: z.string().nullable().optional(),
+        responsavel_id: z.number().nullable().optional(),
+        origem: z.string().optional(),
+        setor: z.string().optional(),
+        regiao: z.string().optional(),
+        porte: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      requirePermission(ctx.user, "manage_leads");
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { ids, ...updateData } = input;
+      const cleanData: Record<string, any> = { updatedAt: new Date() };
+      for (const [key, val] of Object.entries(updateData)) {
+        if (val !== undefined) cleanData[key] = val;
+      }
+      let updated = 0;
+      for (const id of ids) {
+        await db.update(leads).set(cleanData as any).where(and(eq(leads.id, id), eq(leads.organizationId, orgId(ctx))));
+        updated++;
+      }
+      return { success: true, updated };
+    }),
+
+  bulkCreate: protectedProcedure
+    .input(
+      z.object({
+        leads: z.array(
+          z.object({
+            titulo: z.string().min(1),
+            telefone: z.string().optional(),
+            email: z.string().optional(),
+            cargo: z.string().optional(),
+            empresa: z.string().optional(),
+            origem: z.string().optional(),
+            setor: z.string().optional(),
+            regiao: z.string().optional(),
+            porte: z.string().optional(),
+            linkedin: z.string().optional(),
+            site: z.string().optional(),
+            cpf_cnpj: z.string().optional(),
+            notas: z.string().optional(),
+            qualificacao: z.enum(["frio", "morno", "quente", "qualificado"]).optional(),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      requirePermission(ctx.user, "manage_leads");
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      let created = 0;
+      const errors: { row: number; error: string }[] = [];
+      for (let i = 0; i < input.leads.length; i++) {
+        try {
+          await db.insert(leads).values({
+            ...input.leads[i],
+            organizationId: orgId(ctx),
+            responsavel_id: ctx.user.id,
+          } as any);
+          created++;
+        } catch (e: any) {
+          errors.push({ row: i + 1, error: e.message || "Erro desconhecido" });
+        }
+      }
+      return { success: true, created, errors };
     }),
 
   // Move lead to a different cadence phase + log activity
@@ -917,4 +997,6 @@ export const crmRouter = router({
   tasks: tasksRouter,
   users: usersRouter,
   icps: icpsRouter,
+  cadences: leadCadencesRouter,
+  disqualifyReasons: disqualifyReasonsRouter,
 });

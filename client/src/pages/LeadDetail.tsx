@@ -2,7 +2,6 @@ import React, { useState, useEffect, useMemo } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { useRoute, useLocation } from "wouter";
@@ -24,17 +23,6 @@ const TEMPERATURE_OPTIONS = [
   { value: "frio", label: "❄️ Frio", color: "bg-blue-500/20 text-blue-300 border-blue-500/40" },
   { value: "morno", label: "☀️ Morno", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/40" },
   { value: "quente", label: "🔥 Quente", color: "bg-red-500/20 text-red-300 border-red-500/40" },
-];
-
-const MOCK_ICPS = [
-  { id: "icp-1", nome: "Diretor de TI em SaaS B2B" },
-  { id: "icp-2", nome: "CEO de PME Industrial" },
-  { id: "icp-3", nome: "Head Comercial Varejo" },
-];
-
-const MOCK_CADENCES = [
-  { id: "cad-1", nome: "Outbound B2B", fases: ["Novo", "Primeiro Contato", "Follow-up 1", "Follow-up 2", "Qualificação"] },
-  { id: "cad-2", nome: "Inbound", fases: ["Lead Recebido", "Contato Inicial", "Diagnóstico"] },
 ];
 
 // ============================================================================
@@ -146,136 +134,6 @@ function InlineField({ label, value, onSave, type = "text", options, placeholder
 }
 
 // ============================================================================
-// ACTIVITY TIMELINE (inline simplified)
-// ============================================================================
-function SimpleTimeline({ leadId }: { leadId: number }) {
-  const [activities, setActivities] = useState<Array<{
-    id: number;
-    tipo: string;
-    descricao: string;
-    data: string;
-  }>>([]);
-  const [showNewActivity, setShowNewActivity] = useState(false);
-  const [newActivity, setNewActivity] = useState({ tipo: "nota", descricao: "" });
-
-  const addActivity = () => {
-    if (!newActivity.descricao.trim()) {
-      toast.error("Descreva a atividade");
-      return;
-    }
-    setActivities(prev => [{
-      id: Date.now(),
-      tipo: newActivity.tipo,
-      descricao: newActivity.descricao,
-      data: new Date().toISOString(),
-    }, ...prev]);
-    setNewActivity({ tipo: "nota", descricao: "" });
-    setShowNewActivity(false);
-    toast.success("Atividade registrada!");
-  };
-
-  const tipoIcons: Record<string, string> = {
-    nota: "📝",
-    ligacao: "📞",
-    email: "📧",
-    reuniao: "📅",
-    whatsapp: "💬",
-    tarefa: "✅",
-  };
-
-  const tipoLabels: Record<string, string> = {
-    nota: "Nota",
-    ligacao: "Ligação",
-    email: "E-mail",
-    reuniao: "Reunião",
-    whatsapp: "WhatsApp",
-    tarefa: "Tarefa",
-  };
-
-  return (
-    <div>
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-sm font-semibold">Timeline de Atividades</h3>
-        <div className="flex gap-2">
-          <Button
-            variant="outline" size="sm"
-            className="border-border text-xs gap-1"
-            onClick={() => toast.info("Agendamento será implementado em breve")}
-          >
-            <Calendar className="w-3.5 h-3.5" />
-            Nova Agenda
-          </Button>
-          <Button
-            size="sm"
-            className="bg-primary hover:bg-primary/90 text-primary-foreground text-xs gap-1"
-            onClick={() => setShowNewActivity(true)}
-          >
-            <Plus className="w-3.5 h-3.5" />
-            Nova Atividade
-          </Button>
-        </div>
-      </div>
-
-      {showNewActivity && (
-        <div className="bg-[#333]/50 border border-border rounded-lg p-4 mb-4">
-          <div className="flex gap-2 mb-3">
-            {Object.entries(tipoLabels).map(([key, label]) => (
-              <button
-                key={key}
-                onClick={() => setNewActivity(prev => ({ ...prev, tipo: key }))}
-                className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                  newActivity.tipo === key ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground"
-                }`}
-              >
-                {tipoIcons[key]} {label}
-              </button>
-            ))}
-          </div>
-          <textarea
-            className="w-full bg-card border border-border rounded-md px-3 py-2 text-sm min-h-[80px] resize-none mb-3"
-            placeholder="Descreva a atividade..."
-            value={newActivity.descricao}
-            onChange={e => setNewActivity(prev => ({ ...prev, descricao: e.target.value }))}
-            autoFocus
-          />
-          <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" className="border-border" onClick={() => setShowNewActivity(false)}>Cancelar</Button>
-            <Button size="sm" className="bg-primary hover:bg-primary/90 text-primary-foreground" onClick={addActivity}>Registrar</Button>
-          </div>
-        </div>
-      )}
-
-      {activities.length === 0 ? (
-        <div className="text-center py-12 text-muted-foreground">
-          <FileText className="w-10 h-10 mx-auto mb-3 opacity-40" />
-          <p className="text-sm">Nenhuma atividade registrada ainda.</p>
-          <p className="text-xs mt-1">Clique em "Nova Atividade" para começar.</p>
-        </div>
-      ) : (
-        <div className="space-y-3">
-          {activities.map(act => (
-            <div key={act.id} className="flex gap-3 items-start">
-              <div className="w-8 h-8 rounded-full bg-[#333] flex items-center justify-center text-sm flex-shrink-0">
-                {tipoIcons[act.tipo] || "📝"}
-              </div>
-              <div className="flex-1 min-w-0">
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-medium">{tipoLabels[act.tipo] || act.tipo}</span>
-                  <span className="text-[10px] text-muted-foreground">
-                    {new Date(act.data).toLocaleString("pt-BR")}
-                  </span>
-                </div>
-                <p className="text-sm text-foreground/80 mt-0.5">{act.descricao}</p>
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// ============================================================================
 // CONVERT TO ACCOUNT DIALOG
 // ============================================================================
 function ConvertDialog({ open, onClose, leadName, onConfirm }: {
@@ -336,7 +194,7 @@ function ConvertDialog({ open, onClose, leadName, onConfirm }: {
 }
 
 // ============================================================================
-// DISQUALIFY DIALOG
+// DISQUALIFY DIALOG — uses real reasons from backend
 // ============================================================================
 function DisqualifyDialog({ open, onClose, onConfirm }: {
   open: boolean;
@@ -344,6 +202,18 @@ function DisqualifyDialog({ open, onClose, onConfirm }: {
   onConfirm: (motivo: string) => void;
 }) {
   const [motivo, setMotivo] = useState("");
+  const [customMotivo, setCustomMotivo] = useState("");
+
+  // Fetch real disqualify reasons from backend
+  const reasonsQuery = trpc.crm.disqualifyReasons.list.useQuery(
+    { tipo: "desqualificacao" },
+    { enabled: open }
+  );
+  const reasons = reasonsQuery.data || [];
+
+  useEffect(() => {
+    if (open) { setMotivo(""); setCustomMotivo(""); }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -365,26 +235,28 @@ function DisqualifyDialog({ open, onClose, onConfirm }: {
             onChange={e => setMotivo(e.target.value)}
           >
             <option value="">Selecione o motivo...</option>
-            <option value="sem_budget">Sem budget</option>
-            <option value="sem_autoridade">Sem autoridade de decisão</option>
-            <option value="sem_necessidade">Sem necessidade identificada</option>
-            <option value="timing_ruim">Timing inadequado</option>
-            <option value="concorrente">Escolheu concorrente</option>
-            <option value="dados_invalidos">Dados inválidos</option>
-            <option value="nao_responde">Não responde</option>
-            <option value="outro">Outro</option>
+            {reasons.map((r: any) => (
+              <option key={r.id} value={r.nome}>{r.nome}</option>
+            ))}
+            <option value="__outro__">Outro</option>
           </select>
-          {motivo === "outro" && (
+          {motivo === "__outro__" && (
             <textarea
               className="w-full bg-[#333] border border-border rounded-md px-3 py-2 text-sm min-h-[60px] resize-none"
               placeholder="Descreva o motivo..."
+              value={customMotivo}
+              onChange={e => setCustomMotivo(e.target.value)}
             />
           )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="border-border">Cancelar</Button>
           <Button
-            onClick={() => { if (!motivo) { toast.error("Selecione um motivo"); return; } onConfirm(motivo); }}
+            onClick={() => {
+              const finalMotivo = motivo === "__outro__" ? customMotivo : motivo;
+              if (!finalMotivo) { toast.error("Selecione um motivo"); return; }
+              onConfirm(finalMotivo);
+            }}
             className="bg-red-600 hover:bg-red-700 text-white gap-1.5"
           >
             <UserX className="w-4 h-4" />
@@ -397,7 +269,7 @@ function DisqualifyDialog({ open, onClose, onConfirm }: {
 }
 
 // ============================================================================
-// RETIRE DIALOG
+// RETIRE DIALOG — uses real reasons from backend
 // ============================================================================
 function RetireDialog({ open, onClose, onConfirm }: {
   open: boolean;
@@ -405,6 +277,18 @@ function RetireDialog({ open, onClose, onConfirm }: {
   onConfirm: (motivo: string) => void;
 }) {
   const [motivo, setMotivo] = useState("");
+  const [customMotivo, setCustomMotivo] = useState("");
+
+  // Fetch real retire reasons from backend
+  const reasonsQuery = trpc.crm.disqualifyReasons.list.useQuery(
+    { tipo: "aposentamento" },
+    { enabled: open }
+  );
+  const reasons = reasonsQuery.data || [];
+
+  useEffect(() => {
+    if (open) { setMotivo(""); setCustomMotivo(""); }
+  }, [open]);
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
@@ -426,18 +310,27 @@ function RetireDialog({ open, onClose, onConfirm }: {
             onChange={e => setMotivo(e.target.value)}
           >
             <option value="">Selecione o motivo...</option>
-            <option value="sem_resposta_prolongada">Sem resposta prolongada</option>
-            <option value="empresa_fechou">Empresa fechou</option>
-            <option value="contato_saiu">Contato saiu da empresa</option>
-            <option value="mercado_nao_atendido">Mercado não atendido</option>
-            <option value="nutrir_futuro">Nutrir no futuro</option>
-            <option value="outro">Outro</option>
+            {reasons.map((r: any) => (
+              <option key={r.id} value={r.nome}>{r.nome}</option>
+            ))}
+            <option value="__outro__">Outro</option>
           </select>
+          {motivo === "__outro__" && (
+            <textarea
+              className="w-full bg-[#333] border border-border rounded-md px-3 py-2 text-sm min-h-[60px] resize-none"
+              placeholder="Descreva o motivo..."
+              value={customMotivo}
+              onChange={e => setCustomMotivo(e.target.value)}
+            />
+          )}
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose} className="border-border">Cancelar</Button>
           <Button
-            onClick={() => { onConfirm(motivo || "sem_motivo"); }}
+            onClick={() => {
+              const finalMotivo = motivo === "__outro__" ? customMotivo : motivo;
+              onConfirm(finalMotivo || "sem_motivo");
+            }}
             className="bg-gray-600 hover:bg-gray-700 text-white gap-1.5"
           >
             <Archive className="w-4 h-4" />
@@ -466,6 +359,25 @@ export default function LeadDetail() {
   const utils = trpc.useUtils();
   const leadsQuery = trpc.crm.leads.list.useQuery({ limit: 500 });
   const rawLeads = leadsQuery.data || [];
+
+  // Real ICPs from backend
+  const icpsQuery = trpc.crm.icps.list.useQuery();
+  const icps = useMemo(() => {
+    return (icpsQuery.data || []).filter((i: any) => i.ativa !== false).map((i: any) => ({
+      id: i.id,
+      nome: i.nome,
+    }));
+  }, [icpsQuery.data]);
+
+  // Real Cadences from backend
+  const cadencesQuery = trpc.crm.cadences.list.useQuery();
+  const cadences = useMemo(() => {
+    return (cadencesQuery.data || []).map((c: any) => ({
+      id: c.id,
+      nome: c.nome,
+      steps: c.steps ? (typeof c.steps === "string" ? JSON.parse(c.steps) : c.steps) : [],
+    }));
+  }, [cadencesQuery.data]);
 
   const lead = useMemo(() => {
     if (!leadId) return null;
@@ -576,7 +488,7 @@ export default function LeadDetail() {
   const handleDisqualify = (motivo: string) => {
     if (leadId) {
       updateMutation.mutate(
-        { id: leadId, status: "desqualificado" as any, descricao: motivo || undefined },
+        { id: leadId, status: "desqualificado" as any, motivo_desqualificacao: motivo } as any,
         {
           onSuccess: () => {
             toast.success("Lead desqualificado");
@@ -591,7 +503,7 @@ export default function LeadDetail() {
   const handleRetire = (motivo: string) => {
     if (leadId) {
       updateMutation.mutate(
-        { id: leadId, status: "aposentado" as any, descricao: motivo || undefined },
+        { id: leadId, status: "aposentado" as any, motivo_desqualificacao: motivo } as any,
         {
           onSuccess: () => {
             toast.success("Lead aposentado");
@@ -716,7 +628,7 @@ export default function LeadDetail() {
             value={localFields.icp}
             onSave={v => updateField("icp", v)}
             type="select"
-            options={MOCK_ICPS.map(i => ({ value: i.id, label: i.nome }))}
+            options={icps.map((i: any) => ({ value: i.nome, label: i.nome }))}
           />
           <InlineField label="Telefone" value={localFields.telefone} onSave={v => updateField("telefone", v)} />
           <InlineField label="Email" value={localFields.email} onSave={v => updateField("email", v)} />
@@ -724,6 +636,18 @@ export default function LeadDetail() {
           <InlineField label="LinkedIn" value={localFields.linkedin} onSave={v => updateField("linkedin", v)} placeholder="Clique para editar" />
           <InlineField label="Site" value={localFields.site} onSave={v => updateField("site", v)} placeholder="Clique para editar" />
           <InlineField label="CPF / CNPJ" value={localFields.cpfCnpj} onSave={v => updateField("cpfCnpj", v)} placeholder="Clique para editar" />
+
+          <Separator />
+
+          <InlineField label="Setor" value={localFields.setor} onSave={v => updateField("setor", v)} placeholder="Clique para editar" />
+          <InlineField
+            label="Porte"
+            value={localFields.porte}
+            onSave={v => updateField("porte", v)}
+            type="select"
+            options={COMPANY_SIZES.map(s => ({ value: s, label: s }))}
+          />
+          <InlineField label="Região" value={localFields.regiao} onSave={v => updateField("regiao", v)} placeholder="Clique para editar" />
 
           <Separator />
 
@@ -739,17 +663,8 @@ export default function LeadDetail() {
             value={localFields.cadencia}
             onSave={v => updateField("cadencia", v)}
             type="select"
-            options={MOCK_CADENCES.map(c => ({ value: c.id, label: c.nome }))}
+            options={cadences.map((c: any) => ({ value: c.nome, label: c.nome }))}
           />
-          {localFields.cadencia && (
-            <InlineField
-              label="Fase da Cadência"
-              value={localFields.faseCadencia}
-              onSave={v => updateField("faseCadencia", v)}
-              type="select"
-              options={(MOCK_CADENCES.find(c => c.id === localFields.cadencia)?.fases || []).map(f => ({ value: f, label: f }))}
-            />
-          )}
           <InlineField
             label="Visível Para"
             value={localFields.visivelPara}

@@ -30,6 +30,7 @@ export const proposalStatusEnum = pgEnum("proposal_status", ["rascunho", "enviad
 export const notificationTipoEnum = pgEnum("notification_tipo", ["task_vencida", "stage_mudou", "nova_atribuicao", "proposta_aceita", "lead_qualificado"]);
 export const aiInsightTipoEnum = pgEnum("ai_insight_tipo", ["resumo", "recomendacao", "risco", "oportunidade"]);
 export const icpPorteEnum = pgEnum("icp_porte", ["micro", "pequena", "media", "grande", "multinacional"]);
+export const cadenciaStepTipoEnum = pgEnum("cadencia_step_tipo", ["email", "ligacao", "whatsapp", "tarefa", "linkedin"]);
 
 // ============================================================================
 // TABLES
@@ -155,6 +156,8 @@ export const leads = pgTable("leads", {
   porte: varchar("porte", { length: 50 }),
   icp_id: integer("icp_id"),
   notas: text("notas"),
+  motivo_desqualificacao: varchar("motivo_desqualificacao", { length: 255 }),
+  cadencia_id: integer("cadencia_id"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -601,6 +604,57 @@ export const aiInsightsRelations = relations(aiInsights, ({ one }) => ({
 export const icpsRelations = relations(icps, ({ one }) => ({
   organization: one(organizations, {
     fields: [icps.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+// ============================================================================
+// LEAD CADENCES - Sequências de follow-up persistidas
+// ============================================================================
+
+export const leadCadences = pgTable("lead_cadences", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  gatilho: varchar("gatilho", { length: 255 }),
+  ativa: boolean("ativa").default(true).notNull(),
+  steps: text("steps"), // JSON array of { id, dia, tipo, titulo, descricao }
+  totalContatos: integer("total_contatos").default(0),
+  taxaResposta: integer("taxa_resposta").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type LeadCadence = typeof leadCadences.$inferSelect;
+export type InsertLeadCadence = typeof leadCadences.$inferInsert;
+
+export const leadCadencesRelations = relations(leadCadences, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [leadCadences.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+// ============================================================================
+// DISQUALIFY REASONS - Motivos de desqualificação persistidos
+// ============================================================================
+
+export const disqualifyReasons = pgTable("disqualify_reasons", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  tipo: varchar("tipo", { length: 50 }).default("desqualificacao").notNull(), // desqualificacao | aposentamento
+  ativo: boolean("ativo").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type DisqualifyReason = typeof disqualifyReasons.$inferSelect;
+export type InsertDisqualifyReason = typeof disqualifyReasons.$inferInsert;
+
+export const disqualifyReasonsRelations = relations(disqualifyReasons, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [disqualifyReasons.organizationId],
     references: [organizations.id],
   }),
 }));
