@@ -16,6 +16,7 @@ import Tarefas from "./pages/Tarefas";
 import Calendario from "./pages/Calendario";
 import PrevisaoReceita from "./pages/PrevisaoReceita";
 import ExpertComercial from "./pages/ExpertComercial";
+import Configuracoes from "./pages/Configuracoes";
 
 function Router() {
   return (
@@ -31,6 +32,7 @@ function Router() {
       <Route path={"/calendario"} component={() => <SGRPLayout><Calendario /></SGRPLayout>} />
       <Route path={"/previsao-receita"} component={() => <SGRPLayout><PrevisaoReceita /></SGRPLayout>} />
       <Route path={"/expert-comercial"} component={() => <SGRPLayout><ExpertComercial /></SGRPLayout>} />
+      <Route path={"/configuracoes"} component={() => <SGRPLayout><Configuracoes /></SGRPLayout>} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

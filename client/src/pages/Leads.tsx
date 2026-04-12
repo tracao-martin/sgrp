@@ -2,30 +2,94 @@ import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Filter, Loader } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Plus, Search, Filter, Loader, ArrowRightCircle, Thermometer, TrendingUp } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { LeadModal } from "@/components/LeadModal";
 import { LeadActions } from "@/components/LeadActions";
+import { ActivityTimeline } from "@/components/ActivityTimeline";
+import { toast } from "sonner";
 
-const temperatureColors = {
-  quente: "bg-red-900 text-red-200",
-  morno: "bg-yellow-900 text-yellow-200",
-  frio: "bg-blue-900 text-blue-200",
-  qualificado: "bg-green-900 text-green-200",
+const temperatureColors: Record<string, string> = {
+  quente: "bg-red-900/60 text-red-200 border border-red-700",
+  morno: "bg-yellow-900/60 text-yellow-200 border border-yellow-700",
+  frio: "bg-blue-900/60 text-blue-200 border border-blue-700",
+  qualificado: "bg-green-900/60 text-green-200 border border-green-700",
+};
+
+const statusColors: Record<string, string> = {
+  novo: "bg-slate-700 text-slate-200",
+  contatado: "bg-blue-900/60 text-blue-200",
+  qualificado: "bg-green-900/60 text-green-200",
+  convertido: "bg-purple-900/60 text-purple-200",
+  perdido: "bg-red-900/60 text-red-200",
 };
 
 export default function Leads() {
   const [searchTerm, setSearchTerm] = useState("");
-  
-  // Fetch leads from tRPC
+  const [filterQualificacao, setFilterQualificacao] = useState<string>("todos");
+  const [convertDialogOpen, setConvertDialogOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<any>(null);
+  const [convertData, setConvertData] = useState({ titulo: "", valor: "" });
+
+  const utils = trpc.useUtils();
   const leadsQuery = trpc.crm.leads.list.useQuery({ limit: 100 });
   const leads = leadsQuery.data || [];
 
-  const filteredLeads = leads.filter(
-    (lead: any) =>
+  const qualifyMutation = trpc.crm.leads.updateQualification.useMutation({
+    onSuccess: () => {
+      toast.success("Qualificação atualizada!");
+      utils.crm.leads.list.invalidate();
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const convertMutation = trpc.crm.leads.convertToOpportunity.useMutation({
+    onSuccess: () => {
+      toast.success("Lead convertido em oportunidade!");
+      setConvertDialogOpen(false);
+      utils.crm.leads.list.invalidate();
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const filteredLeads = leads.filter((lead: any) => {
+    const matchSearch =
       lead.titulo?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.descricao?.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+      lead.descricao?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchQualificacao =
+      filterQualificacao === "todos" || lead.qualificacao === filterQualificacao;
+    return matchSearch && matchQualificacao;
+  });
+
+  const handleQualify = (leadId: number, qualificacao: string) => {
+    qualifyMutation.mutate({ id: leadId, qualificacao: qualificacao as any });
+  };
+
+  const openConvertDialog = (lead: any) => {
+    setSelectedLead(lead);
+    setConvertData({
+      titulo: `Oportunidade - ${lead.titulo}`,
+      valor: lead.valor_estimado?.toString() || "",
+    });
+    setConvertDialogOpen(true);
+  };
+
+  const handleConvert = () => {
+    if (!selectedLead) return;
+    convertMutation.mutate({
+      leadId: selectedLead.id,
+      opportunityTitle: convertData.titulo,
+      valor: convertData.valor ? parseInt(convertData.valor) : 0,
+      stageId: 1,
+    });
+  };
+
+  // Stats
+  const totalLeads = leads.length;
+  const quentes = leads.filter((l: any) => l.qualificacao === "quente").length;
+  const mornos = leads.filter((l: any) => l.qualificacao === "morno").length;
+  const frios = leads.filter((l: any) => l.qualificacao === "frio").length;
 
   if (leadsQuery.isLoading) {
     return (
@@ -46,6 +110,62 @@ export default function Leads() {
         <LeadModal onSuccess={() => leadsQuery.refetch()} />
       </div>
 
+      {/* Stats Cards */}
+      <div className="grid grid-cols-4 gap-4">
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-900/30 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{totalLeads}</p>
+                <p className="text-xs text-gray-400">Total de Leads</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-red-900/30 rounded-lg">
+                <Thermometer className="w-5 h-5 text-red-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{quentes}</p>
+                <p className="text-xs text-gray-400">Quentes</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-900/30 rounded-lg">
+                <Thermometer className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{mornos}</p>
+                <p className="text-xs text-gray-400">Mornos</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-900/30 rounded-lg">
+                <Thermometer className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{frios}</p>
+                <p className="text-xs text-gray-400">Frios</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
       {/* Filters */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
@@ -57,10 +177,17 @@ export default function Leads() {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <Button variant="outline" className="border-gray-700">
-          <Filter className="w-4 h-4 mr-2" />
-          Filtros
-        </Button>
+        <select
+          value={filterQualificacao}
+          onChange={(e) => setFilterQualificacao(e.target.value)}
+          className="bg-gray-800 border border-gray-700 rounded-md px-3 py-2 text-sm text-gray-300"
+        >
+          <option value="todos">Todas Qualificações</option>
+          <option value="frio">Frio</option>
+          <option value="morno">Morno</option>
+          <option value="quente">Quente</option>
+          <option value="qualificado">Qualificado</option>
+        </select>
       </div>
 
       {/* Table */}
@@ -80,9 +207,11 @@ export default function Leads() {
                 <thead>
                   <tr className="border-b border-gray-700">
                     <th className="text-left py-3 px-4 font-medium text-gray-300">Título</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-300">Status</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-300">Qualificação</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-300">Origem</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-300">Valor Estimado</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-300">Qualificar</th>
                     <th className="text-left py-3 px-4 font-medium text-gray-300">Ações</th>
                   </tr>
                 </thead>
@@ -92,15 +221,16 @@ export default function Leads() {
                       <td className="py-3 px-4">
                         <div>
                           <p className="font-medium">{lead.titulo}</p>
-                          <p className="text-xs text-gray-400">{lead.descricao}</p>
+                          <p className="text-xs text-gray-400 truncate max-w-[200px]">{lead.descricao}</p>
                         </div>
                       </td>
                       <td className="py-3 px-4">
-                        <span
-                          className={`px-2 py-1 rounded-full text-xs font-medium ${
-                            temperatureColors[lead.qualificacao as keyof typeof temperatureColors] || "bg-gray-700 text-gray-300"
-                          }`}
-                        >
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${statusColors[lead.status] || "bg-gray-700 text-gray-300"}`}>
+                          {lead.status || "novo"}
+                        </span>
+                      </td>
+                      <td className="py-3 px-4">
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${temperatureColors[lead.qualificacao] || "bg-gray-700 text-gray-300"}`}>
                           {lead.qualificacao || "Não qualificado"}
                         </span>
                       </td>
@@ -109,7 +239,38 @@ export default function Leads() {
                         {lead.valor_estimado ? `R$ ${(lead.valor_estimado / 1000).toFixed(0)}K` : "-"}
                       </td>
                       <td className="py-3 px-4">
-                        <LeadActions lead={lead} onSuccess={() => leadsQuery.refetch()} />
+                        <div className="flex gap-1">
+                          {["frio", "morno", "quente"].map((q) => (
+                            <button
+                              key={q}
+                              onClick={() => handleQualify(lead.id, q)}
+                              className={`w-6 h-6 rounded-full text-[10px] font-bold transition-all ${
+                                lead.qualificacao === q
+                                  ? q === "frio" ? "bg-blue-500 text-white" : q === "morno" ? "bg-yellow-500 text-black" : "bg-red-500 text-white"
+                                  : "bg-gray-700 text-gray-400 hover:bg-gray-600"
+                              }`}
+                              title={q.charAt(0).toUpperCase() + q.slice(1)}
+                            >
+                              {q === "frio" ? "F" : q === "morno" ? "M" : "Q"}
+                            </button>
+                          ))}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1">
+                          <LeadActions lead={lead} onSuccess={() => leadsQuery.refetch()} />
+                          {lead.status !== "convertido" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-purple-400 hover:text-purple-300"
+                              onClick={() => openConvertDialog(lead)}
+                              title="Converter em Oportunidade"
+                            >
+                              <ArrowRightCircle className="w-4 h-4" />
+                            </Button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -119,6 +280,55 @@ export default function Leads() {
           )}
         </CardContent>
       </Card>
+
+      {/* Activity Timeline for selected lead */}
+      {selectedLead && !convertDialogOpen && (
+        <ActivityTimeline contactId={selectedLead.id} />
+      )}
+
+      {/* Convert Dialog */}
+      <Dialog open={convertDialogOpen} onOpenChange={setConvertDialogOpen}>
+        <DialogContent className="bg-gray-800 border-gray-700 max-w-md">
+          <DialogHeader>
+            <DialogTitle>Converter Lead em Oportunidade</DialogTitle>
+            <DialogDescription>
+              Converter "{selectedLead?.titulo}" em uma oportunidade no funil de vendas
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div>
+              <label className="text-sm font-medium text-gray-300">Título da Oportunidade</label>
+              <Input
+                value={convertData.titulo}
+                onChange={(e) => setConvertData({ ...convertData, titulo: e.target.value })}
+                className="bg-gray-700 border-gray-600 mt-1"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-gray-300">Valor Estimado (R$)</label>
+              <Input
+                type="number"
+                value={convertData.valor}
+                onChange={(e) => setConvertData({ ...convertData, valor: e.target.value })}
+                className="bg-gray-700 border-gray-600 mt-1"
+              />
+            </div>
+            <div className="flex gap-3 justify-end pt-4 border-t border-gray-700">
+              <Button variant="outline" onClick={() => setConvertDialogOpen(false)} className="border-gray-600">
+                Cancelar
+              </Button>
+              <Button
+                onClick={handleConvert}
+                className="bg-purple-600 hover:bg-purple-700"
+                disabled={convertMutation.isPending}
+              >
+                {convertMutation.isPending ? <Loader className="w-4 h-4 animate-spin mr-2" /> : <ArrowRightCircle className="w-4 h-4 mr-2" />}
+                Converter
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

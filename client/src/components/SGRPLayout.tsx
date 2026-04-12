@@ -117,14 +117,15 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
   }
 
   const configItems = [
-    { label: "Cadeências", href: "/configuracoes/cadeencias" },
-    { label: "Probabilidade", href: "/configuracoes/probabilidade" },
-    { label: "Funis", href: "/configuracoes/funis" },
-    { label: "iCPs", href: "/configuracoes/icps" },
-    { label: "Produtos", href: "/configuracoes/produtos" },
-    { label: "Metas", href: "/configuracoes/metas" },
-    { label: "Mensagens Rápidas", href: "/configuracoes/mensagens-rapidas" },
-    { label: "E-mails por CCO", href: "/configuracoes/emails-cco" },
+    { label: "Geral", href: "/configuracoes" },
+    { label: "Cadências", href: "/configuracoes" },
+    { label: "Probabilidade", href: "/configuracoes" },
+    { label: "Funis", href: "/configuracoes" },
+    { label: "ICPs", href: "/configuracoes" },
+    { label: "Produtos", href: "/configuracoes" },
+    { label: "Metas", href: "/configuracoes" },
+    { label: "Mensagens Rápidas", href: "/configuracoes" },
+    { label: "E-mails por CCO", href: "/configuracoes" },
   ];
 
   return (

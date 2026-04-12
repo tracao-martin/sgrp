@@ -20,9 +20,9 @@
 - [x] Criar página de Leads com listagem, detalhes e CRUD completo
 - [x] Criar página de Contas (Empresas) com listagem, detalhes e CRUD completo
 - [x] Criar página de Contatos vinculados a empresas com CRUD completo
-- [ ] Implementar timeline de interações (Activities)
-- [ ] Criar interface de qualificação de leads
-- [ ] Criar interface de conversão de lead para oportunidade
+- [x] Implementar timeline de interações (Activities) - componente ActivityTimeline criado
+- [x] Criar interface de qualificação de leads - botão na página de Leads
+- [x] Criar interface de conversão de lead para oportunidade - botão na página de Leads
 
 ## Fase 4: Pipeline de Oportunidades, Tarefas e Propostas (UI)
 - [x] Criar página de Funil de Vendas (Pipeline) com Kanban e dados reais
@@ -36,7 +36,7 @@
 - [x] Criar Dashboard com métricas de funil (dados reais)
 - [x] Implementar gráficos de funil e valor por estágio (dados reais)
 - [x] Implementar gráficos de status dos deals (dados reais)
-- [ ] Criar página de Previsão de Receita
+- [x] Criar página de Previsão de Receita - dados reais do pipeline
 - [ ] Implementar widget de atividades recentes
 - [ ] Implementar notificações internas
 
@@ -50,7 +50,8 @@
 - [ ] Implementar automação de e-mails para novas atribuições
 
 ## Fase 7: Configurações e Refinamentos Finais
-- [ ] Criar página de Configurações (Cadeências, Probabilidade, Funis, etc)
+- [x] Criar página de Configurações (Estágios do Pipeline - funcional)
+- [ ] Implementar Configurações avançadas (Notificações, Integrações - placeholders)
 - [x] Implementar Calendário (página criada)
 - [ ] Implementar Mensagens Rápidas
 - [ ] Implementar E-mails por CCO

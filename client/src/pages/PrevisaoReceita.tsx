@@ -1,167 +1,293 @@
-import React from "react";
-import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import React, { useMemo } from "react";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from "recharts";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { trpc } from "@/lib/trpc";
+import { Loader, TrendingUp, Target, DollarSign, BarChart3 } from "lucide-react";
 
-const forecastData = [
-  { month: "Abr", atual: 145000, previsto: 165000, pessimista: 120000 },
-  { month: "Mai", atual: 0, previsto: 180000, pessimista: 140000 },
-  { month: "Jun", atual: 0, previsto: 195000, pessimista: 155000 },
-  { month: "Jul", atual: 0, previsto: 210000, pessimista: 170000 },
-  { month: "Ago", atual: 0, previsto: 225000, pessimista: 185000 },
-  { month: "Set", atual: 0, previsto: 240000, pessimista: 200000 },
-];
+const STAGE_PROBABILITY: Record<string, number> = {
+  "Prospecção": 10,
+  "Qualificação": 25,
+  "Proposta": 50,
+  "Negociação": 75,
+  "Fechamento": 90,
+};
 
-const sellerForecast = [
-  { name: "João Silva", target: 80000, forecast: 92000, probability: 85 },
-  { name: "Maria Santos", target: 70000, forecast: 75000, probability: 72 },
-  { name: "Carlos Costa", target: 60000, forecast: 58000, probability: 65 },
-  { name: "Ana Oliveira", target: 50000, forecast: 48000, probability: 60 },
-];
+const COLORS = ["#3b82f6", "#10b981", "#f59e0b", "#ef4444", "#8b5cf6"];
 
 export default function PrevisaoReceita() {
-  const totalForecast = forecastData.reduce((sum, m) => sum + m.previsto, 0);
-  const totalTarget = 1_000_000;
-  const forecastPercentage = ((totalForecast / totalTarget) * 100).toFixed(1);
+  const opportunitiesQuery = trpc.crm.opportunities.list.useQuery({});
+  const stagesQuery = trpc.crm.pipelineStages.list.useQuery();
+
+  const opportunities = opportunitiesQuery.data || [];
+  const stages = stagesQuery.data || [];
+
+  const analysis = useMemo(() => {
+    if (!opportunities.length) return null;
+
+    // Build stage map
+    const stageMap: Record<number, string> = {};
+    stages.forEach((s: any) => { stageMap[s.id] = s.nome; });
+
+    // Calculate weighted pipeline
+    let totalPipeline = 0;
+    let totalWeighted = 0;
+    const byStage: Record<string, { count: number; value: number; weighted: number }> = {};
+
+    opportunities.forEach((opp: any) => {
+      const stageName = stageMap[opp.stage_id] || "Desconhecido";
+      const value = opp.valor || 0;
+      const prob = STAGE_PROBABILITY[stageName] || 50;
+      const weighted = value * (prob / 100);
+
+      totalPipeline += value;
+      totalWeighted += weighted;
+
+      if (!byStage[stageName]) byStage[stageName] = { count: 0, value: 0, weighted: 0 };
+      byStage[stageName].count++;
+      byStage[stageName].value += value;
+      byStage[stageName].weighted += weighted;
+    });
+
+    // Forecast by month (distribute weighted value over next 6 months)
+    const months = ["Abr", "Mai", "Jun", "Jul", "Ago", "Set"];
+    const monthlyWeights = [0.3, 0.25, 0.2, 0.12, 0.08, 0.05];
+    const forecastData = months.map((month, i) => ({
+      month,
+      otimista: Math.round(totalWeighted * monthlyWeights[i] * 1.3),
+      realista: Math.round(totalWeighted * monthlyWeights[i]),
+      pessimista: Math.round(totalWeighted * monthlyWeights[i] * 0.6),
+    }));
+
+    // Pie data by stage
+    const pieData = Object.entries(byStage).map(([name, data]) => ({
+      name,
+      value: data.value,
+      count: data.count,
+    }));
+
+    // Bar data by stage
+    const barData = Object.entries(byStage).map(([name, data]) => ({
+      name,
+      pipeline: data.value,
+      ponderado: data.weighted,
+    }));
+
+    const avgProbability = totalPipeline > 0
+      ? Math.round((totalWeighted / totalPipeline) * 100)
+      : 0;
+
+    return {
+      totalPipeline,
+      totalWeighted,
+      avgProbability,
+      dealCount: opportunities.length,
+      forecastData,
+      pieData,
+      barData,
+    };
+  }, [opportunities, stages]);
+
+  if (opportunitiesQuery.isLoading || stagesQuery.isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader className="w-8 h-8 animate-spin text-blue-400" />
+      </div>
+    );
+  }
+
+  if (!analysis) {
+    return (
+      <div className="text-center py-16 text-gray-400">
+        <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
+        <p>Nenhuma oportunidade encontrada para gerar previsão</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Previsão de Receita</h1>
-        <p className="text-gray-400 mt-1">Projeção de receita baseada em deals abertos</p>
+        <p className="text-gray-400 mt-1">Projeção baseada em {analysis.dealCount} deals no pipeline</p>
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-300">Previsão Total (6 meses)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ {(totalForecast / 1000).toFixed(0)}K</div>
-            <p className="text-xs text-green-400 mt-1">↑ {forecastPercentage}% da meta</p>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-blue-900/30 rounded-lg">
+                <DollarSign className="w-5 h-5 text-blue-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">R$ {(analysis.totalPipeline / 1000).toFixed(0)}K</p>
+                <p className="text-xs text-gray-400">Pipeline Total</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-300">Meta Anual</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">R$ 1.000K</div>
-            <p className="text-xs text-gray-400 mt-1">Até dezembro</p>
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-green-900/30 rounded-lg">
+                <TrendingUp className="w-5 h-5 text-green-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">R$ {(analysis.totalWeighted / 1000).toFixed(0)}K</p>
+                <p className="text-xs text-gray-400">Receita Ponderada</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-300">Probabilidade Média</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">72%</div>
-            <p className="text-xs text-gray-400 mt-1">Deals em aberto</p>
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-yellow-900/30 rounded-lg">
+                <Target className="w-5 h-5 text-yellow-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{analysis.avgProbability}%</p>
+                <p className="text-xs text-gray-400">Prob. Média</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-gray-800/50 border-gray-700">
+          <CardContent className="p-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-purple-900/30 rounded-lg">
+                <BarChart3 className="w-5 h-5 text-purple-400" />
+              </div>
+              <div>
+                <p className="text-2xl font-bold">{analysis.dealCount}</p>
+                <p className="text-xs text-gray-400">Deals Ativos</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Forecast Chart */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle>Projeção de Receita</CardTitle>
-          <CardDescription>Cenários: Otimista, Realista e Pessimista</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={forecastData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="month" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" />
-              <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151" }} />
-              <Legend />
-              <Line type="monotone" dataKey="atual" stroke="#10b981" name="Atual" strokeWidth={2} />
-              <Line type="monotone" dataKey="previsto" stroke="#3b82f6" name="Previsto" strokeWidth={2} />
-              <Line type="monotone" dataKey="pessimista" stroke="#ef4444" name="Pessimista" strokeWidth={2} />
-            </LineChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Forecast Chart */}
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle>Projeção de Receita (6 meses)</CardTitle>
+            <CardDescription>Cenários: Otimista, Realista e Pessimista</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart data={analysis.forecastData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="month" stroke="#9ca3af" />
+                <YAxis stroke="#9ca3af" tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151" }}
+                  formatter={(value: number) => [`R$ ${(value / 1000).toFixed(1)}K`, ""]}
+                />
+                <Legend />
+                <Line type="monotone" dataKey="otimista" stroke="#10b981" name="Otimista" strokeWidth={2} />
+                <Line type="monotone" dataKey="realista" stroke="#3b82f6" name="Realista" strokeWidth={2} />
+                <Line type="monotone" dataKey="pessimista" stroke="#ef4444" name="Pessimista" strokeWidth={2} />
+              </LineChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
 
-      {/* Seller Forecast */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle>Previsão por Vendedor</CardTitle>
-          <CardDescription>Performance esperada vs meta</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ResponsiveContainer width="100%" height={300}>
-            <BarChart data={sellerForecast}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-              <XAxis dataKey="name" stroke="#9ca3af" />
-              <YAxis stroke="#9ca3af" />
-              <Tooltip contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151" }} />
-              <Legend />
-              <Bar dataKey="target" fill="#6b7280" name="Meta" />
-              <Bar dataKey="forecast" fill="#3b82f6" name="Previsão" />
-            </BarChart>
-          </ResponsiveContainer>
-        </CardContent>
-      </Card>
+        {/* Pipeline by Stage */}
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle>Pipeline vs Ponderado por Estágio</CardTitle>
+            <CardDescription>Valor total vs valor ponderado pela probabilidade</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <BarChart data={analysis.barData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
+                <XAxis dataKey="name" stroke="#9ca3af" fontSize={12} />
+                <YAxis stroke="#9ca3af" tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151" }}
+                  formatter={(value: number) => [`R$ ${(value / 1000).toFixed(1)}K`, ""]}
+                />
+                <Legend />
+                <Bar dataKey="pipeline" fill="#6b7280" name="Pipeline" />
+                <Bar dataKey="ponderado" fill="#3b82f6" name="Ponderado" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+      </div>
 
-      {/* Seller Details */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle>Detalhes por Vendedor</CardTitle>
-          <CardDescription>Análise detalhada de performance</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {sellerForecast.map((seller, idx) => (
-              <div key={idx} className="p-4 bg-gray-700 rounded-lg">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <p className="font-medium">{seller.name}</p>
-                    <p className="text-sm text-gray-400">Meta: R$ {(seller.target / 1000).toFixed(0)}K</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="font-bold text-blue-400">R$ {(seller.forecast / 1000).toFixed(0)}K</p>
-                    <p className="text-sm text-gray-400">
-                      {((seller.forecast / seller.target) * 100).toFixed(0)}% da meta
-                    </p>
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-400">Probabilidade Média</span>
-                    <span className="font-medium">{seller.probability}%</span>
-                  </div>
-                  <div className="w-full bg-gray-600 rounded-full h-2">
+      {/* Distribution Pie + Details */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle>Distribuição por Estágio</CardTitle>
+            <CardDescription>Proporção do pipeline por fase</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={300}>
+              <PieChart>
+                <Pie
+                  data={analysis.pieData}
+                  cx="50%"
+                  cy="50%"
+                  outerRadius={100}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                >
+                  {analysis.pieData.map((_: any, i: number) => (
+                    <Cell key={i} fill={COLORS[i % COLORS.length]} />
+                  ))}
+                </Pie>
+                <Tooltip
+                  contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151" }}
+                  formatter={(value: number) => [`R$ ${(value / 1000).toFixed(1)}K`, ""]}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
+
+        {/* Premissas */}
+        <Card className="bg-gray-800 border-gray-700">
+          <CardHeader>
+            <CardTitle>Premissas da Previsão</CardTitle>
+            <CardDescription>Probabilidades por estágio do funil</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {Object.entries(STAGE_PROBABILITY).map(([stage, prob]) => (
+                <div key={stage} className="flex items-center gap-3">
+                  <div className="w-32 text-sm text-gray-300">{stage}</div>
+                  <div className="flex-1 bg-gray-700 rounded-full h-3">
                     <div
-                      className="bg-blue-500 h-2 rounded-full"
-                      style={{ width: `${seller.probability}%` }}
+                      className="bg-blue-500 h-3 rounded-full transition-all"
+                      style={{ width: `${prob}%` }}
                     />
                   </div>
+                  <div className="w-12 text-sm text-right font-medium">{prob}%</div>
                 </div>
-              </div>
-            ))}
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Assumptions */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle>Premissas da Previsão</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-2 text-sm text-gray-300">
-            <li>✓ Baseada em deals com probabilidade &gt; 50%</li>
-            <li>✓ Considera histórico de conversão dos últimos 3 meses</li>
-            <li>✓ Inclui sazonalidade e tendências de mercado</li>
-            <li>✓ Atualizada diariamente com novos deals</li>
-            <li>✓ Cenário pessimista: -25% da previsão realista</li>
-          </ul>
-        </CardContent>
-      </Card>
+              ))}
+            </div>
+            <div className="mt-6 pt-4 border-t border-gray-700">
+              <h4 className="text-sm font-medium mb-2 text-gray-300">Metodologia</h4>
+              <ul className="space-y-1 text-xs text-gray-400">
+                <li>- Receita ponderada = Valor x Probabilidade do estágio</li>
+                <li>- Cenário otimista: +30% sobre realista</li>
+                <li>- Cenário pessimista: -40% sobre realista</li>
+                <li>- Distribuição temporal: 30/25/20/12/8/5%</li>
+                <li>- Atualizado em tempo real com dados do pipeline</li>
+              </ul>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }
