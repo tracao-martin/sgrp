@@ -235,7 +235,7 @@ function DisqualifyDialog({ open, onClose, onConfirm }: {
             onChange={e => setMotivo(e.target.value)}
           >
             <option value="">Selecione o motivo...</option>
-            {reasons.map((r: any) => (
+            {reasons.filter((r: any) => r.nome.toLowerCase() !== "outro").map((r: any) => (
               <option key={r.id} value={r.nome}>{r.nome}</option>
             ))}
             <option value="__outro__">Outro</option>
@@ -310,7 +310,7 @@ function RetireDialog({ open, onClose, onConfirm }: {
             onChange={e => setMotivo(e.target.value)}
           >
             <option value="">Selecione o motivo...</option>
-            {reasons.map((r: any) => (
+            {reasons.filter((r: any) => r.nome.toLowerCase() !== "outro").map((r: any) => (
               <option key={r.id} value={r.nome}>{r.nome}</option>
             ))}
             <option value="__outro__">Outro</option>
