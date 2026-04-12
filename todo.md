@@ -381,16 +381,17 @@
 
 ### GAP 7: ActivityTimeline completa no LeadDetail
 - [x] ActivityTimeline componente compartilhado com query real getByLead
-- [ ] Adicionar formulário de nova atividade com tipos visuais (ligação, reunião, email, whatsapp, visita, nota)
-- [ ] Editar atividade existente
-- [ ] Excluir atividade
-- [ ] Vincular atividade a deal (opcional)
+- [x] Formulário de nova atividade com 8 tipos visuais (ligação, email, reunião, whatsapp, visita, proposta, nota, outro)
+- [x] Editar atividade existente (inline edit com botão de edição)
+- [x] Excluir atividade com confirmação
+- [ ] Vincular atividade a deal (opcional - futuro)
 
 ### GAP 8: Lead Score Card
-- [ ] Criar função calcLeadScore(lead) → score 0-100%
-- [ ] Checklist: nome, email, telefone, empresa, CNPJ, setor, porte, região, canal, cadência
-- [ ] Card visual no LeadDetail com barra de progresso circular
-- [ ] Lista de itens faltantes com sugestão
+- [x] Componente LeadScoreCard com 12 campos avaliados (nome, email, telefone, empresa, cargo, cpf_cnpj, setor, porte, região, origem, icp, cadência)
+- [x] Score visual com barra de progresso + número (ex: 10/12)
+- [x] Campos faltantes como badges vermelhas
+- [x] Mensagem contextual (bem qualificado / parcial / insuficiente)
+- [x] Posicionado acima dos dados do contato no LeadDetail - CONFIRMADO 12/04/2026
 
 ### GAP 6: Filtros avançados
 - [x] Adicionar filtros: temperatura, status, origem, ICP, porte, região, setor
