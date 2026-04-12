@@ -17,6 +17,7 @@ import {
   ChevronLeft, ChevronRight, X, Download, Edit,
   LayoutGrid, List, Phone, Mail, Building2, MapPin,
   Thermometer, Target, UserCheck, Globe, Linkedin,
+  GripVertical, ArrowRight,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
@@ -52,12 +53,33 @@ interface LeadRow {
   createdAt: string;
 }
 
+interface LeadFormData {
+  nome: string;
+  cargo: string;
+  telefone: string;
+  email: string;
+  empresa: string;
+  origem: string;
+  temperatura: string;
+  icp: string;
+  setor: string;
+  porte: string;
+  regiao: string;
+  valor_estimado: string;
+  linkedin: string;
+  site: string;
+  cpfCnpj: string;
+  cadencia: string;
+  visivelPara: string;
+  notas: string;
+}
+
 const LEAD_SOURCES = ["Instagram", "WhatsApp", "Indicação", "Site", "LinkedIn", "Outros"];
 const COMPANY_SIZES = ["MEI", "Micro", "Pequena", "Média", "Grande"];
 const TEMPERATURE_OPTIONS = [
-  { value: "frio", label: "Frio", color: "bg-blue-500/20 text-blue-300 border-blue-500/40" },
-  { value: "morno", label: "Morno", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/40" },
-  { value: "quente", label: "Quente", color: "bg-red-500/20 text-red-300 border-red-500/40" },
+  { value: "frio", label: "Frio", color: "bg-blue-500/20 text-blue-300 border-blue-500/40", icon: "❄️" },
+  { value: "morno", label: "Morno", color: "bg-yellow-500/20 text-yellow-300 border-yellow-500/40", icon: "☀️" },
+  { value: "quente", label: "Quente", color: "bg-red-500/20 text-red-300 border-red-500/40", icon: "🔥" },
 ];
 const STATUS_OPTIONS = [
   { value: "novo", label: "Novo", color: "bg-[#333] text-foreground/80" },
@@ -86,20 +108,15 @@ const ALL_COLUMNS = [
   { key: "valor_estimado", label: "Valor Estimado", defaultVisible: false },
 ];
 
-// Mock cadences for Kanban view
-const MOCK_CADENCES = [
-  { id: "cad-1", nome: "Outbound B2B", fases: [
-    { id: "f1", nome: "Novo", ordem: 1 },
-    { id: "f2", nome: "Primeiro Contato", ordem: 2 },
-    { id: "f3", nome: "Follow-up 1", ordem: 3 },
-    { id: "f4", nome: "Follow-up 2", ordem: 4 },
-    { id: "f5", nome: "Qualificação", ordem: 5 },
-  ]},
-  { id: "cad-2", nome: "Inbound", fases: [
-    { id: "f6", nome: "Lead Recebido", ordem: 1 },
-    { id: "f7", nome: "Contato Inicial", ordem: 2 },
-    { id: "f8", nome: "Diagnóstico", ordem: 3 },
-  ]},
+// Cadence phases for Kanban
+const CADENCE_PHASES = [
+  { id: "sem_cadencia", nome: "Sem Cadência", cor: "#555555" },
+  { id: "novo", nome: "Novo", cor: "#ffbf19" },
+  { id: "primeiro_contato", nome: "Primeiro Contato", cor: "#8b5cf6" },
+  { id: "followup_1", nome: "Follow-up 1", cor: "#f59e0b" },
+  { id: "followup_2", nome: "Follow-up 2", cor: "#f97316" },
+  { id: "qualificacao", nome: "Qualificação", cor: "#22c55e" },
+  { id: "apresentacao", nome: "Apresentação", cor: "#3b82f6" },
 ];
 
 // Mock ICPs
@@ -107,6 +124,12 @@ const MOCK_ICPS = [
   { id: "icp-1", nome: "Diretor de TI em SaaS B2B" },
   { id: "icp-2", nome: "CEO de PME Industrial" },
   { id: "icp-3", nome: "Head Comercial Varejo" },
+];
+
+// Mock cadences
+const MOCK_CADENCES = [
+  { id: "cad-1", nome: "Outbound B2B" },
+  { id: "cad-2", nome: "Inbound" },
 ];
 
 // ============================================================================
@@ -150,10 +173,7 @@ function TemperatureBadge({ value }: { value: string }) {
   if (!opt) return <span className="text-muted-foreground text-xs">—</span>;
   return (
     <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium border ${opt.color}`}>
-      {opt.value === "frio" && "❄️"}
-      {opt.value === "morno" && "☀️"}
-      {opt.value === "quente" && "🔥"}
-      {opt.label}
+      {opt.icon} {opt.label}
     </span>
   );
 }
@@ -271,7 +291,7 @@ function ContactFilters({ filters, onChange, onClear }: {
           <Filter className="w-4 h-4" />
           Filtros
           {activeCount > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-1.5 bg-primary text-primary-foreground text-[10px] w-4 h-4 rounded-full flex items-center justify-center font-bold">
               {activeCount}
             </span>
           )}
@@ -279,18 +299,16 @@ function ContactFilters({ filters, onChange, onClear }: {
       </PopoverTrigger>
       <PopoverContent className="w-80 bg-card border-border p-4" align="end">
         <div className="flex items-center justify-between mb-3">
-          <p className="text-sm font-medium">Filtros Avançados</p>
+          <p className="text-sm font-medium">Filtros avançados</p>
           {activeCount > 0 && (
-            <Button variant="ghost" size="sm" className="text-xs text-muted-foreground h-6" onClick={onClear}>
-              Limpar filtros
-            </Button>
+            <button onClick={onClear} className="text-xs text-primary hover:underline">Limpar todos</button>
           )}
         </div>
         <div className="space-y-4">
           {/* Temperatura */}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Temperatura</label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-1.5">
               {TEMPERATURE_OPTIONS.map(t => (
                 <button
                   key={t.value}
@@ -300,16 +318,15 @@ function ContactFilters({ filters, onChange, onClear }: {
                       : [...filters.temperatura, t.value];
                     onChange({ ...filters, temperatura: newTemps });
                   }}
-                  className={`px-2.5 py-1 rounded-full text-xs font-medium border transition-colors ${
-                    filters.temperatura.includes(t.value) ? t.color : "border-border text-muted-foreground hover:border-foreground/30"
+                  className={`px-2.5 py-1 rounded-full text-xs border transition-all ${
+                    filters.temperatura.includes(t.value) ? t.color : "border-border text-muted-foreground"
                   }`}
                 >
-                  {t.label}
+                  {t.icon} {t.label}
                 </button>
               ))}
             </div>
           </div>
-
           {/* Status */}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Status</label>
@@ -318,13 +335,13 @@ function ContactFilters({ filters, onChange, onClear }: {
                 <button
                   key={s.value}
                   onClick={() => {
-                    const newStatuses = filters.status.includes(s.value)
+                    const newStatus = filters.status.includes(s.value)
                       ? filters.status.filter(v => v !== s.value)
                       : [...filters.status, s.value];
-                    onChange({ ...filters, status: newStatuses });
+                    onChange({ ...filters, status: newStatus });
                   }}
-                  className={`px-2 py-0.5 rounded-full text-xs font-medium transition-colors ${
-                    filters.status.includes(s.value) ? s.color : "bg-[#333] text-muted-foreground hover:text-foreground"
+                  className={`px-2.5 py-1 rounded-full text-xs border transition-all ${
+                    filters.status.includes(s.value) ? s.color + " border-current" : "border-border text-muted-foreground"
                   }`}
                 >
                   {s.label}
@@ -332,57 +349,38 @@ function ContactFilters({ filters, onChange, onClear }: {
               ))}
             </div>
           </div>
-
-          {/* ICP */}
-          <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">ICP</label>
-            <select
-              value={filters.icp}
-              onChange={(e) => onChange({ ...filters, icp: e.target.value })}
-              className="w-full bg-[#333] border border-border rounded-md px-2.5 py-1.5 text-sm"
-            >
-              <option value="">Todos os ICPs</option>
-              {MOCK_ICPS.map(icp => (
-                <option key={icp.id} value={icp.id}>{icp.nome}</option>
-              ))}
-            </select>
-          </div>
-
           {/* Canal de Origem */}
           <div>
             <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Canal de Origem</label>
             <div className="flex flex-wrap gap-1.5">
-              {LEAD_SOURCES.map(src => (
+              {LEAD_SOURCES.map(s => (
                 <button
-                  key={src}
+                  key={s}
                   onClick={() => {
-                    const newOrigens = filters.origem.includes(src)
-                      ? filters.origem.filter(v => v !== src)
-                      : [...filters.origem, src];
-                    onChange({ ...filters, origem: newOrigens });
+                    const newOrigem = filters.origem.includes(s)
+                      ? filters.origem.filter(v => v !== s)
+                      : [...filters.origem, s];
+                    onChange({ ...filters, origem: newOrigem });
                   }}
-                  className={`px-2 py-0.5 rounded-full text-xs font-medium border transition-colors ${
-                    filters.origem.includes(src) ? "border-primary bg-primary/20 text-primary" : "border-border text-muted-foreground hover:border-foreground/30"
+                  className={`px-2.5 py-1 rounded-full text-xs border transition-all ${
+                    filters.origem.includes(s) ? "bg-primary/20 text-primary border-primary/40" : "border-border text-muted-foreground"
                   }`}
                 >
-                  {src}
+                  {s}
                 </button>
               ))}
             </div>
           </div>
-
           {/* Porte */}
           <div>
-            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Porte da Empresa</label>
+            <label className="text-xs font-medium text-muted-foreground mb-1.5 block">Porte</label>
             <select
+              className="w-full bg-[#333] border border-border rounded-md px-3 py-1.5 text-sm"
               value={filters.porte}
-              onChange={(e) => onChange({ ...filters, porte: e.target.value })}
-              className="w-full bg-[#333] border border-border rounded-md px-2.5 py-1.5 text-sm"
+              onChange={e => onChange({ ...filters, porte: e.target.value })}
             >
-              <option value="">Todos os portes</option>
-              {COMPANY_SIZES.map(s => (
-                <option key={s} value={s}>{s}</option>
-              ))}
+              <option value="">Todos</option>
+              {COMPANY_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
         </div>
@@ -394,131 +392,90 @@ function ContactFilters({ filters, onChange, onClear }: {
 // ============================================================================
 // LEAD FORM DIALOG (Create / Edit)
 // ============================================================================
-interface LeadFormData {
-  nome: string;
-  telefone: string;
-  email: string;
-  empresa: string;
-  cargo: string;
-  origem: string;
-  icp: string;
-  temperatura: string;
-  setor: string;
-  porte: string;
-  regiao: string;
-  linkedin: string;
-  site: string;
-  cpfCnpj: string;
-  cadencia: string;
-  visivelPara: string;
-  notas: string;
-  valor_estimado: string;
-}
-
-const EMPTY_FORM: LeadFormData = {
-  nome: "", telefone: "", email: "", empresa: "", cargo: "", origem: "",
-  icp: "", temperatura: "frio", setor: "", porte: "", regiao: "",
-  linkedin: "", site: "", cpfCnpj: "", cadencia: "", visivelPara: "Todos",
-  notas: "", valor_estimado: "",
-};
-
 function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  editLead?: LeadRow | null;
+  editLead: LeadRow | null;
   onSave: (data: LeadFormData) => void;
   isSaving: boolean;
 }) {
-  const [form, setForm] = useState<LeadFormData>(EMPTY_FORM);
+  const [form, setForm] = useState<LeadFormData>({
+    nome: "", cargo: "", telefone: "", email: "", empresa: "", origem: "",
+    temperatura: "frio", icp: "", setor: "", porte: "", regiao: "",
+    valor_estimado: "", linkedin: "", site: "", cpfCnpj: "", cadencia: "",
+    visivelPara: "Todos", notas: "",
+  });
   const [errors, setErrors] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
     if (editLead) {
       setForm({
-        nome: editLead.nome,
-        telefone: editLead.telefone,
-        email: editLead.email,
-        empresa: editLead.empresa,
-        cargo: editLead.cargo,
-        origem: editLead.origem,
-        icp: editLead.icp,
-        temperatura: editLead.temperatura,
-        setor: editLead.setor,
-        porte: editLead.porte,
-        regiao: editLead.regiao,
-        linkedin: editLead.linkedin,
-        site: editLead.site,
-        cpfCnpj: editLead.cpfCnpj,
-        cadencia: editLead.cadencia,
-        visivelPara: editLead.visivelPara,
-        notas: editLead.notas,
+        nome: editLead.nome, cargo: editLead.cargo, telefone: editLead.telefone,
+        email: editLead.email, empresa: editLead.empresa, origem: editLead.origem,
+        temperatura: editLead.temperatura, icp: editLead.icp, setor: editLead.setor,
+        porte: editLead.porte, regiao: editLead.regiao,
         valor_estimado: editLead.valor_estimado?.toString() || "",
+        linkedin: editLead.linkedin, site: editLead.site, cpfCnpj: editLead.cpfCnpj,
+        cadencia: editLead.cadencia, visivelPara: editLead.visivelPara, notas: editLead.notas,
       });
     } else {
-      setForm(EMPTY_FORM);
+      setForm({
+        nome: "", cargo: "", telefone: "", email: "", empresa: "", origem: "",
+        temperatura: "frio", icp: "", setor: "", porte: "", regiao: "",
+        valor_estimado: "", linkedin: "", site: "", cpfCnpj: "", cadencia: "",
+        visivelPara: "Todos", notas: "",
+      });
     }
     setErrors({});
   }, [editLead, open]);
 
-  const handleSave = () => {
-    const newErrors: Record<string, boolean> = {};
-    if (!form.nome.trim()) newErrors.nome = true;
-    if (!form.telefone.trim()) newErrors.telefone = true;
-    if (!form.email.trim()) newErrors.email = true;
-    if (!form.empresa.trim()) newErrors.empresa = true;
-    if (!form.cargo.trim()) newErrors.cargo = true;
-    if (!form.origem) newErrors.origem = true;
+  const update = (key: keyof LeadFormData, value: string) => {
+    setForm(prev => ({ ...prev, [key]: value }));
+    if (errors[key]) setErrors(prev => ({ ...prev, [key]: false }));
+  };
 
+  const handleSave = () => {
+    const required = ["nome", "cargo", "telefone", "email", "empresa", "origem"];
+    const newErrors: Record<string, boolean> = {};
+    required.forEach(k => { if (!form[k as keyof LeadFormData]) newErrors[k] = true; });
     if (Object.keys(newErrors).length > 0) {
       setErrors(newErrors);
-      toast.error("Preencha os campos obrigatórios");
+      toast.error("Preencha todos os campos obrigatórios");
       return;
     }
     onSave(form);
   };
 
-  const update = (field: keyof LeadFormData, value: string) => {
-    setForm(prev => ({ ...prev, [field]: value }));
-    if (errors[field]) setErrors(prev => ({ ...prev, [field]: false }));
-  };
-
-  const inputClass = (field: string) =>
-    `w-full bg-[#333] border ${errors[field] ? "border-red-500" : "border-border"} rounded-md px-3 py-2 text-sm`;
+  const inputClass = (key: string) =>
+    `w-full bg-[#333] border ${errors[key] ? "border-red-500" : "border-border"} rounded-md px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary`;
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="bg-card border-border max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="bg-card border-border max-w-2xl max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>{editLead ? "Editar Lead" : "Novo Lead"}</DialogTitle>
         </DialogHeader>
-
         <div className="grid grid-cols-2 gap-4 py-2">
-          {/* Nome */}
-          <div className="col-span-2 sm:col-span-1">
+          <div>
             <label className="text-xs font-medium text-muted-foreground">Nome *</label>
-            <input className={inputClass("nome")} placeholder="Nome completo" value={form.nome} onChange={e => update("nome", e.target.value)} />
+            <input className={inputClass("nome")} placeholder="Nome do lead" value={form.nome} onChange={e => update("nome", e.target.value)} />
           </div>
-          {/* Cargo */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Cargo/Título *</label>
             <input className={inputClass("cargo")} placeholder="Ex: CEO, Diretor de TI" value={form.cargo} onChange={e => update("cargo", e.target.value)} />
           </div>
-          {/* Telefone */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Telefone *</label>
             <input className={inputClass("telefone")} placeholder="41988072454" value={form.telefone} onChange={e => update("telefone", e.target.value)} />
           </div>
-          {/* Email */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Email *</label>
             <input className={inputClass("email")} placeholder="email@empresa.com" value={form.email} onChange={e => update("email", e.target.value)} />
           </div>
-          {/* Empresa */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Empresa *</label>
             <input className={inputClass("empresa")} placeholder="Nome da empresa" value={form.empresa} onChange={e => update("empresa", e.target.value)} />
           </div>
-          {/* Canal de Origem */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Canal de Origem *</label>
             <select className={inputClass("origem")} value={form.origem} onChange={e => update("origem", e.target.value)}>
@@ -529,7 +486,6 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
 
           <Separator className="col-span-2 my-1" />
 
-          {/* ICP */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">ICP</label>
             <select className={inputClass("icp")} value={form.icp} onChange={e => update("icp", e.target.value)}>
@@ -537,7 +493,6 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
               {MOCK_ICPS.map(i => <option key={i.id} value={i.id}>{i.nome}</option>)}
             </select>
           </div>
-          {/* Temperatura */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Temperatura</label>
             <div className="flex gap-2 mt-1.5">
@@ -550,17 +505,15 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
                     form.temperatura === t.value ? t.color : "border-border text-muted-foreground hover:border-foreground/30"
                   }`}
                 >
-                  {t.value === "frio" && "❄️ "}{t.value === "morno" && "☀️ "}{t.value === "quente" && "🔥 "}{t.label}
+                  {t.icon} {t.label}
                 </button>
               ))}
             </div>
           </div>
-          {/* Setor */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Setor</label>
             <input className={inputClass("setor")} placeholder="Ex: Tecnologia, Saúde" value={form.setor} onChange={e => update("setor", e.target.value)} />
           </div>
-          {/* Porte */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Porte da Empresa</label>
             <select className={inputClass("porte")} value={form.porte} onChange={e => update("porte", e.target.value)}>
@@ -568,12 +521,10 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
               {COMPANY_SIZES.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
           </div>
-          {/* Região */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Região/Estado</label>
             <input className={inputClass("regiao")} placeholder="Ex: São Paulo, Paraná" value={form.regiao} onChange={e => update("regiao", e.target.value)} />
           </div>
-          {/* Valor Estimado */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Valor Estimado (R$)</label>
             <input className={inputClass("valor_estimado")} type="number" placeholder="50000" value={form.valor_estimado} onChange={e => update("valor_estimado", e.target.value)} />
@@ -581,22 +532,18 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
 
           <Separator className="col-span-2 my-1" />
 
-          {/* LinkedIn */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">LinkedIn</label>
             <input className={inputClass("linkedin")} placeholder="URL do perfil" value={form.linkedin} onChange={e => update("linkedin", e.target.value)} />
           </div>
-          {/* Site */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Site</label>
             <input className={inputClass("site")} placeholder="https://..." value={form.site} onChange={e => update("site", e.target.value)} />
           </div>
-          {/* CPF/CNPJ */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">CPF/CNPJ</label>
             <input className={inputClass("cpfCnpj")} placeholder="Documento" value={form.cpfCnpj} onChange={e => update("cpfCnpj", e.target.value)} />
           </div>
-          {/* Cadência */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Cadência</label>
             <select className={inputClass("cadencia")} value={form.cadencia} onChange={e => update("cadencia", e.target.value)}>
@@ -604,7 +551,6 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
               {MOCK_CADENCES.map(c => <option key={c.id} value={c.id}>{c.nome}</option>)}
             </select>
           </div>
-          {/* Visível Para */}
           <div>
             <label className="text-xs font-medium text-muted-foreground">Visível Para</label>
             <select className={inputClass("visivelPara")} value={form.visivelPara} onChange={e => update("visivelPara", e.target.value)}>
@@ -612,7 +558,6 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving }: {
             </select>
           </div>
 
-          {/* Notas */}
           <div className="col-span-2">
             <label className="text-xs font-medium text-muted-foreground">Observações</label>
             <textarea
@@ -700,72 +645,27 @@ function BulkEditModal({ open, onClose, selectedCount, onConfirm }: {
 }
 
 // ============================================================================
-// KANBAN VIEW
+// KANBAN CARD (draggable)
 // ============================================================================
-function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (lead: LeadRow) => void }) {
-  // Group leads by cadence phase
-  const allFases = MOCK_CADENCES.flatMap(c => c.fases.map(f => ({ ...f, cadenciaNome: c.nome })));
-  const semCadencia = leads.filter(l => !l.cadencia);
-  const comCadencia = leads.filter(l => !!l.cadencia);
-
-  // For mock purposes, distribute leads with cadence across phases
-  const faseGroups: Record<string, LeadRow[]> = {};
-  allFases.forEach(f => { faseGroups[f.id] = []; });
-  comCadencia.forEach((lead, idx) => {
-    const faseIdx = idx % allFases.length;
-    faseGroups[allFases[faseIdx].id].push(lead);
-  });
-
-  return (
-    <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
-      {/* Sem Cadência */}
-      <div className="flex-shrink-0 w-72">
-        <div className="bg-[#333]/50 rounded-lg p-3 mb-2">
-          <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-muted-foreground">Sem Cadência</h3>
-            <Badge variant="secondary" className="text-xs">{semCadencia.length}</Badge>
-          </div>
-        </div>
-        <div className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto">
-          {semCadencia.map(lead => (
-            <KanbanCard key={lead.id} lead={lead} onClick={() => onClickLead(lead)} />
-          ))}
-        </div>
-      </div>
-
-      {/* Fases da cadência */}
-      {allFases.map(fase => (
-        <div key={fase.id} className="flex-shrink-0 w-72">
-          <div className="bg-[#333]/50 rounded-lg p-3 mb-2">
-            <div className="flex items-center justify-between">
-              <div>
-                <h3 className="text-sm font-medium">{fase.nome}</h3>
-                <p className="text-[10px] text-muted-foreground">{fase.cadenciaNome}</p>
-              </div>
-              <Badge variant="secondary" className="text-xs">{faseGroups[fase.id]?.length || 0}</Badge>
-            </div>
-          </div>
-          <div className="space-y-2 max-h-[calc(100vh-280px)] overflow-y-auto">
-            {(faseGroups[fase.id] || []).map(lead => (
-              <KanbanCard key={lead.id} lead={lead} onClick={() => onClickLead(lead)} />
-            ))}
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-function KanbanCard({ lead, onClick }: { lead: LeadRow; onClick: () => void }) {
+function KanbanCard({ lead, onClick, onDragStart }: {
+  lead: LeadRow;
+  onClick: () => void;
+  onDragStart: (e: React.DragEvent) => void;
+}) {
   return (
     <div
+      draggable
+      onDragStart={onDragStart}
       onClick={onClick}
-      className="bg-card border border-border rounded-lg p-3 cursor-pointer hover:border-primary/40 transition-colors group"
+      className="bg-card border border-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-primary/40 transition-colors group"
     >
       <div className="flex items-start justify-between mb-2">
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium truncate">{lead.nome}</p>
-          <p className="text-xs text-muted-foreground truncate">{lead.cargo} • {lead.empresa}</p>
+          <div className="flex items-center gap-1.5">
+            <GripVertical className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground/70 flex-shrink-0" />
+            <p className="text-sm font-medium truncate">{lead.nome}</p>
+          </div>
+          <p className="text-xs text-muted-foreground truncate ml-4.5">{lead.cargo} • {lead.empresa}</p>
         </div>
         <TemperatureBadge value={lead.temperatura} />
       </div>
@@ -773,8 +673,281 @@ function KanbanCard({ lead, onClick }: { lead: LeadRow; onClick: () => void }) {
         {lead.origem && (
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#333] text-muted-foreground">{lead.origem}</span>
         )}
+        <StatusBadge value={lead.status} />
         <div className="flex-1" />
         <WhatsAppButton phone={lead.telefone} size="xs" />
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// KANBAN COLUMN (droppable)
+// ============================================================================
+function KanbanColumn({ phase, leads, isOver, onDragOver, onDrop, onDragLeave, onClickLead, onDragStartLead }: {
+  phase: typeof CADENCE_PHASES[0];
+  leads: LeadRow[];
+  isOver: boolean;
+  onDragOver: (e: React.DragEvent) => void;
+  onDrop: (e: React.DragEvent) => void;
+  onDragLeave: () => void;
+  onClickLead: (lead: LeadRow) => void;
+  onDragStartLead: (e: React.DragEvent, leadId: number) => void;
+}) {
+  return (
+    <div
+      className={`flex-shrink-0 w-72 transition-all ${isOver ? "scale-[1.01]" : ""}`}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
+      onDragLeave={onDragLeave}
+    >
+      {/* Column header */}
+      <div className="rounded-lg p-3 mb-2" style={{ backgroundColor: `${phase.cor}15` }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: phase.cor }} />
+            <h3 className="text-sm font-medium">{phase.nome}</h3>
+          </div>
+          <Badge variant="secondary" className="text-xs">{leads.length}</Badge>
+        </div>
+      </div>
+
+      {/* Drop zone */}
+      <div
+        className={`space-y-2 min-h-[100px] max-h-[calc(100vh-300px)] overflow-y-auto rounded-lg p-1 transition-colors ${
+          isOver ? "bg-primary/5 ring-2 ring-primary/30 ring-dashed" : ""
+        }`}
+      >
+        {leads.length === 0 && (
+          <div className={`text-center py-8 text-xs text-muted-foreground ${isOver ? "text-primary" : ""}`}>
+            {isOver ? "Solte aqui" : "Nenhum lead"}
+          </div>
+        )}
+        {leads.map(lead => (
+          <KanbanCard
+            key={lead.id}
+            lead={lead}
+            onClick={() => onClickLead(lead)}
+            onDragStart={(e) => onDragStartLead(e, lead.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ============================================================================
+// ACTIVITY LOG ENTRY (for Kanban moves)
+// ============================================================================
+interface ActivityLogEntry {
+  id: string;
+  leadId: number;
+  leadNome: string;
+  usuario: string;
+  data: string;
+  faseAnterior: string;
+  faseNova: string;
+}
+
+// ============================================================================
+// KANBAN VIEW (with drag-and-drop + activity logging)
+// ============================================================================
+function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (lead: LeadRow) => void }) {
+  const [draggedLeadId, setDraggedLeadId] = useState<number | null>(null);
+  const [overPhaseId, setOverPhaseId] = useState<string | null>(null);
+  const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
+  const [showLog, setShowLog] = useState(false);
+
+  // Track lead-to-phase assignments (local state for mock)
+  const [leadPhases, setLeadPhases] = useState<Record<number, string>>(() => {
+    const initial: Record<number, string> = {};
+    leads.forEach((lead, idx) => {
+      if (lead.faseCadencia) {
+        // Map to a phase ID
+        const phaseMatch = CADENCE_PHASES.find(p =>
+          p.nome.toLowerCase().includes(lead.faseCadencia.toLowerCase())
+        );
+        initial[lead.id] = phaseMatch?.id || "sem_cadencia";
+      } else if (lead.cadencia) {
+        // Distribute across phases for demo
+        const phaseIdx = (idx % (CADENCE_PHASES.length - 1)) + 1;
+        initial[lead.id] = CADENCE_PHASES[phaseIdx].id;
+      } else {
+        initial[lead.id] = "sem_cadencia";
+      }
+    });
+    return initial;
+  });
+
+  // Update leadPhases when leads change
+  useEffect(() => {
+    setLeadPhases(prev => {
+      const updated = { ...prev };
+      leads.forEach((lead, idx) => {
+        if (!(lead.id in updated)) {
+          updated[lead.id] = lead.cadencia
+            ? CADENCE_PHASES[((idx % (CADENCE_PHASES.length - 1)) + 1)].id
+            : "sem_cadencia";
+        }
+      });
+      return updated;
+    });
+  }, [leads]);
+
+  // Group leads by phase
+  const leadsByPhase = useMemo(() => {
+    const grouped: Record<string, LeadRow[]> = {};
+    CADENCE_PHASES.forEach(p => { grouped[p.id] = []; });
+    leads.forEach(lead => {
+      const phaseId = leadPhases[lead.id] || "sem_cadencia";
+      if (grouped[phaseId]) {
+        grouped[phaseId].push(lead);
+      } else {
+        grouped["sem_cadencia"].push(lead);
+      }
+    });
+    return grouped;
+  }, [leads, leadPhases]);
+
+  // Drag handlers
+  const handleDragStart = (e: React.DragEvent, leadId: number) => {
+    setDraggedLeadId(leadId);
+    e.dataTransfer.effectAllowed = "move";
+    // Set transparent drag image
+    const el = document.createElement("div");
+    el.style.opacity = "0";
+    document.body.appendChild(el);
+    e.dataTransfer.setDragImage(el, 0, 0);
+    setTimeout(() => document.body.removeChild(el), 0);
+  };
+
+  const handleDragOver = (e: React.DragEvent, phaseId: string) => {
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+    setOverPhaseId(phaseId);
+  };
+
+  const handleDrop = (e: React.DragEvent, targetPhaseId: string) => {
+    e.preventDefault();
+    setOverPhaseId(null);
+
+    if (draggedLeadId === null) return;
+
+    const currentPhaseId = leadPhases[draggedLeadId] || "sem_cadencia";
+    if (currentPhaseId === targetPhaseId) {
+      setDraggedLeadId(null);
+      return;
+    }
+
+    const lead = leads.find(l => l.id === draggedLeadId);
+    if (!lead) {
+      setDraggedLeadId(null);
+      return;
+    }
+
+    const fromPhase = CADENCE_PHASES.find(p => p.id === currentPhaseId);
+    const toPhase = CADENCE_PHASES.find(p => p.id === targetPhaseId);
+
+    // Move the lead
+    setLeadPhases(prev => ({ ...prev, [draggedLeadId!]: targetPhaseId }));
+
+    // Log the activity
+    const newEntry: ActivityLogEntry = {
+      id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+      leadId: lead.id,
+      leadNome: lead.nome,
+      usuario: "Administrador", // Current user
+      data: new Date().toISOString(),
+      faseAnterior: fromPhase?.nome || "Desconhecida",
+      faseNova: toPhase?.nome || "Desconhecida",
+    };
+    setActivityLog(prev => [newEntry, ...prev]);
+
+    toast.success(
+      <div className="flex items-center gap-2">
+        <ArrowRight className="w-4 h-4 text-primary" />
+        <span><strong>{lead.nome}</strong> movido para <strong>{toPhase?.nome}</strong></span>
+      </div>
+    );
+
+    setDraggedLeadId(null);
+  };
+
+  const handleDragLeave = () => {
+    setOverPhaseId(null);
+  };
+
+  const formatDate = (iso: string) => {
+    const d = new Date(iso);
+    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }) +
+      " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+  };
+
+  return (
+    <div className="space-y-4">
+      {/* Activity log toggle */}
+      <div className="flex items-center justify-between">
+        <p className="text-sm text-muted-foreground">
+          Arraste os cards entre as fases para movimentar os leads na cadência
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          className="border-border gap-1.5"
+          onClick={() => setShowLog(!showLog)}
+        >
+          <RotateCcw className="w-3.5 h-3.5" />
+          Histórico ({activityLog.length})
+        </Button>
+      </div>
+
+      {/* Activity log panel */}
+      {showLog && activityLog.length > 0 && (
+        <div className="bg-card border border-border rounded-lg p-4 max-h-60 overflow-y-auto">
+          <h4 className="text-sm font-medium mb-3">Timeline de Movimentações</h4>
+          <div className="space-y-3">
+            {activityLog.map(entry => (
+              <div key={entry.id} className="flex items-start gap-3 text-sm">
+                <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
+                <div className="flex-1 min-w-0">
+                  <p>
+                    <span className="font-medium">{entry.usuario}</span>
+                    {" moveu "}
+                    <span className="font-medium text-primary">{entry.leadNome}</span>
+                    {" de "}
+                    <span className="text-muted-foreground">{entry.faseAnterior}</span>
+                    {" → "}
+                    <span className="font-medium">{entry.faseNova}</span>
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{formatDate(entry.data)}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {showLog && activityLog.length === 0 && (
+        <div className="bg-card border border-border rounded-lg p-6 text-center text-sm text-muted-foreground">
+          Nenhuma movimentação registrada nesta sessão. Arraste um card para iniciar.
+        </div>
+      )}
+
+      {/* Kanban columns */}
+      <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
+        {CADENCE_PHASES.map(phase => (
+          <KanbanColumn
+            key={phase.id}
+            phase={phase}
+            leads={leadsByPhase[phase.id] || []}
+            isOver={overPhaseId === phase.id}
+            onDragOver={(e) => handleDragOver(e, phase.id)}
+            onDrop={(e) => handleDrop(e, phase.id)}
+            onDragLeave={handleDragLeave}
+            onClickLead={onClickLead}
+            onDragStartLead={handleDragStart}
+          />
+        ))}
       </div>
     </div>
   );
@@ -825,7 +998,7 @@ export default function Leads() {
       setShowCreateDialog(false);
       utils.crm.leads.list.invalidate();
     },
-    onError: (err) => toast.error(`Erro: ${err.message}`),
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
   });
 
   const updateMutation = trpc.crm.leads.update.useMutation({
@@ -834,7 +1007,7 @@ export default function Leads() {
       setEditingLead(null);
       utils.crm.leads.list.invalidate();
     },
-    onError: (err) => toast.error(`Erro: ${err.message}`),
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
   });
 
   const deleteMutation = trpc.crm.leads.delete.useMutation({
@@ -842,7 +1015,7 @@ export default function Leads() {
       toast.success("Lead excluído!");
       utils.crm.leads.list.invalidate();
     },
-    onError: (err) => toast.error(`Erro: ${err.message}`),
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
   });
 
   // Map backend data to rows
@@ -1009,17 +1182,17 @@ export default function Leads() {
         </div>
       </div>
 
-      {/* Tabs */}
+      {/* Tabs — Leads Ativos FIRST, Cadência SECOND */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between">
           <TabsList>
-            <TabsTrigger value="cadencia" className="gap-1.5">
-              <LayoutGrid className="w-4 h-4" />
-              Cadência
-            </TabsTrigger>
             <TabsTrigger value="lista" className="gap-1.5">
               <List className="w-4 h-4" />
               Leads Ativos
+            </TabsTrigger>
+            <TabsTrigger value="cadencia" className="gap-1.5">
+              <LayoutGrid className="w-4 h-4" />
+              Cadência
             </TabsTrigger>
           </TabsList>
 
@@ -1050,12 +1223,7 @@ export default function Leads() {
           )}
         </div>
 
-        {/* KANBAN TAB */}
-        <TabsContent value="cadencia" className="mt-4">
-          <LeadKanban leads={filteredLeads} onClickLead={(lead) => navigate(`/leads/${lead.id}`)} />
-        </TabsContent>
-
-        {/* LIST TAB */}
+        {/* LIST TAB (first / default) */}
         <TabsContent value="lista" className="mt-4">
           <div className="bg-card border border-border rounded-lg overflow-hidden">
             <Table>
@@ -1158,6 +1326,11 @@ export default function Leads() {
               </div>
             </div>
           </div>
+        </TabsContent>
+
+        {/* KANBAN TAB (second) */}
+        <TabsContent value="cadencia" className="mt-4">
+          <LeadKanban leads={filteredLeads} onClickLead={(lead) => navigate(`/leads/${lead.id}`)} />
         </TabsContent>
       </Tabs>
 

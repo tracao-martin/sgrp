@@ -312,3 +312,10 @@
 - [x] Rota /leads/:id registrada no App.tsx
 - [x] Build sem erros
 - [x] Deploy no VPS - CONFIRMADO 12/04/2026
+
+## Ajustes Leads Page - Ordem das Abas e Kanban DnD
+
+- [ ] Inverter ordem das abas: "Leads Ativos" primeiro (padrão), "Cadência" segundo
+- [ ] Implementar drag-and-drop real no Kanban de Cadência (arrastar cards entre colunas)
+- [ ] Ao mover card no Kanban, registrar atividade na Timeline (usuário, data/hora, fase anterior → fase nova)
+- [ ] Build e deploy no VPS
