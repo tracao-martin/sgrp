@@ -324,9 +324,10 @@
 
 ## Bug Fix: Kanban Cadência não persiste movimentações
 
-- [ ] Adicionar campo cadence_phase na tabela leads (ou usar campo existente)
-- [ ] Criar procedure tRPC para atualizar fase da cadência do lead
-- [ ] Criar atividade na timeline ao mover lead (tipo: cadence_move, com fase anterior e nova)
-- [ ] Atualizar frontend Kanban para chamar mutation ao mover card
-- [ ] Timeline de Atividades no detalhe do lead deve mostrar movimentações
-- [ ] Build, deploy e testar no VPS
+- [x] Adicionar campo cadence_phase na tabela leads (usa campo existente fase_cadencia)
+- [x] Criar procedure tRPC para atualizar fase da cadência do lead (moveCadencePhase)
+- [x] Criar atividade na timeline ao mover lead (tipo: cadence_move, com fase anterior e nova)
+- [x] Atualizar frontend Kanban para chamar mutation ao mover card
+- [x] Corrigir mapeamento snake_case (fase_cadencia) vs camelCase (faseCadencia) no frontend
+- [x] Timeline de Atividades no detalhe do lead mostra movimentações corretamente
+- [x] Build, deploy e testar no VPS - CONFIRMADO 12/04/2026
