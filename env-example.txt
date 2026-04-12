@@ -1,0 +1,13 @@
+# Database
+DATABASE_URL=postgres://sgrp:your_password@localhost:5432/sgrp
+
+# Auth
+JWT_SECRET=your-super-secret-jwt-key-change-this
+
+# Server
+NODE_ENV=production
+PORT=3000
+
+# Optional: LLM (for Expert Comercial AI features)
+# BUILT_IN_FORGE_API_URL=
+# BUILT_IN_FORGE_API_KEY=

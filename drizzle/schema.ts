@@ -1,32 +1,52 @@
 import {
-  int,
-  mysqlEnum,
-  mysqlTable,
+  integer,
+  pgEnum,
+  pgTable,
   text,
   timestamp,
   varchar,
-  decimal,
+  numeric,
   boolean,
-  longtext,
-} from "drizzle-orm/mysql-core";
+  serial,
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+export const userRoleEnum = pgEnum("user_role", ["admin", "gerente", "vendedor"]);
+export const companyTamanhoEnum = pgEnum("company_tamanho", ["micro", "pequena", "media", "grande", "multinacional"]);
+export const companyStatusEnum = pgEnum("company_status", ["ativa", "inativa", "prospect"]);
+export const leadQualificacaoEnum = pgEnum("lead_qualificacao", ["frio", "morno", "quente", "qualificado"]);
+export const leadStatusEnum = pgEnum("lead_status", ["novo", "em_contato", "qualificado", "convertido", "perdido"]);
+export const opportunityStatusEnum = pgEnum("opportunity_status", ["aberta", "ganha", "perdida", "cancelada"]);
+export const activityTipoEnum = pgEnum("activity_tipo", ["email", "chamada", "reuniao", "nota", "proposta", "outro"]);
+export const taskPrioridadeEnum = pgEnum("task_prioridade", ["baixa", "media", "alta", "critica"]);
+export const taskStatusEnum = pgEnum("task_status", ["pendente", "em_progresso", "concluida", "cancelada"]);
+export const proposalStatusEnum = pgEnum("proposal_status", ["rascunho", "enviada", "aceita", "rejeitada", "expirada"]);
+export const notificationTipoEnum = pgEnum("notification_tipo", ["task_vencida", "stage_mudou", "nova_atribuicao", "proposta_aceita", "lead_qualificado"]);
+export const aiInsightTipoEnum = pgEnum("ai_insight_tipo", ["resumo", "recomendacao", "risco", "oportunidade"]);
+
+// ============================================================================
+// TABLES
+// ============================================================================
+
 /**
- * Core user table with role-based access control
+ * Core user table with role-based access control and local auth
  * Roles: admin (full access), gerente (manage team), vendedor (own data)
  */
-export const users = mysqlTable("users", {
-  id: int("id").autoincrement().primaryKey(),
-  openId: varchar("openId", { length: 64 }).notNull().unique(),
+export const users = pgTable("users", {
+  id: serial("id").primaryKey(),
+  email: varchar("email", { length: 320 }).notNull().unique(),
+  passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   name: text("name"),
-  email: varchar("email", { length: 320 }).unique(),
-  loginMethod: varchar("loginMethod", { length: 64 }),
-  role: mysqlEnum("role", ["admin", "gerente", "vendedor"]).default("vendedor").notNull(),
+  role: userRoleEnum("role").default("vendedor").notNull(),
   departamento: varchar("departamento", { length: 255 }),
   ativo: boolean("ativo").default(true).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
-  lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+  lastSignedIn: timestamp("last_signed_in").defaultNow().notNull(),
 });
 
 export type User = typeof users.$inferSelect;
@@ -35,8 +55,8 @@ export type InsertUser = typeof users.$inferInsert;
 /**
  * Companies (Contas) - Main business accounts
  */
-export const companies = mysqlTable("companies", {
-  id: int("id").autoincrement().primaryKey(),
+export const companies = pgTable("companies", {
+  id: serial("id").primaryKey(),
   nome: varchar("nome", { length: 255 }).notNull(),
   cnpj: varchar("cnpj", { length: 20 }).unique(),
   email: varchar("email", { length: 320 }),
@@ -47,12 +67,12 @@ export const companies = mysqlTable("companies", {
   estado: varchar("estado", { length: 2 }),
   pais: varchar("pais", { length: 100 }),
   segmento: varchar("segmento", { length: 100 }),
-  tamanho: mysqlEnum("tamanho", ["micro", "pequena", "media", "grande", "multinacional"]),
-  receita_anual: decimal("receita_anual", { precision: 15, scale: 2 }),
-  responsavel_id: int("responsavel_id"),
-  status: mysqlEnum("status", ["ativa", "inativa", "prospect"]).default("prospect").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  tamanho: companyTamanhoEnum("tamanho"),
+  receita_anual: numeric("receita_anual", { precision: 15, scale: 2 }),
+  responsavel_id: integer("responsavel_id"),
+  status: companyStatusEnum("status").default("prospect").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Company = typeof companies.$inferSelect;
@@ -61,9 +81,9 @@ export type InsertCompany = typeof companies.$inferInsert;
 /**
  * Contacts - People within companies
  */
-export const contacts = mysqlTable("contacts", {
-  id: int("id").autoincrement().primaryKey(),
-  company_id: int("company_id").notNull(),
+export const contacts = pgTable("contacts", {
+  id: serial("id").primaryKey(),
+  company_id: integer("company_id").notNull(),
   nome: varchar("nome", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }).unique(),
   telefone: varchar("telefone", { length: 20 }),
@@ -71,8 +91,8 @@ export const contacts = mysqlTable("contacts", {
   departamento: varchar("departamento", { length: 100 }),
   linkedin: varchar("linkedin", { length: 255 }),
   principal: boolean("principal").default(false),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Contact = typeof contacts.$inferSelect;
@@ -81,20 +101,20 @@ export type InsertContact = typeof contacts.$inferInsert;
 /**
  * Leads - Potential opportunities
  */
-export const leads = mysqlTable("leads", {
-  id: int("id").autoincrement().primaryKey(),
-  company_id: int("company_id"),
-  contact_id: int("contact_id"),
+export const leads = pgTable("leads", {
+  id: serial("id").primaryKey(),
+  company_id: integer("company_id"),
+  contact_id: integer("contact_id"),
   titulo: varchar("titulo", { length: 255 }).notNull(),
-  descricao: longtext("descricao"),
+  descricao: text("descricao"),
   origem: varchar("origem", { length: 100 }),
-  qualificacao: mysqlEnum("qualificacao", ["frio", "morno", "quente", "qualificado"]).default("frio"),
-  valor_estimado: decimal("valor_estimado", { precision: 15, scale: 2 }),
-  responsavel_id: int("responsavel_id"),
-  status: mysqlEnum("status", ["novo", "em_contato", "qualificado", "convertido", "perdido"]).default("novo"),
+  qualificacao: leadQualificacaoEnum("qualificacao").default("frio"),
+  valor_estimado: numeric("valor_estimado", { precision: 15, scale: 2 }),
+  responsavel_id: integer("responsavel_id"),
+  status: leadStatusEnum("status").default("novo"),
   data_conversao: timestamp("data_conversao"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Lead = typeof leads.$inferSelect;
@@ -103,14 +123,14 @@ export type InsertLead = typeof leads.$inferInsert;
 /**
  * Pipeline Stages - Customizable opportunity stages
  */
-export const pipelineStages = mysqlTable("pipeline_stages", {
-  id: int("id").autoincrement().primaryKey(),
+export const pipelineStages = pgTable("pipeline_stages", {
+  id: serial("id").primaryKey(),
   nome: varchar("nome", { length: 100 }).notNull(),
-  ordem: int("ordem").notNull(),
+  ordem: integer("ordem").notNull(),
   cor: varchar("cor", { length: 7 }).default("#3B82F6"),
-  probabilidade_fechamento: int("probabilidade_fechamento").default(0),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  probabilidade_fechamento: integer("probabilidade_fechamento").default(0),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type PipelineStage = typeof pipelineStages.$inferSelect;
@@ -119,24 +139,24 @@ export type InsertPipelineStage = typeof pipelineStages.$inferInsert;
 /**
  * Opportunities - Sales opportunities
  */
-export const opportunities = mysqlTable("opportunities", {
-  id: int("id").autoincrement().primaryKey(),
-  company_id: int("company_id").notNull(),
-  contact_id: int("contact_id"),
-  lead_id: int("lead_id"),
+export const opportunities = pgTable("opportunities", {
+  id: serial("id").primaryKey(),
+  company_id: integer("company_id").notNull(),
+  contact_id: integer("contact_id"),
+  lead_id: integer("lead_id"),
   titulo: varchar("titulo", { length: 255 }).notNull(),
-  descricao: longtext("descricao"),
-  valor: decimal("valor", { precision: 15, scale: 2 }).notNull(),
+  descricao: text("descricao"),
+  valor: numeric("valor", { precision: 15, scale: 2 }).notNull(),
   moeda: varchar("moeda", { length: 3 }).default("BRL"),
-  stage_id: int("stage_id").notNull(),
-  responsavel_id: int("responsavel_id").notNull(),
+  stage_id: integer("stage_id").notNull(),
+  responsavel_id: integer("responsavel_id").notNull(),
   data_fechamento_prevista: timestamp("data_fechamento_prevista"),
-  probabilidade: int("probabilidade").default(0),
+  probabilidade: integer("probabilidade").default(0),
   motivo_ganho: varchar("motivo_ganho", { length: 255 }),
   motivo_perda: varchar("motivo_perda", { length: 255 }),
-  status: mysqlEnum("status", ["aberta", "ganha", "perdida", "cancelada"]).default("aberta"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  status: opportunityStatusEnum("status").default("aberta"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Opportunity = typeof opportunities.$inferSelect;
@@ -145,18 +165,18 @@ export type InsertOpportunity = typeof opportunities.$inferInsert;
 /**
  * Activities - Interactions timeline
  */
-export const activities = mysqlTable("activities", {
-  id: int("id").autoincrement().primaryKey(),
-  company_id: int("company_id"),
-  contact_id: int("contact_id"),
-  opportunity_id: int("opportunity_id"),
-  tipo: mysqlEnum("tipo", ["email", "chamada", "reuniao", "nota", "proposta", "outro"]).notNull(),
+export const activities = pgTable("activities", {
+  id: serial("id").primaryKey(),
+  company_id: integer("company_id"),
+  contact_id: integer("contact_id"),
+  opportunity_id: integer("opportunity_id"),
+  tipo: activityTipoEnum("tipo").notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
-  descricao: longtext("descricao"),
-  usuario_id: int("usuario_id").notNull(),
+  descricao: text("descricao"),
+  usuario_id: integer("usuario_id").notNull(),
   data_atividade: timestamp("data_atividade").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Activity = typeof activities.$inferSelect;
@@ -165,20 +185,20 @@ export type InsertActivity = typeof activities.$inferInsert;
 /**
  * Tasks - Follow-ups and reminders
  */
-export const tasks = mysqlTable("tasks", {
-  id: int("id").autoincrement().primaryKey(),
+export const tasks = pgTable("tasks", {
+  id: serial("id").primaryKey(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
-  descricao: longtext("descricao"),
-  opportunity_id: int("opportunity_id"),
-  contact_id: int("contact_id"),
-  company_id: int("company_id"),
-  responsavel_id: int("responsavel_id").notNull(),
+  descricao: text("descricao"),
+  opportunity_id: integer("opportunity_id"),
+  contact_id: integer("contact_id"),
+  company_id: integer("company_id"),
+  responsavel_id: integer("responsavel_id").notNull(),
   data_vencimento: timestamp("data_vencimento").notNull(),
-  prioridade: mysqlEnum("prioridade", ["baixa", "media", "alta", "critica"]).default("media"),
-  status: mysqlEnum("status", ["pendente", "em_progresso", "concluida", "cancelada"]).default("pendente"),
+  prioridade: taskPrioridadeEnum("prioridade").default("media"),
+  status: taskStatusEnum("status").default("pendente"),
   notificacao_enviada: boolean("notificacao_enviada").default(false),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Task = typeof tasks.$inferSelect;
@@ -187,21 +207,21 @@ export type InsertTask = typeof tasks.$inferInsert;
 /**
  * Proposals - Commercial proposals
  */
-export const proposals = mysqlTable("proposals", {
-  id: int("id").autoincrement().primaryKey(),
-  opportunity_id: int("opportunity_id").notNull(),
+export const proposals = pgTable("proposals", {
+  id: serial("id").primaryKey(),
+  opportunity_id: integer("opportunity_id").notNull(),
   numero: varchar("numero", { length: 50 }).unique().notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
-  descricao: longtext("descricao"),
-  valor: decimal("valor", { precision: 15, scale: 2 }).notNull(),
+  descricao: text("descricao"),
+  valor: numeric("valor", { precision: 15, scale: 2 }).notNull(),
   moeda: varchar("moeda", { length: 3 }).default("BRL"),
   condicoes_pagamento: text("condicoes_pagamento"),
   validade: timestamp("validade"),
-  status: mysqlEnum("status", ["rascunho", "enviada", "aceita", "rejeitada", "expirada"]).default("rascunho"),
-  versao: int("versao").default(1),
-  criado_por: int("criado_por").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  status: proposalStatusEnum("status").default("rascunho"),
+  versao: integer("versao").default(1),
+  criado_por: integer("criado_por").notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Proposal = typeof proposals.$inferSelect;
@@ -210,14 +230,14 @@ export type InsertProposal = typeof proposals.$inferInsert;
 /**
  * Proposal Items - Line items in proposals
  */
-export const proposalItems = mysqlTable("proposal_items", {
-  id: int("id").autoincrement().primaryKey(),
-  proposal_id: int("proposal_id").notNull(),
+export const proposalItems = pgTable("proposal_items", {
+  id: serial("id").primaryKey(),
+  proposal_id: integer("proposal_id").notNull(),
   descricao: varchar("descricao", { length: 255 }).notNull(),
-  quantidade: decimal("quantidade", { precision: 10, scale: 2 }).notNull(),
-  valor_unitario: decimal("valor_unitario", { precision: 15, scale: 2 }).notNull(),
-  subtotal: decimal("subtotal", { precision: 15, scale: 2 }).notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  quantidade: numeric("quantidade", { precision: 10, scale: 2 }).notNull(),
+  valor_unitario: numeric("valor_unitario", { precision: 15, scale: 2 }).notNull(),
+  subtotal: numeric("subtotal", { precision: 15, scale: 2 }).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type ProposalItem = typeof proposalItems.$inferSelect;
@@ -226,16 +246,16 @@ export type InsertProposalItem = typeof proposalItems.$inferInsert;
 /**
  * Notifications - Internal alerts
  */
-export const notifications = mysqlTable("notifications", {
-  id: int("id").autoincrement().primaryKey(),
-  usuario_id: int("usuario_id").notNull(),
-  tipo: mysqlEnum("tipo", ["task_vencida", "stage_mudou", "nova_atribuicao", "proposta_aceita", "lead_qualificado"]).notNull(),
+export const notifications = pgTable("notifications", {
+  id: serial("id").primaryKey(),
+  usuario_id: integer("usuario_id").notNull(),
+  tipo: notificationTipoEnum("tipo").notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
-  mensagem: longtext("mensagem"),
+  mensagem: text("mensagem"),
   link: varchar("link", { length: 255 }),
   lida: boolean("lida").default(false),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Notification = typeof notifications.$inferSelect;
@@ -244,18 +264,18 @@ export type InsertNotification = typeof notifications.$inferInsert;
 /**
  * Email Logs - Track automated emails
  */
-export const emailLogs = mysqlTable("email_logs", {
-  id: int("id").autoincrement().primaryKey(),
-  usuario_id: int("usuario_id").notNull(),
+export const emailLogs = pgTable("email_logs", {
+  id: serial("id").primaryKey(),
+  usuario_id: integer("usuario_id").notNull(),
   tipo: varchar("tipo", { length: 100 }).notNull(),
   destinatario: varchar("destinatario", { length: 320 }).notNull(),
   assunto: varchar("assunto", { length: 255 }).notNull(),
-  corpo: longtext("corpo"),
+  corpo: text("corpo"),
   relacionado_a: varchar("relacionado_a", { length: 100 }),
-  relacionado_id: int("relacionado_id"),
+  relacionado_id: integer("relacionado_id"),
   enviado: boolean("enviado").default(false),
   erro: text("erro"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type EmailLog = typeof emailLogs.$inferSelect;
@@ -264,13 +284,13 @@ export type InsertEmailLog = typeof emailLogs.$inferInsert;
 /**
  * AI Insights - Store AI-generated summaries and insights
  */
-export const aiInsights = mysqlTable("ai_insights", {
-  id: int("id").autoincrement().primaryKey(),
-  opportunity_id: int("opportunity_id").notNull(),
-  tipo: mysqlEnum("tipo", ["resumo", "proximos_passos", "probabilidade_fechamento"]).notNull(),
-  conteudo: longtext("conteudo").notNull(),
+export const aiInsights = pgTable("ai_insights", {
+  id: serial("id").primaryKey(),
+  opportunity_id: integer("opportunity_id").notNull(),
+  tipo: aiInsightTipoEnum("tipo").notNull(),
+  conteudo: text("conteudo").notNull(),
   gerado_em: timestamp("gerado_em").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
 });
 
 export type AIInsight = typeof aiInsights.$inferSelect;

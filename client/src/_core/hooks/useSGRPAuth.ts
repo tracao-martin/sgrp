@@ -6,9 +6,8 @@ export type UserRole = "admin" | "gerente" | "vendedor";
 
 export interface SGRPUser {
   id: number;
-  openId: string;
   name: string | null;
-  email: string | null;
+  email: string;
   role: UserRole;
   departamento: string | null;
   ativo: boolean;

@@ -100,3 +100,20 @@
 - [ ] Configurar Nginx reverse proxy + SSL Let's Encrypt
 - [ ] Iniciar aplicação com PM2
 - [ ] Testar acesso via dev.sgrp.tracaocomercial.com.br
+
+## Migração PostgreSQL + Auth Local + Deploy VPS
+- [x] Trocar driver mysql2 por postgres (drizzle-orm/postgres-js)
+- [x] Migrar schema Drizzle de mysqlTable para pgTable
+- [x] Atualizar db.ts para usar PostgreSQL
+- [x] Implementar autenticação local (email/senha com bcrypt + JWT)
+- [x] Criar páginas de login/registro local
+- [x] Remover dependências do OAuth Manus
+- [x] Testar build e testes localmente (21 testes passando)
+- [ ] Instalar PostgreSQL no VPS
+- [ ] Criar banco e tabelas no VPS
+- [ ] Configurar .env no VPS
+- [ ] Configurar Nginx reverse proxy + SSL Let's Encrypt
+- [ ] Iniciar app com PM2 e testar via dev.sgrp.tracaocomercial.com.br
+- [ ] Validar fluxo completo de autenticação local no navegador
+- [ ] Executar pnpm build e corrigir erros
+- [ ] Finalizar limpeza de OAuth Manus (renomear funções, remover textos inconsistentes)
