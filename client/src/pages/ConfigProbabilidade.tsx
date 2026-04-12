@@ -162,13 +162,13 @@ export default function ConfigProbabilidade() {
             <Percent className="w-7 h-7 text-green-400" />
             <h1 className="text-2xl font-bold">Probabilidade por Estágio</h1>
           </div>
-          <p className="text-gray-400 mt-1 ml-10">
+          <p className="text-muted-foreground mt-1 ml-10">
             Defina a probabilidade padrão de fechamento para cada estágio do funil
           </p>
         </div>
         <div className="flex gap-2">
           {hasChanges && (
-            <Button variant="outline" onClick={handleReset} className="border-gray-600">
+            <Button variant="outline" onClick={handleReset} className="border-border">
               <RotateCcw className="w-4 h-4 mr-2" />
               Restaurar
             </Button>
@@ -196,12 +196,12 @@ export default function ConfigProbabilidade() {
             }}
             className={
               selectedPipeline === c.id
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "border-gray-600 text-gray-300"
+                ? "bg-primary hover:bg-primary/90"
+                : "border-border text-foreground/80"
             }
           >
             {c.nome}
-            <Badge className="ml-2 bg-gray-600 text-gray-200 text-xs">{c.stages.length}</Badge>
+            <Badge className="ml-2 bg-[#444444] text-gray-200 text-xs">{c.stages.length}</Badge>
           </Button>
         ))}
       </div>
@@ -217,19 +217,19 @@ export default function ConfigProbabilidade() {
       )}
 
       {/* Templates */}
-      <Card className="bg-gray-800/50 border-gray-700">
+      <Card className="bg-card/50 border-border">
         <CardContent className="p-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <Info className="w-4 h-4 text-blue-400" />
-              <span className="text-sm text-gray-300">Templates de probabilidade:</span>
+              <Info className="w-4 h-4 text-primary" />
+              <span className="text-sm text-foreground/80">Templates de probabilidade:</span>
             </div>
             <div className="flex gap-2">
               <Button
                 variant="outline"
                 size="sm"
                 onClick={() => handleApplyTemplate("conservador")}
-                className="border-gray-600 text-xs"
+                className="border-border text-xs"
               >
                 Conservador (5-85%)
               </Button>
@@ -237,7 +237,7 @@ export default function ConfigProbabilidade() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleApplyTemplate("moderado")}
-                className="border-gray-600 text-xs"
+                className="border-border text-xs"
               >
                 Moderado (10-90%)
               </Button>
@@ -245,7 +245,7 @@ export default function ConfigProbabilidade() {
                 variant="outline"
                 size="sm"
                 onClick={() => handleApplyTemplate("agressivo")}
-                className="border-gray-600 text-xs"
+                className="border-border text-xs"
               >
                 Agressivo (20-95%)
               </Button>
@@ -256,10 +256,10 @@ export default function ConfigProbabilidade() {
 
       {/* Stages Probability Table */}
       {currentConfig && (
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5 text-blue-400" />
+              <BarChart3 className="w-5 h-5 text-primary" />
               {currentConfig.nome}
             </CardTitle>
           </CardHeader>
@@ -279,7 +279,7 @@ export default function ConfigProbabilidade() {
                       />
                       <div>
                         <span className="text-sm font-medium">{stage.nome}</span>
-                        <span className="text-xs text-gray-500 ml-2">#{stage.ordem}</span>
+                        <span className="text-xs text-muted-foreground ml-2">#{stage.ordem}</span>
                       </div>
                     </div>
 
@@ -305,11 +305,11 @@ export default function ConfigProbabilidade() {
                         onChange={(e) =>
                           handleProbabilityChange(stage.id, parseInt(e.target.value) || 0)
                         }
-                        className={`bg-gray-700 border-gray-600 text-center w-16 h-8 text-sm ${
+                        className={`bg-[#333333] border-border text-center w-16 h-8 text-sm ${
                           isInvalid ? "border-red-500" : ""
                         }`}
                       />
-                      <span className="text-gray-400 text-sm">%</span>
+                      <span className="text-muted-foreground text-sm">%</span>
                     </div>
 
                     {/* Status */}
@@ -326,7 +326,7 @@ export default function ConfigProbabilidade() {
 
                   {/* Progress Bar Visual */}
                   <div className="ml-[17rem] flex-1">
-                    <div className="h-2 bg-gray-700 rounded-full overflow-hidden">
+                    <div className="h-2 bg-[#333333] rounded-full overflow-hidden">
                       <div
                         className="h-full rounded-full transition-all duration-300"
                         style={{
@@ -338,7 +338,7 @@ export default function ConfigProbabilidade() {
                   </div>
 
                   {idx < currentConfig.stages.length - 1 && (
-                    <Separator className="bg-gray-700/50" />
+                    <Separator className="bg-[#333333]/50" />
                   )}
                 </div>
               );
@@ -349,7 +349,7 @@ export default function ConfigProbabilidade() {
 
       {/* Visual Chart */}
       {currentConfig && (
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 text-base">
               <TrendingUp className="w-5 h-5 text-green-400" />
@@ -371,7 +371,7 @@ export default function ConfigProbabilidade() {
                       }}
                     />
                   </div>
-                  <span className="text-[10px] text-gray-400 text-center leading-tight max-w-[80px] truncate">
+                  <span className="text-[10px] text-muted-foreground text-center leading-tight max-w-[80px] truncate">
                     {stage.nome}
                   </span>
                 </div>

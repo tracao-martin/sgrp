@@ -128,22 +128,22 @@ export function KanbanBoard() {
               </div>
 
               {/* Cards Container */}
-              <div className="flex flex-col gap-2 min-h-96 bg-gray-100 dark:bg-gray-800 rounded-lg p-2">
+              <div className="flex flex-col gap-2 min-h-96 bg-[#f5f5f5] dark:bg-card rounded-lg p-2">
                 {stageOpps.map((opp) => (
                   <Card
                     key={opp.id}
                     draggable
                     onDragStart={(e) => handleDragStart(e, opp)}
                     onClick={() => setSelectedDeal(opp)}
-                    className="cursor-move hover:shadow-lg transition-shadow p-3 bg-white dark:bg-gray-700"
+                    className="cursor-move hover:shadow-lg transition-shadow p-3 bg-white dark:bg-[#333333]"
                   >
                     <div className="flex gap-2">
-                      <GripVertical className="w-4 h-4 text-gray-400 flex-shrink-0 mt-1" />
+                      <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-1" />
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold text-sm truncate">
                           {opp.titulo}
                         </h4>
-                        <p className="text-xs text-gray-500 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {formatCurrency(Number(opp.valor ?? opp.valor_estimado ?? 0))}
                         </p>
                         <div className="flex gap-2 mt-2">
@@ -172,7 +172,7 @@ export function KanbanBoard() {
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="w-full mt-auto text-gray-500 hover:text-gray-700"
+                  className="w-full mt-auto text-muted-foreground hover:text-gray-700"
                 >
                   <Plus className="w-4 h-4 mr-2" />
                   Nova Oportunidade

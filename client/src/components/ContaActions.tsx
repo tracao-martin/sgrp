@@ -75,11 +75,11 @@ export function ContaActions({ conta, onSuccess }: ContaActionsProps) {
       {/* View */}
       <Dialog open={openView} onOpenChange={setOpenView}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300">
+          <Button variant="ghost" size="sm" className="text-primary hover:text-primary">
             <Eye className="w-4 h-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
+        <DialogContent className="bg-card border-border max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes da Conta</DialogTitle>
             <DialogDescription>{conta.nome}</DialogDescription>
@@ -87,43 +87,43 @@ export function ContaActions({ conta, onSuccess }: ContaActionsProps) {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-gray-400">Empresa</label>
+                <label className="text-xs text-muted-foreground">Empresa</label>
                 <p className="text-white font-medium">{conta.nome}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">CNPJ</label>
+                <label className="text-xs text-muted-foreground">CNPJ</label>
                 <p className="text-white font-medium">{conta.cnpj || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Email</label>
+                <label className="text-xs text-muted-foreground">Email</label>
                 <p className="text-white font-medium">{conta.email || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Telefone</label>
+                <label className="text-xs text-muted-foreground">Telefone</label>
                 <p className="text-white font-medium">{conta.telefone || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Website</label>
+                <label className="text-xs text-muted-foreground">Website</label>
                 <p className="text-white font-medium">{conta.website || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Segmento</label>
+                <label className="text-xs text-muted-foreground">Segmento</label>
                 <p className="text-white font-medium">{conta.segmento || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Cidade</label>
+                <label className="text-xs text-muted-foreground">Cidade</label>
                 <p className="text-white font-medium">{conta.cidade || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Estado</label>
+                <label className="text-xs text-muted-foreground">Estado</label>
                 <p className="text-white font-medium">{conta.estado || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Tamanho</label>
+                <label className="text-xs text-muted-foreground">Tamanho</label>
                 <p className="text-white font-medium">{conta.tamanho || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Status</label>
+                <label className="text-xs text-muted-foreground">Status</label>
                 <p className="text-white font-medium">{conta.status || "-"}</p>
               </div>
             </div>
@@ -138,7 +138,7 @@ export function ContaActions({ conta, onSuccess }: ContaActionsProps) {
             <Edit className="w-4 h-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
+        <DialogContent className="bg-card border-border max-w-2xl">
           <DialogHeader>
             <DialogTitle>Editar Conta</DialogTitle>
             <DialogDescription>Atualize os dados da empresa</DialogDescription>
@@ -146,40 +146,40 @@ export function ContaActions({ conta, onSuccess }: ContaActionsProps) {
           <form onSubmit={handleUpdate} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-300">Nome</label>
+                <label className="text-sm font-medium text-foreground/80">Nome</label>
                 <Input
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  className="bg-gray-700 border-gray-600 mt-1"
+                  className="bg-[#333333] border-border mt-1"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-300">CNPJ</label>
+                <label className="text-sm font-medium text-foreground/80">CNPJ</label>
                 <Input
                   value={formData.cnpj}
                   onChange={(e) => setFormData({ ...formData, cnpj: e.target.value })}
-                  className="bg-gray-700 border-gray-600 mt-1"
+                  className="bg-[#333333] border-border mt-1"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-300">Email</label>
+                <label className="text-sm font-medium text-foreground/80">Email</label>
                 <Input
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="bg-gray-700 border-gray-600 mt-1"
+                  className="bg-[#333333] border-border mt-1"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-300">Telefone</label>
+                <label className="text-sm font-medium text-foreground/80">Telefone</label>
                 <Input
                   value={formData.telefone}
                   onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                  className="bg-gray-700 border-gray-600 mt-1"
+                  className="bg-[#333333] border-border mt-1"
                 />
               </div>
             </div>
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-700">
-              <Button type="button" variant="outline" onClick={() => setOpenEdit(false)} className="border-gray-600">
+            <div className="flex gap-3 justify-end pt-4 border-t border-border">
+              <Button type="button" variant="outline" onClick={() => setOpenEdit(false)} className="border-border">
                 Cancelar
               </Button>
               <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={updateMutation.isPending}>
@@ -198,13 +198,13 @@ export function ContaActions({ conta, onSuccess }: ContaActionsProps) {
             <Trash2 className="w-4 h-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-gray-800 border-gray-700">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle>Deletar Conta</DialogTitle>
             <DialogDescription>Tem certeza que deseja deletar "{conta.nome}"?</DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 justify-end pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpenDelete(false)} className="border-gray-600">
+            <Button type="button" variant="outline" onClick={() => setOpenDelete(false)} className="border-border">
               Cancelar
             </Button>
             <Button type="button" className="bg-red-600 hover:bg-red-700" onClick={handleDelete} disabled={deleteMutation.isPending}>

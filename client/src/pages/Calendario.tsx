@@ -11,7 +11,7 @@ const eventos = [
 ];
 
 const eventColors = {
-  reuniao: "bg-blue-500",
+  reuniao: "bg-primary",
   email: "bg-purple-500",
   whatsapp: "bg-green-500",
   tarefa: "bg-orange-500",
@@ -55,9 +55,9 @@ export default function Calendario() {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold">Calendário</h1>
-          <p className="text-gray-400 mt-1">Visualize suas atividades e agendamentos</p>
+          <p className="text-muted-foreground mt-1">Visualize suas atividades e agendamentos</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button className="bg-primary hover:bg-primary/90">
           <Plus className="w-4 h-4 mr-2" />
           Novo Evento
         </Button>
@@ -67,14 +67,14 @@ export default function Calendario() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Calendar Grid */}
         <div className="lg:col-span-2">
-          <Card className="bg-gray-800 border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader>
               <div className="flex items-center justify-between">
-                <button onClick={prevMonth} className="p-2 hover:bg-gray-700 rounded">
+                <button onClick={prevMonth} className="p-2 hover:bg-[#333333] rounded">
                   <ChevronLeft className="w-5 h-5" />
                 </button>
                 <h2 className="text-lg font-semibold capitalize">{monthName}</h2>
-                <button onClick={nextMonth} className="p-2 hover:bg-gray-700 rounded">
+                <button onClick={nextMonth} className="p-2 hover:bg-[#333333] rounded">
                   <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
@@ -83,7 +83,7 @@ export default function Calendario() {
               {/* Day Headers */}
               <div className="grid grid-cols-7 gap-2 mb-4">
                 {["Dom", "Seg", "Ter", "Qua", "Qui", "Sex", "Sab"].map((day) => (
-                  <div key={day} className="text-center text-sm font-medium text-gray-400 py-2">
+                  <div key={day} className="text-center text-sm font-medium text-muted-foreground py-2">
                     {day}
                   </div>
                 ))}
@@ -106,11 +106,11 @@ export default function Calendario() {
                       key={day}
                       className={`aspect-square p-2 rounded-lg border-2 transition-colors ${
                         isToday
-                          ? "border-blue-500 bg-blue-900/20"
+                          ? "border-primary bg-primary/15"
                           : dayEventos.length > 0
-                            ? "border-gray-600 bg-gray-700/50"
-                            : "border-gray-700 bg-gray-800"
-                      } hover:border-gray-500`}
+                            ? "border-border bg-[#333333]/50"
+                            : "border-border bg-card"
+                      } hover:border-primary/40`}
                     >
                       <div className="text-sm font-medium mb-1">{day}</div>
                       <div className="space-y-1">
@@ -125,7 +125,7 @@ export default function Calendario() {
                           </div>
                         ))}
                         {dayEventos.length > 2 && (
-                          <div className="text-xs text-gray-400 px-1">
+                          <div className="text-xs text-muted-foreground px-1">
                             +{dayEventos.length - 2} mais
                           </div>
                         )}
@@ -140,7 +140,7 @@ export default function Calendario() {
 
         {/* Upcoming Events */}
         <div>
-          <Card className="bg-gray-800 border-gray-700">
+          <Card className="bg-card border-border">
             <CardHeader>
               <CardTitle>Próximos Eventos</CardTitle>
               <CardDescription>Próximos 7 dias</CardDescription>
@@ -148,7 +148,7 @@ export default function Calendario() {
             <CardContent>
               <div className="space-y-3">
                 {eventos.map((evento, idx) => (
-                  <div key={idx} className="p-3 bg-gray-700 rounded-lg">
+                  <div key={idx} className="p-3 bg-[#333333] rounded-lg">
                     <div className="flex items-start gap-2">
                       <div
                         className={`w-2 h-2 rounded-full mt-2 ${
@@ -157,10 +157,10 @@ export default function Calendario() {
                       />
                       <div className="flex-1">
                         <p className="text-sm font-medium">{evento.title}</p>
-                        <p className="text-xs text-gray-400 mt-1">
+                        <p className="text-xs text-muted-foreground mt-1">
                           {evento.date}/04 às {evento.time}
                         </p>
-                        <span className="text-xs bg-gray-600 px-2 py-1 rounded mt-2 inline-block">
+                        <span className="text-xs bg-[#444444] px-2 py-1 rounded mt-2 inline-block">
                           {eventLabels[evento.type as keyof typeof eventLabels]}
                         </span>
                       </div>
@@ -174,13 +174,13 @@ export default function Calendario() {
       </div>
 
       {/* Legend */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardContent className="pt-6">
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             {Object.entries(eventColors).map(([key, color]) => (
               <div key={key} className="flex items-center gap-2">
                 <div className={`w-3 h-3 rounded-full ${color}`} />
-                <span className="text-sm text-gray-300 capitalize">
+                <span className="text-sm text-foreground/80 capitalize">
                   {eventLabels[key as keyof typeof eventLabels]}
                 </span>
               </div>

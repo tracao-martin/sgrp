@@ -48,7 +48,7 @@ interface Cadencia {
 }
 
 const TIPO_STEP_CONFIG: Record<string, { label: string; icon: React.ReactNode; cor: string }> = {
-  email: { label: "Email", icon: <Mail className="w-4 h-4" />, cor: "bg-blue-900/30 text-blue-300 border-blue-800" },
+  email: { label: "Email", icon: <Mail className="w-4 h-4" />, cor: "bg-primary/20 text-primary border-primary/30" },
   ligacao: { label: "Ligação", icon: <Phone className="w-4 h-4" />, cor: "bg-green-900/30 text-green-300 border-green-800" },
   whatsapp: { label: "WhatsApp", icon: <MessageSquare className="w-4 h-4" />, cor: "bg-emerald-900/30 text-emerald-300 border-emerald-800" },
   tarefa: { label: "Tarefa", icon: <CheckSquare className="w-4 h-4" />, cor: "bg-yellow-900/30 text-yellow-300 border-yellow-800" },
@@ -263,7 +263,7 @@ export default function ConfigCadencias() {
             <Zap className="w-7 h-7 text-purple-400" />
             <h1 className="text-2xl font-bold">Cadências de Vendas</h1>
           </div>
-          <p className="text-gray-400 mt-1 ml-10">
+          <p className="text-muted-foreground mt-1 ml-10">
             Configure sequências de follow-up automatizadas para cada etapa do processo comercial
           </p>
         </div>
@@ -275,22 +275,22 @@ export default function ConfigCadencias() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-purple-400">{cadencias.length}</p>
-            <p className="text-xs text-gray-400">Cadências criadas</p>
+            <p className="text-xs text-muted-foreground">Cadências criadas</p>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-green-400">{totalAtivas}</p>
-            <p className="text-xs text-gray-400">Ativas</p>
+            <p className="text-xs text-muted-foreground">Ativas</p>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-blue-400">{totalSteps}</p>
-            <p className="text-xs text-gray-400">Steps totais</p>
+            <p className="text-2xl font-bold text-primary">{totalSteps}</p>
+            <p className="text-xs text-muted-foreground">Steps totais</p>
           </CardContent>
         </Card>
       </div>
@@ -302,42 +302,42 @@ export default function ConfigCadencias() {
           const duracao = cadencia.steps.length > 0 ? Math.max(...cadencia.steps.map((s) => s.dia)) : 0;
 
           return (
-            <Card key={cadencia.id} className={`border-gray-700 overflow-hidden ${cadencia.ativa ? "bg-gray-800" : "bg-gray-800/50"}`}>
+            <Card key={cadencia.id} className={`border-border overflow-hidden ${cadencia.ativa ? "bg-card" : "bg-card/50"}`}>
               {/* Header */}
               <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-750"
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#2f2f2f]"
                 onClick={() => setExpandedCadencia(isExpanded ? null : cadencia.id)}
               >
                 <div className="flex items-center gap-3">
-                  {isExpanded ? <ChevronDown className="w-5 h-5 text-gray-400" /> : <ChevronRight className="w-5 h-5 text-gray-400" />}
+                  {isExpanded ? <ChevronDown className="w-5 h-5 text-muted-foreground" /> : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
                   <div>
                     <div className="flex items-center gap-2">
                       <h3 className="font-semibold">{cadencia.nome}</h3>
                       {cadencia.ativa ? (
                         <Badge className="bg-green-900/30 text-green-300 text-xs">Ativa</Badge>
                       ) : (
-                        <Badge className="bg-gray-600/50 text-gray-400 text-xs">Inativa</Badge>
+                        <Badge className="bg-[#444444]/50 text-muted-foreground text-xs">Inativa</Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-gray-500">Gatilho: {cadencia.gatilho}</span>
-                      <span className="text-xs text-gray-500">·</span>
-                      <span className="text-xs text-gray-500">{cadencia.steps.length} steps</span>
-                      <span className="text-xs text-gray-500">·</span>
-                      <span className="text-xs text-gray-500">{duracao} dias</span>
+                      <span className="text-xs text-muted-foreground">Gatilho: {cadencia.gatilho}</span>
+                      <span className="text-xs text-muted-foreground">·</span>
+                      <span className="text-xs text-muted-foreground">{cadencia.steps.length} steps</span>
+                      <span className="text-xs text-muted-foreground">·</span>
+                      <span className="text-xs text-muted-foreground">{duracao} dias</span>
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                  <div className="text-right text-xs text-gray-400">
+                  <div className="text-right text-xs text-muted-foreground">
                     <p>{cadencia.totalContatos} contatos</p>
                     <p className="text-green-400">{cadencia.taxaResposta}% resposta</p>
                   </div>
-                  <Button variant="ghost" size="sm" onClick={() => handleDuplicateCadencia(cadencia.id)} className="text-gray-400 hover:text-white" title="Duplicar">
+                  <Button variant="ghost" size="sm" onClick={() => handleDuplicateCadencia(cadencia.id)} className="text-muted-foreground hover:text-white" title="Duplicar">
                     <Copy className="w-4 h-4" />
                   </Button>
                   <Switch checked={cadencia.ativa} onCheckedChange={() => handleToggleCadencia(cadencia.id)} />
-                  <Button variant="ghost" size="sm" onClick={() => openForm(cadencia)} className="text-blue-400 hover:text-blue-300">
+                  <Button variant="ghost" size="sm" onClick={() => openForm(cadencia)} className="text-primary hover:text-primary">
                     <Pencil className="w-4 h-4" />
                   </Button>
                   <Button variant="ghost" size="sm" onClick={() => handleDeleteCadencia(cadencia.id)} className="text-red-400 hover:text-red-300">
@@ -348,8 +348,8 @@ export default function ConfigCadencias() {
 
               {/* Expanded: Timeline */}
               {isExpanded && (
-                <div className="border-t border-gray-700 p-4">
-                  <p className="text-sm text-gray-300 mb-4">{cadencia.descricao}</p>
+                <div className="border-t border-border p-4">
+                  <p className="text-sm text-foreground/80 mb-4">{cadencia.descricao}</p>
 
                   {/* Timeline */}
                   <div className="space-y-0">
@@ -359,11 +359,11 @@ export default function ConfigCadencias() {
                         <div key={step.id} className="flex gap-4">
                           {/* Timeline Line */}
                           <div className="flex flex-col items-center w-16 flex-shrink-0">
-                            <div className="text-xs font-bold text-gray-300 bg-gray-700 px-2 py-1 rounded mb-1">
+                            <div className="text-xs font-bold text-foreground/80 bg-[#333333] px-2 py-1 rounded mb-1">
                               Dia {step.dia}
                             </div>
                             {idx < cadencia.steps.length - 1 && (
-                              <div className="flex-1 w-px bg-gray-600 min-h-[20px]" />
+                              <div className="flex-1 w-px bg-[#444444] min-h-[20px]" />
                             )}
                           </div>
 
@@ -376,7 +376,7 @@ export default function ConfigCadencias() {
                                 <span className="font-medium text-sm">{step.titulo}</span>
                               </div>
                               <div className="flex gap-1">
-                                <Button variant="ghost" size="sm" onClick={() => openStepForm(cadencia.id, step)} className="text-blue-400 hover:text-blue-300 h-6 w-6 p-0">
+                                <Button variant="ghost" size="sm" onClick={() => openStepForm(cadencia.id, step)} className="text-primary hover:text-primary h-6 w-6 p-0">
                                   <Pencil className="w-3 h-3" />
                                 </Button>
                                 <Button variant="ghost" size="sm" onClick={() => handleDeleteStep(cadencia.id, step.id)} className="text-red-400 hover:text-red-300 h-6 w-6 p-0">
@@ -384,7 +384,7 @@ export default function ConfigCadencias() {
                                 </Button>
                               </div>
                             </div>
-                            <p className="text-xs text-gray-400 mt-1">{step.descricao}</p>
+                            <p className="text-xs text-muted-foreground mt-1">{step.descricao}</p>
                           </div>
                         </div>
                       );
@@ -396,14 +396,14 @@ export default function ConfigCadencias() {
                     variant="outline"
                     size="sm"
                     onClick={() => openStepForm(cadencia.id)}
-                    className="mt-2 border-gray-600 border-dashed w-full"
+                    className="mt-2 border-border border-dashed w-full"
                   >
                     <Plus className="w-4 h-4 mr-2" />
                     Adicionar Step
                   </Button>
 
                   {cadencia.steps.length === 0 && (
-                    <div className="text-center py-8 text-gray-400">
+                    <div className="text-center py-8 text-muted-foreground">
                       <Zap className="w-10 h-10 mx-auto mb-3 opacity-30" />
                       <p>Nenhum step configurado</p>
                       <p className="text-xs mt-1">Adicione o primeiro step para definir a sequência</p>
@@ -418,44 +418,44 @@ export default function ConfigCadencias() {
 
       {/* Cadência Form Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-lg">
+        <DialogContent className="bg-card border-border max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingCadencia ? "Editar Cadência" : "Nova Cadência"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div>
-              <label className="text-sm font-medium text-gray-300">Nome *</label>
+              <label className="text-sm font-medium text-foreground/80">Nome *</label>
               <Input
                 value={form.nome}
                 onChange={(e) => setForm({ ...form, nome: e.target.value })}
                 placeholder="Ex: Prospecção Outbound - ICP Tier 1"
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Descrição</label>
+              <label className="text-sm font-medium text-foreground/80">Descrição</label>
               <Textarea
                 value={form.descricao}
                 onChange={(e) => setForm({ ...form, descricao: e.target.value })}
                 placeholder="Descreva o objetivo e contexto desta cadência..."
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
                 rows={3}
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Gatilho</label>
+              <label className="text-sm font-medium text-foreground/80">Gatilho</label>
               <select
                 value={form.gatilho}
                 onChange={(e) => setForm({ ...form, gatilho: e.target.value })}
-                className="mt-1 w-full h-10 px-3 rounded-md bg-gray-700 border border-gray-600 text-sm text-white"
+                className="mt-1 w-full h-10 px-3 rounded-md bg-[#333333] border border-border text-sm text-white"
               >
                 {GATILHOS.map((g) => (
                   <option key={g} value={g}>{g}</option>
                 ))}
               </select>
             </div>
-            <div className="flex gap-3 justify-end pt-2 border-t border-gray-700">
-              <Button variant="outline" onClick={() => setShowForm(false)} className="border-gray-600">Cancelar</Button>
+            <div className="flex gap-3 justify-end pt-2 border-t border-border">
+              <Button variant="outline" onClick={() => setShowForm(false)} className="border-border">Cancelar</Button>
               <Button onClick={handleSaveCadencia} className="bg-yellow-500 hover:bg-yellow-600 text-black">
                 {editingCadencia ? "Salvar Alterações" : "Criar Cadência"}
               </Button>
@@ -469,28 +469,28 @@ export default function ConfigCadencias() {
         open={!!showStepForm || !!editingStep}
         onOpenChange={() => { setShowStepForm(null); setEditingStep(null); }}
       >
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-lg">
+        <DialogContent className="bg-card border-border max-w-lg">
           <DialogHeader>
             <DialogTitle>{editingStep ? "Editar Step" : "Novo Step"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-300">Dia</label>
+                <label className="text-sm font-medium text-foreground/80">Dia</label>
                 <Input
                   type="number"
                   min={1}
                   value={stepForm.dia}
                   onChange={(e) => setStepForm({ ...stepForm, dia: parseInt(e.target.value) || 1 })}
-                  className="mt-1 bg-gray-700 border-gray-600"
+                  className="mt-1 bg-[#333333] border-border"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-300">Tipo de Ação</label>
+                <label className="text-sm font-medium text-foreground/80">Tipo de Ação</label>
                 <select
                   value={stepForm.tipo}
                   onChange={(e) => setStepForm({ ...stepForm, tipo: e.target.value as CadenciaStep["tipo"] })}
-                  className="mt-1 w-full h-10 px-3 rounded-md bg-gray-700 border border-gray-600 text-sm text-white"
+                  className="mt-1 w-full h-10 px-3 rounded-md bg-[#333333] border border-border text-sm text-white"
                 >
                   {Object.entries(TIPO_STEP_CONFIG).map(([k, v]) => (
                     <option key={k} value={k}>{v.label}</option>
@@ -499,26 +499,26 @@ export default function ConfigCadencias() {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Título *</label>
+              <label className="text-sm font-medium text-foreground/80">Título *</label>
               <Input
                 value={stepForm.titulo}
                 onChange={(e) => setStepForm({ ...stepForm, titulo: e.target.value })}
                 placeholder="Ex: Email de abertura personalizado"
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Descrição / Instruções</label>
+              <label className="text-sm font-medium text-foreground/80">Descrição / Instruções</label>
               <Textarea
                 value={stepForm.descricao}
                 onChange={(e) => setStepForm({ ...stepForm, descricao: e.target.value })}
                 placeholder="Descreva o que o vendedor deve fazer neste step..."
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
                 rows={3}
               />
             </div>
-            <div className="flex gap-3 justify-end pt-2 border-t border-gray-700">
-              <Button variant="outline" onClick={() => { setShowStepForm(null); setEditingStep(null); }} className="border-gray-600">Cancelar</Button>
+            <div className="flex gap-3 justify-end pt-2 border-t border-border">
+              <Button variant="outline" onClick={() => { setShowStepForm(null); setEditingStep(null); }} className="border-border">Cancelar</Button>
               <Button onClick={handleSaveStep} className="bg-yellow-500 hover:bg-yellow-600 text-black">
                 {editingStep ? "Salvar" : "Adicionar Step"}
               </Button>

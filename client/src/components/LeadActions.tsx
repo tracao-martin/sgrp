@@ -67,35 +67,35 @@ export function LeadActions({ lead, onSuccess }: LeadActionsProps) {
       {/* View */}
       <Dialog open={openView} onOpenChange={setOpenView}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300">
+          <Button variant="ghost" size="sm" className="text-primary hover:text-primary">
             <Eye className="w-4 h-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
+        <DialogContent className="bg-card border-border max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes do Lead</DialogTitle>
             <DialogDescription>{lead.titulo}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4">
             <div>
-              <label className="text-xs text-gray-400">Título</label>
+              <label className="text-xs text-muted-foreground">Título</label>
               <p className="text-white font-medium">{lead.titulo}</p>
             </div>
             <div>
-              <label className="text-xs text-gray-400">Descrição</label>
+              <label className="text-xs text-muted-foreground">Descrição</label>
               <p className="text-white font-medium">{lead.descricao || "-"}</p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-gray-400">Origem</label>
+                <label className="text-xs text-muted-foreground">Origem</label>
                 <p className="text-white font-medium">{lead.origem || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Qualificação</label>
+                <label className="text-xs text-muted-foreground">Qualificação</label>
                 <p className="text-white font-medium">{lead.qualificacao || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Valor Estimado</label>
+                <label className="text-xs text-muted-foreground">Valor Estimado</label>
                 <p className="text-white font-medium">{lead.valor_estimado ? `R$ ${(lead.valor_estimado / 1000).toFixed(0)}K` : "-"}</p>
               </div>
             </div>
@@ -110,44 +110,44 @@ export function LeadActions({ lead, onSuccess }: LeadActionsProps) {
             <Edit className="w-4 h-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
+        <DialogContent className="bg-card border-border max-w-2xl">
           <DialogHeader>
             <DialogTitle>Editar Lead</DialogTitle>
             <DialogDescription>Atualize os dados do lead</DialogDescription>
           </DialogHeader>
           <form onSubmit={handleUpdate} className="space-y-4">
             <div>
-              <label className="text-sm font-medium text-gray-300">Título</label>
+              <label className="text-sm font-medium text-foreground/80">Título</label>
               <Input
                 value={formData.titulo}
                 onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-                className="bg-gray-700 border-gray-600 mt-1"
+                className="bg-[#333333] border-border mt-1"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Descrição</label>
+              <label className="text-sm font-medium text-foreground/80">Descrição</label>
               <textarea
                 value={formData.descricao}
                 onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-                className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-gray-300 mt-1 resize-none"
+                className="w-full bg-[#333333] border border-border rounded px-3 py-2 text-foreground/80 mt-1 resize-none"
                 rows={3}
               />
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-300">Origem</label>
+                <label className="text-sm font-medium text-foreground/80">Origem</label>
                 <Input
                   value={formData.origem}
                   onChange={(e) => setFormData({ ...formData, origem: e.target.value })}
-                  className="bg-gray-700 border-gray-600 mt-1"
+                  className="bg-[#333333] border-border mt-1"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-300">Qualificação</label>
+                <label className="text-sm font-medium text-foreground/80">Qualificação</label>
                 <select
                   value={formData.qualificacao}
                   onChange={(e) => setFormData({ ...formData, qualificacao: e.target.value })}
-                  className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-gray-300 mt-1"
+                  className="w-full bg-[#333333] border border-border rounded px-3 py-2 text-foreground/80 mt-1"
                 >
                   <option value="frio">Frio</option>
                   <option value="morno">Morno</option>
@@ -157,16 +157,16 @@ export function LeadActions({ lead, onSuccess }: LeadActionsProps) {
               </div>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Valor Estimado</label>
+              <label className="text-sm font-medium text-foreground/80">Valor Estimado</label>
               <Input
                 type="number"
                 value={formData.valor_estimado}
                 onChange={(e) => setFormData({ ...formData, valor_estimado: e.target.value })}
-                className="bg-gray-700 border-gray-600 mt-1"
+                className="bg-[#333333] border-border mt-1"
               />
             </div>
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-700">
-              <Button type="button" variant="outline" onClick={() => setOpenEdit(false)} className="border-gray-600">
+            <div className="flex gap-3 justify-end pt-4 border-t border-border">
+              <Button type="button" variant="outline" onClick={() => setOpenEdit(false)} className="border-border">
                 Cancelar
               </Button>
               <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={updateMutation.isPending}>
@@ -185,13 +185,13 @@ export function LeadActions({ lead, onSuccess }: LeadActionsProps) {
             <Trash2 className="w-4 h-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-gray-800 border-gray-700">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle>Deletar Lead</DialogTitle>
             <DialogDescription>Tem certeza que deseja deletar "{lead.titulo}"?</DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 justify-end pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpenDelete(false)} className="border-gray-600">
+            <Button type="button" variant="outline" onClick={() => setOpenDelete(false)} className="border-border">
               Cancelar
             </Button>
             <Button type="button" className="bg-red-600 hover:bg-red-700" onClick={handleDelete}>

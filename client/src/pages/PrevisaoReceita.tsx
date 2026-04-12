@@ -103,14 +103,14 @@ export default function PrevisaoReceita() {
   if (opportunitiesQuery.isLoading || stagesQuery.isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader className="w-8 h-8 animate-spin text-blue-400" />
+        <Loader className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
 
   if (!analysis) {
     return (
-      <div className="text-center py-16 text-gray-400">
+      <div className="text-center py-16 text-muted-foreground">
         <BarChart3 className="w-12 h-12 mx-auto mb-4 opacity-50" />
         <p>Nenhuma oportunidade encontrada para gerar previsão</p>
       </div>
@@ -122,26 +122,26 @@ export default function PrevisaoReceita() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Previsão de Receita</h1>
-        <p className="text-gray-400 mt-1">Projeção baseada em {analysis.dealCount} deals abertos no pipeline</p>
+        <p className="text-muted-foreground mt-1">Projeção baseada em {analysis.dealCount} deals abertos no pipeline</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-900/30 rounded-lg">
-                <DollarSign className="w-5 h-5 text-blue-400" />
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <DollarSign className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <p className="text-2xl font-bold">R$ {(analysis.totalPipeline / 1000).toFixed(0)}K</p>
-                <p className="text-xs text-gray-400">Pipeline Total</p>
+                <p className="text-xs text-muted-foreground">Pipeline Total</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-green-900/30 rounded-lg">
@@ -149,13 +149,13 @@ export default function PrevisaoReceita() {
               </div>
               <div>
                 <p className="text-2xl font-bold">R$ {(analysis.totalWeighted / 1000).toFixed(0)}K</p>
-                <p className="text-xs text-gray-400">Receita Ponderada</p>
+                <p className="text-xs text-muted-foreground">Receita Ponderada</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-yellow-900/30 rounded-lg">
@@ -163,13 +163,13 @@ export default function PrevisaoReceita() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{analysis.avgProbability}%</p>
-                <p className="text-xs text-gray-400">Prob. Média</p>
+                <p className="text-xs text-muted-foreground">Prob. Média</p>
               </div>
             </div>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-900/30 rounded-lg">
@@ -177,7 +177,7 @@ export default function PrevisaoReceita() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{analysis.dealCount}</p>
-                <p className="text-xs text-gray-400">Deals Abertos</p>
+                <p className="text-xs text-muted-foreground">Deals Abertos</p>
               </div>
             </div>
           </CardContent>
@@ -187,7 +187,7 @@ export default function PrevisaoReceita() {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Forecast Chart */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Projeção de Receita (6 meses)</CardTitle>
             <CardDescription>Cenários: Otimista, Realista e Pessimista</CardDescription>
@@ -212,7 +212,7 @@ export default function PrevisaoReceita() {
         </Card>
 
         {/* Pipeline by Stage */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Pipeline vs Ponderado por Estágio</CardTitle>
             <CardDescription>Valor total vs valor ponderado pela probabilidade</CardDescription>
@@ -238,7 +238,7 @@ export default function PrevisaoReceita() {
 
       {/* Distribution Pie + Details */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Distribuição por Estágio</CardTitle>
             <CardDescription>Proporção do pipeline por fase</CardDescription>
@@ -268,7 +268,7 @@ export default function PrevisaoReceita() {
         </Card>
 
         {/* Premissas - now using real stage data */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Premissas da Previsão</CardTitle>
             <CardDescription>Probabilidades por estágio do funil (dados reais)</CardDescription>
@@ -277,10 +277,10 @@ export default function PrevisaoReceita() {
             <div className="space-y-3">
               {analysis.stageProbabilities.map((stage) => (
                 <div key={stage.nome} className="flex items-center gap-3">
-                  <div className="w-32 text-sm text-gray-300">{stage.nome}</div>
-                  <div className="flex-1 bg-gray-700 rounded-full h-3">
+                  <div className="w-32 text-sm text-foreground/80">{stage.nome}</div>
+                  <div className="flex-1 bg-[#333333] rounded-full h-3">
                     <div
-                      className="bg-blue-500 h-3 rounded-full transition-all"
+                      className="bg-primary h-3 rounded-full transition-all"
                       style={{ width: `${stage.probabilidade}%` }}
                     />
                   </div>
@@ -288,9 +288,9 @@ export default function PrevisaoReceita() {
                 </div>
               ))}
             </div>
-            <div className="mt-6 pt-4 border-t border-gray-700">
-              <h4 className="text-sm font-medium mb-2 text-gray-300">Metodologia</h4>
-              <ul className="space-y-1 text-xs text-gray-400">
+            <div className="mt-6 pt-4 border-t border-border">
+              <h4 className="text-sm font-medium mb-2 text-foreground/80">Metodologia</h4>
+              <ul className="space-y-1 text-xs text-muted-foreground">
                 <li>- Receita ponderada = Valor x Probabilidade efetiva do deal</li>
                 <li>- Probabilidade: manual (se definida) ou automática (do estágio)</li>
                 <li>- Cenário otimista: +30% sobre realista</li>

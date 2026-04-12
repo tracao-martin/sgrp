@@ -39,8 +39,8 @@ function MenuItem({ icon, label, href, isActive, badge }: MenuItemProps) {
       href={href}
       className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
         isActive
-          ? "bg-blue-600 text-white"
-          : "text-gray-300 hover:bg-gray-800 hover:text-white"
+          ? "bg-primary text-primary-foreground"
+          : "text-foreground/80 hover:bg-card hover:text-white"
       }`}
     >
       <span className="w-5 h-5">{icon}</span>
@@ -75,7 +75,7 @@ function Submenu({
     <div>
       <button
         onClick={onToggle}
-        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 hover:text-white transition-colors"
+        className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-foreground/80 hover:bg-card hover:text-white transition-colors"
       >
         <span className="w-5 h-5">{icon}</span>
         <span className="flex-1 text-sm font-medium text-left">{label}</span>
@@ -85,15 +85,15 @@ function Submenu({
       </button>
 
       {isOpen && (
-        <div className="mt-2 ml-4 space-y-1 border-l border-gray-700 pl-4">
+        <div className="mt-2 ml-4 space-y-1 border-l border-border pl-4">
           {items.map((item) => (
             <Link
               key={item.href}
               href={item.href}
               className={`block px-3 py-2 rounded text-sm transition-colors ${
                 currentPath === item.href
-                  ? "bg-blue-600 text-white"
-                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+                  ? "bg-primary text-primary-foreground"
+                  : "text-muted-foreground hover:text-white hover:bg-card"
               }`}
             >
               {item.label}
@@ -131,23 +131,23 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
   ];
 
   return (
-    <div className="flex h-screen bg-gray-950 text-white">
+    <div className="flex h-screen bg-[#111111] text-white">
       {/* Sidebar */}
       <aside
-        className={`bg-gray-900 border-r border-gray-800 transition-all duration-300 ${
+        className={`bg-[#1c1c1c] border-r border-[#2a2a2a] transition-all duration-300 ${
           sidebarOpen ? "w-64" : "w-20"
         } overflow-y-auto`}
       >
         {/* Logo + Org Name */}
-        <div className="p-4 border-b border-gray-800">
+        <div className="p-4 border-b border-[#2a2a2a]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-blue-600 rounded-lg flex items-center justify-center font-bold">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center font-bold">
               SG
             </div>
             {sidebarOpen && (
               <div>
                 <h1 className="text-lg font-bold">SGRP</h1>
-                <p className="text-xs text-gray-500 truncate max-w-[160px]">
+                <p className="text-xs text-muted-foreground truncate max-w-[160px]">
                   {orgData?.nome || "Receita Previsível"}
                 </p>
               </div>
@@ -215,7 +215,7 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
           />
 
           {/* Divider */}
-          <div className="my-4 border-t border-gray-800" />
+          <div className="my-4 border-t border-[#2a2a2a]" />
 
           {/* Settings Submenu */}
           {sidebarOpen && (
@@ -232,7 +232,7 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
           {/* Admin Menu */}
           {isAdmin() && sidebarOpen && (
             <>
-              <div className="my-4 border-t border-gray-800" />
+              <div className="my-4 border-t border-[#2a2a2a]" />
               <MenuItem
                 icon={<Users className="w-5 h-5" />}
                 label="Usuários"
@@ -247,10 +247,10 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
       {/* Main Content */}
       <div className="flex-1 flex flex-col">
         {/* Top Bar */}
-        <header className="bg-gray-900 border-b border-gray-800 px-6 py-4 flex items-center justify-between">
+        <header className="bg-[#1c1c1c] border-b border-[#2a2a2a] px-6 py-4 flex items-center justify-between">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-2 hover:bg-gray-800 rounded-lg transition-colors"
+            className="p-2 hover:bg-card rounded-lg transition-colors"
           >
             {sidebarOpen ? (
               <X className="w-5 h-5" />
@@ -263,7 +263,7 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
           <div className="flex items-center gap-4">
             <div className="text-right">
               <p className="text-sm font-medium">{user.name || "Usuário"}</p>
-              <p className="text-xs text-gray-500 capitalize">
+              <p className="text-xs text-muted-foreground capitalize">
                 {user.role === "gerente"
                   ? "Gerente"
                   : user.role === "admin"
@@ -274,20 +274,20 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
 
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <button className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center font-bold hover:bg-blue-700 transition-colors">
+                <button className="w-10 h-10 bg-primary rounded-full flex items-center justify-center font-bold hover:bg-primary/90 transition-colors">
                   {user.name?.charAt(0).toUpperCase() || "U"}
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="bg-gray-800 border-gray-700">
-                <DropdownMenuItem className="text-gray-300 cursor-pointer hover:bg-gray-700">
+              <DropdownMenuContent align="end" className="bg-card border-border">
+                <DropdownMenuItem className="text-foreground/80 cursor-pointer hover:bg-[#333333]">
                   Perfil
                 </DropdownMenuItem>
-                <DropdownMenuItem className="text-gray-300 cursor-pointer hover:bg-gray-700">
+                <DropdownMenuItem className="text-foreground/80 cursor-pointer hover:bg-[#333333]">
                   Preferências
                 </DropdownMenuItem>
                 <DropdownMenuItem
                   onClick={() => logout()}
-                  className="text-red-400 cursor-pointer hover:bg-gray-700"
+                  className="text-red-400 cursor-pointer hover:bg-[#333333]"
                 >
                   <LogOut className="w-4 h-4 mr-2" />
                   Sair

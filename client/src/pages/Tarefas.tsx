@@ -14,7 +14,7 @@ const priorityColors: Record<string, string> = {
   critica: "bg-red-900 text-red-200",
   alta: "bg-orange-900 text-orange-200",
   media: "bg-yellow-900 text-yellow-200",
-  baixa: "bg-blue-900 text-blue-200",
+  baixa: "bg-primary/20 text-primary/80",
 };
 
 const priorityLabels: Record<string, string> = {
@@ -111,7 +111,7 @@ export default function Tarefas() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
       </div>
     );
   }
@@ -122,16 +122,16 @@ export default function Tarefas() {
       <div className="flex justify-between items-start">
         <div>
           <h1 className="text-3xl font-bold">Tarefas</h1>
-          <p className="text-gray-400 mt-1">Gerenciamento de tarefas e ações</p>
+          <p className="text-muted-foreground mt-1">Gerenciamento de tarefas e ações</p>
         </div>
         <Dialog open={showNewTask} onOpenChange={setShowNewTask}>
           <DialogTrigger asChild>
-            <Button className="bg-blue-600 hover:bg-blue-700">
+            <Button className="bg-primary hover:bg-primary/90">
               <Plus className="w-4 h-4 mr-2" />
               Nova Tarefa
             </Button>
           </DialogTrigger>
-          <DialogContent className="bg-gray-800 border-gray-700">
+          <DialogContent className="bg-card border-border">
             <DialogHeader>
               <DialogTitle>Nova Tarefa</DialogTitle>
             </DialogHeader>
@@ -142,7 +142,7 @@ export default function Tarefas() {
                   value={newTask.titulo}
                   onChange={(e) => setNewTask({ ...newTask, titulo: e.target.value })}
                   placeholder="Ex: Preparar proposta comercial"
-                  className="bg-gray-700 border-gray-600"
+                  className="bg-[#333333] border-border"
                 />
               </div>
               <div>
@@ -151,7 +151,7 @@ export default function Tarefas() {
                   value={newTask.descricao}
                   onChange={(e) => setNewTask({ ...newTask, descricao: e.target.value })}
                   placeholder="Detalhes da tarefa..."
-                  className="bg-gray-700 border-gray-600"
+                  className="bg-[#333333] border-border"
                   rows={3}
                 />
               </div>
@@ -159,10 +159,10 @@ export default function Tarefas() {
                 <div>
                   <Label>Prioridade</Label>
                   <Select value={newTask.prioridade} onValueChange={(v) => setNewTask({ ...newTask, prioridade: v })}>
-                    <SelectTrigger className="bg-gray-700 border-gray-600">
+                    <SelectTrigger className="bg-[#333333] border-border">
                       <SelectValue />
                     </SelectTrigger>
-                    <SelectContent className="bg-gray-700 border-gray-600">
+                    <SelectContent className="bg-[#333333] border-border">
                       <SelectItem value="baixa">Baixa</SelectItem>
                       <SelectItem value="media">Media</SelectItem>
                       <SelectItem value="alta">Alta</SelectItem>
@@ -176,11 +176,11 @@ export default function Tarefas() {
                     type="date"
                     value={newTask.data_vencimento}
                     onChange={(e) => setNewTask({ ...newTask, data_vencimento: e.target.value })}
-                    className="bg-gray-700 border-gray-600"
+                    className="bg-[#333333] border-border"
                   />
                 </div>
               </div>
-              <Button onClick={handleCreateTask} className="w-full bg-blue-600 hover:bg-blue-700" disabled={createTask.isPending}>
+              <Button onClick={handleCreateTask} className="w-full bg-primary hover:bg-primary/90" disabled={createTask.isPending}>
                 {createTask.isPending ? "Criando..." : "Criar Tarefa"}
               </Button>
             </div>
@@ -191,10 +191,10 @@ export default function Tarefas() {
       {/* Filters */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
+          <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar tarefas..."
-            className="pl-10 bg-gray-800 border-gray-700"
+            className="pl-10 bg-card border-border"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -202,21 +202,21 @@ export default function Tarefas() {
         <div className="flex gap-2">
           <Button
             variant={filter === "all" ? "default" : "outline"}
-            className={filter === "all" ? "bg-blue-600" : "border-gray-700"}
+            className={filter === "all" ? "bg-primary" : "border-border"}
             onClick={() => setFilter("all")}
           >
             Todas ({tasksList.length})
           </Button>
           <Button
             variant={filter === "pending" ? "default" : "outline"}
-            className={filter === "pending" ? "bg-blue-600" : "border-gray-700"}
+            className={filter === "pending" ? "bg-primary" : "border-border"}
             onClick={() => setFilter("pending")}
           >
             Pendentes ({pendingCount})
           </Button>
           <Button
             variant={filter === "completed" ? "default" : "outline"}
-            className={filter === "completed" ? "bg-blue-600" : "border-gray-700"}
+            className={filter === "completed" ? "bg-primary" : "border-border"}
             onClick={() => setFilter("completed")}
           >
             Concluidas ({completedCount})
@@ -227,8 +227,8 @@ export default function Tarefas() {
       {/* Tasks List */}
       <div className="space-y-3">
         {filteredTasks.length === 0 ? (
-          <Card className="bg-gray-800 border-gray-700">
-            <CardContent className="p-8 text-center text-gray-400">
+          <Card className="bg-card border-border">
+            <CardContent className="p-8 text-center text-muted-foreground">
               <p>Nenhuma tarefa encontrada</p>
             </CardContent>
           </Card>
@@ -236,7 +236,7 @@ export default function Tarefas() {
           filteredTasks.map((task: any) => (
             <Card
               key={task.id}
-              className={`bg-gray-800 border-gray-700 hover:border-gray-600 transition-colors ${
+              className={`bg-card border-border hover:border-border transition-colors ${
                 task.status === "concluida" ? "opacity-60" : ""
               }`}
             >
@@ -244,7 +244,7 @@ export default function Tarefas() {
                 <div className="flex items-start gap-4">
                   {/* Checkbox */}
                   <button
-                    className="mt-1 text-gray-400 hover:text-blue-400 transition-colors"
+                    className="mt-1 text-muted-foreground hover:text-primary transition-colors"
                     onClick={() => toggleComplete(task)}
                   >
                     {task.status === "concluida" ? (
@@ -260,13 +260,13 @@ export default function Tarefas() {
                       <div className="flex-1">
                         <h3
                           className={`font-medium ${
-                            task.status === "concluida" ? "line-through text-gray-500" : "text-white"
+                            task.status === "concluida" ? "line-through text-muted-foreground" : "text-white"
                           }`}
                         >
                           {task.titulo}
                         </h3>
                         {task.descricao && (
-                          <p className="text-sm text-gray-400 mt-1 line-clamp-1">{task.descricao}</p>
+                          <p className="text-sm text-muted-foreground mt-1 line-clamp-1">{task.descricao}</p>
                         )}
                       </div>
 
@@ -276,21 +276,21 @@ export default function Tarefas() {
                           {isOverdue(task.data_vencimento) && task.status !== "concluida" && (
                             <AlertTriangle className="w-4 h-4 text-red-400" />
                           )}
-                          <Clock className="w-3 h-3 text-gray-500" />
-                          <span className={`text-xs ${isOverdue(task.data_vencimento) && task.status !== "concluida" ? "text-red-400" : "text-gray-400"}`}>
+                          <Clock className="w-3 h-3 text-muted-foreground" />
+                          <span className={`text-xs ${isOverdue(task.data_vencimento) && task.status !== "concluida" ? "text-red-400" : "text-muted-foreground"}`}>
                             {formatDate(task.data_vencimento)}
                           </span>
                         </div>
                         <span
                           className={`px-2 py-1 rounded text-xs font-medium whitespace-nowrap ${
-                            priorityColors[task.prioridade] || "bg-gray-700 text-gray-300"
+                            priorityColors[task.prioridade] || "bg-[#333333] text-foreground/80"
                           }`}
                         >
                           {priorityLabels[task.prioridade] || task.prioridade}
                         </span>
                         <button
                           onClick={() => deleteTask.mutate({ id: task.id })}
-                          className="text-gray-500 hover:text-red-400 transition-colors"
+                          className="text-muted-foreground hover:text-red-400 transition-colors"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -305,19 +305,19 @@ export default function Tarefas() {
       </div>
 
       {/* Summary */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardContent className="pt-6">
           <div className="grid grid-cols-3 gap-4">
             <div>
-              <p className="text-xs text-gray-400 mb-1">Total de Tarefas</p>
+              <p className="text-xs text-muted-foreground mb-1">Total de Tarefas</p>
               <p className="text-2xl font-bold">{tasksList.length}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Pendentes</p>
+              <p className="text-xs text-muted-foreground mb-1">Pendentes</p>
               <p className="text-2xl font-bold text-yellow-400">{pendingCount}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Concluidas</p>
+              <p className="text-xs text-muted-foreground mb-1">Concluidas</p>
               <p className="text-2xl font-bold text-green-400">{completedCount}</p>
             </div>
           </div>

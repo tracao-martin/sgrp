@@ -55,12 +55,12 @@ export function LeadModal({ onSuccess }: LeadModalProps) {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button className="bg-blue-600 hover:bg-blue-700">
+        <Button className="bg-primary hover:bg-primary/90">
           <Plus className="w-4 h-4 mr-2" />
           Novo Lead
         </Button>
       </DialogTrigger>
-      <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
+      <DialogContent className="bg-card border-border max-w-2xl">
         <DialogHeader>
           <DialogTitle>Criar Novo Lead</DialogTitle>
           <DialogDescription>Preencha os dados do lead</DialogDescription>
@@ -69,23 +69,23 @@ export function LeadModal({ onSuccess }: LeadModalProps) {
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Row 1 */}
           <div>
-            <label className="text-sm font-medium text-gray-300">Título do Lead *</label>
+            <label className="text-sm font-medium text-foreground/80">Título do Lead *</label>
             <Input
               placeholder="Ex: Contato com Acme Corp"
               value={formData.titulo}
               onChange={(e) => setFormData({ ...formData, titulo: e.target.value })}
-              className="bg-gray-700 border-gray-600 mt-1"
+              className="bg-[#333333] border-border mt-1"
             />
           </div>
 
           {/* Row 2 */}
           <div>
-            <label className="text-sm font-medium text-gray-300">Descrição</label>
+            <label className="text-sm font-medium text-foreground/80">Descrição</label>
             <textarea
               placeholder="Detalhes do lead..."
               value={formData.descricao}
               onChange={(e) => setFormData({ ...formData, descricao: e.target.value })}
-              className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-gray-300 mt-1 resize-none"
+              className="w-full bg-[#333333] border border-border rounded px-3 py-2 text-foreground/80 mt-1 resize-none"
               rows={3}
             />
           </div>
@@ -93,20 +93,20 @@ export function LeadModal({ onSuccess }: LeadModalProps) {
           {/* Row 3 */}
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="text-sm font-medium text-gray-300">Origem</label>
+              <label className="text-sm font-medium text-foreground/80">Origem</label>
               <Input
                 placeholder="Ex: LinkedIn, Indicação"
                 value={formData.origem}
                 onChange={(e) => setFormData({ ...formData, origem: e.target.value })}
-                className="bg-gray-700 border-gray-600 mt-1"
+                className="bg-[#333333] border-border mt-1"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Qualificação</label>
+              <label className="text-sm font-medium text-foreground/80">Qualificação</label>
               <select
                 value={formData.qualificacao}
                 onChange={(e) => setFormData({ ...formData, qualificacao: e.target.value })}
-                className="w-full bg-gray-700 border border-gray-600 rounded px-3 py-2 text-gray-300 mt-1"
+                className="w-full bg-[#333333] border border-border rounded px-3 py-2 text-foreground/80 mt-1"
               >
                 <option value="frio">Frio</option>
                 <option value="morno">Morno</option>
@@ -118,29 +118,29 @@ export function LeadModal({ onSuccess }: LeadModalProps) {
 
           {/* Row 4 */}
           <div>
-            <label className="text-sm font-medium text-gray-300">Valor Estimado (R$)</label>
+            <label className="text-sm font-medium text-foreground/80">Valor Estimado (R$)</label>
             <Input
               type="number"
               placeholder="50000"
               value={formData.valor_estimado}
               onChange={(e) => setFormData({ ...formData, valor_estimado: e.target.value })}
-              className="bg-gray-700 border-gray-600 mt-1"
+              className="bg-[#333333] border-border mt-1"
             />
           </div>
 
           {/* Buttons */}
-          <div className="flex gap-3 justify-end pt-4 border-t border-gray-700">
+          <div className="flex gap-3 justify-end pt-4 border-t border-border">
             <Button
               type="button"
               variant="outline"
               onClick={() => setOpen(false)}
-              className="border-gray-600"
+              className="border-border"
             >
               Cancelar
             </Button>
             <Button
               type="submit"
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90"
               disabled={createMutation.isPending}
             >
               {createMutation.isPending ? (

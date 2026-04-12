@@ -66,13 +66,13 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center p-4">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse" />
-        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-blue-500 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse" />
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse" />
+        <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse" />
       </div>
 
       {/* Login Card */}
       <div className="relative w-full max-w-md">
-        <div className="bg-gray-900 border border-gray-800 rounded-2xl shadow-2xl p-8 space-y-6">
+        <div className="bg-[#1c1c1c] border border-[#2a2a2a] rounded-2xl shadow-2xl p-8 space-y-6">
           {/* Header */}
           <div className="text-center space-y-4">
             <div className="flex justify-center">
@@ -82,21 +82,21 @@ export default function Login() {
             </div>
             <div>
               <h1 className="text-3xl font-bold text-white">SGRP</h1>
-              <p className="text-gray-400 text-sm mt-2">
+              <p className="text-muted-foreground text-sm mt-2">
                 Sistema de Geração de Receita Previsível
               </p>
             </div>
           </div>
 
           {/* Tab Toggle */}
-          <div className="flex bg-gray-800 rounded-lg p-1">
+          <div className="flex bg-card rounded-lg p-1">
             <button
               type="button"
               onClick={() => { setMode("login"); setError(""); }}
               className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
                 mode === "login"
-                  ? "bg-blue-600 text-white shadow"
-                  : "text-gray-400 hover:text-gray-200"
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "text-muted-foreground hover:text-gray-200"
               }`}
             >
               Entrar
@@ -106,8 +106,8 @@ export default function Login() {
               onClick={() => { setMode("register"); setError(""); }}
               className={`flex-1 py-2 text-sm font-medium rounded-md transition-all ${
                 mode === "register"
-                  ? "bg-blue-600 text-white shadow"
-                  : "text-gray-400 hover:text-gray-200"
+                  ? "bg-primary text-primary-foreground shadow"
+                  : "text-muted-foreground hover:text-gray-200"
               }`}
             >
               Criar Empresa
@@ -119,7 +119,7 @@ export default function Login() {
             {mode === "register" && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="orgName" className="text-gray-300 text-sm flex items-center gap-2">
+                  <Label htmlFor="orgName" className="text-foreground/80 text-sm flex items-center gap-2">
                     <Building2 className="w-4 h-4" />
                     Nome da Empresa
                   </Label>
@@ -130,11 +130,11 @@ export default function Login() {
                     onChange={(e) => setOrgName(e.target.value)}
                     placeholder="Ex: Minha Empresa Ltda"
                     required
-                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
+                    className="bg-card border-border text-white placeholder:text-muted-foreground focus:border-primary"
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-gray-300 text-sm">Seu nome completo</Label>
+                  <Label htmlFor="name" className="text-foreground/80 text-sm">Seu nome completo</Label>
                   <Input
                     id="name"
                     type="text"
@@ -142,14 +142,14 @@ export default function Login() {
                     onChange={(e) => setName(e.target.value)}
                     placeholder="Seu nome"
                     required
-                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
+                    className="bg-card border-border text-white placeholder:text-muted-foreground focus:border-primary"
                   />
                 </div>
               </>
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-gray-300 text-sm">Email</Label>
+              <Label htmlFor="email" className="text-foreground/80 text-sm">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -157,12 +157,12 @@ export default function Login() {
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="seu@email.com"
                 required
-                className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
+                className="bg-card border-border text-white placeholder:text-muted-foreground focus:border-primary"
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-gray-300 text-sm">Senha</Label>
+              <Label htmlFor="password" className="text-foreground/80 text-sm">Senha</Label>
               <div className="relative">
                 <Input
                   id="password"
@@ -172,12 +172,12 @@ export default function Login() {
                   placeholder={mode === "register" ? "Mínimo 6 caracteres" : "Sua senha"}
                   required
                   minLength={mode === "register" ? 6 : undefined}
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500 pr-10"
+                  className="bg-card border-border text-white placeholder:text-muted-foreground focus:border-primary pr-10"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground/80"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -193,7 +193,7 @@ export default function Login() {
             <Button
               type="submit"
               disabled={submitting || loading}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white py-6 rounded-lg font-semibold text-base transition-all flex items-center justify-center gap-2"
+              className="w-full bg-primary hover:bg-primary/90 text-white py-6 rounded-lg font-semibold text-base transition-all flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <>
@@ -211,7 +211,7 @@ export default function Login() {
 
           {/* Info for register mode */}
           {mode === "register" && (
-            <div className="bg-blue-900/20 border border-blue-800/30 rounded-lg p-3 text-xs text-blue-300">
+            <div className="bg-primary/15 border border-primary/30/30 rounded-lg p-3 text-xs text-primary">
               <p>Ao criar sua empresa, você será o administrador e poderá convidar sua equipe depois.</p>
               <p className="mt-1">Inclui 14 dias de teste gratuito.</p>
             </div>
@@ -220,36 +220,36 @@ export default function Login() {
           {/* Features */}
           <div className="space-y-3 pt-2">
             <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-blue-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <div className="w-2 h-2 bg-blue-400 rounded-full" />
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-2 h-2 bg-primary rounded-full" />
               </div>
               <div>
                 <p className="text-sm font-medium text-white">Pipeline Inteligente</p>
-                <p className="text-xs text-gray-500">Gerencie oportunidades com drag-and-drop</p>
+                <p className="text-xs text-muted-foreground">Gerencie oportunidades com drag-and-drop</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-blue-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <div className="w-2 h-2 bg-blue-400 rounded-full" />
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-2 h-2 bg-primary rounded-full" />
               </div>
               <div>
                 <p className="text-sm font-medium text-white">Vendas Consultivas (SPIN)</p>
-                <p className="text-xs text-gray-500">Metodologia integrada ao seu pipeline</p>
+                <p className="text-xs text-muted-foreground">Metodologia integrada ao seu pipeline</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
-              <div className="w-5 h-5 rounded-full bg-blue-600/20 flex items-center justify-center flex-shrink-0 mt-0.5">
-                <div className="w-2 h-2 bg-blue-400 rounded-full" />
+              <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                <div className="w-2 h-2 bg-primary rounded-full" />
               </div>
               <div>
                 <p className="text-sm font-medium text-white">Multi-Equipe</p>
-                <p className="text-xs text-gray-500">Cada empresa com seus dados isolados</p>
+                <p className="text-xs text-muted-foreground">Cada empresa com seus dados isolados</p>
               </div>
             </div>
           </div>
 
           {/* Footer */}
-          <div className="text-center text-xs text-gray-500 border-t border-gray-800 pt-4">
+          <div className="text-center text-xs text-muted-foreground border-t border-[#2a2a2a] pt-4">
             <p>Tração Comercial - Plataforma segura</p>
           </div>
         </div>

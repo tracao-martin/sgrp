@@ -90,14 +90,14 @@ function TagInput({
             }
           }}
           placeholder={placeholder}
-          className="bg-gray-700 border-gray-600 text-white"
+          className="bg-[#333333] border-border text-white"
         />
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={addTag}
-          className="border-gray-600 shrink-0"
+          className="border-border shrink-0"
         >
           <Plus className="w-4 h-4" />
         </Button>
@@ -107,7 +107,7 @@ function TagInput({
           {value.map((tag, idx) => (
             <span
               key={idx}
-              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-blue-600/20 text-blue-300 text-sm border border-blue-600/30"
+              className="inline-flex items-center gap-1 px-3 py-1 rounded-full bg-primary/20 text-primary text-sm border border-primary/25"
             >
               {tag}
               <button
@@ -158,8 +158,8 @@ function PorteSelector({
           onClick={() => toggle(opt.value)}
           className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
             value.includes(opt.value)
-              ? "bg-blue-600/30 border-blue-500 text-blue-300"
-              : "bg-gray-700 border-gray-600 text-gray-400 hover:border-gray-500"
+              ? "bg-primary/30 border-primary text-primary"
+              : "bg-[#333333] border-border text-muted-foreground hover:border-primary/40"
           }`}
         >
           {opt.label}
@@ -199,20 +199,20 @@ function CriteriosInput({
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="Critério (ex: Nº de funcionários)"
-          className="bg-gray-700 border-gray-600 text-white flex-1"
+          className="bg-[#333333] border-border text-white flex-1"
         />
         <Input
           value={val}
           onChange={(e) => setVal(e.target.value)}
           placeholder="Valor (ex: > 50)"
-          className="bg-gray-700 border-gray-600 text-white flex-1"
+          className="bg-[#333333] border-border text-white flex-1"
         />
         <Button
           type="button"
           variant="outline"
           size="sm"
           onClick={add}
-          className="border-gray-600 shrink-0"
+          className="border-border shrink-0"
         >
           <Plus className="w-4 h-4" />
         </Button>
@@ -222,18 +222,18 @@ function CriteriosInput({
           {value.map((c, idx) => (
             <div
               key={idx}
-              className="flex items-center justify-between px-3 py-2 bg-gray-700/50 rounded-lg"
+              className="flex items-center justify-between px-3 py-2 bg-[#333333]/50 rounded-lg"
             >
               <span className="text-sm">
-                <span className="text-gray-300 font-medium">{c.label}</span>
+                <span className="text-foreground/80 font-medium">{c.label}</span>
                 {c.value && (
-                  <span className="text-gray-500 ml-2">→ {c.value}</span>
+                  <span className="text-muted-foreground ml-2">→ {c.value}</span>
                 )}
               </span>
               <button
                 type="button"
                 onClick={() => remove(idx)}
-                className="text-gray-500 hover:text-red-400 transition-colors"
+                className="text-muted-foreground hover:text-red-400 transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -399,13 +399,13 @@ export default function ConfigICPs() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold flex items-center gap-3">
-            <Target className="w-8 h-8 text-blue-400" />
+            <Target className="w-8 h-8 text-primary" />
             ICPs — Perfis de Cliente Ideal
           </h1>
-          <p className="text-gray-400 mt-1">
+          <p className="text-muted-foreground mt-1">
             {icpsList.length} perfil(is) cadastrado(s)
             {activeCount < icpsList.length && (
-              <span className="ml-2 text-gray-500">
+              <span className="ml-2 text-muted-foreground">
                 ({activeCount} ativo{activeCount !== 1 ? "s" : ""})
               </span>
             )}
@@ -422,7 +422,7 @@ export default function ConfigICPs() {
 
       {/* Create / Edit Form */}
       {showForm && (
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle className="text-lg">
               {editingId ? "Editar ICP" : "Novo ICP"}
@@ -431,21 +431,21 @@ export default function ConfigICPs() {
           <CardContent className="space-y-5">
             {/* Nome */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
                 Nome *
               </label>
               <Input
                 value={form.nome}
                 onChange={(e) => setForm({ ...form, nome: e.target.value })}
                 placeholder="Ex: Diretor de TI em SaaS B2B"
-                className="bg-gray-700 border-gray-600 text-white"
+                className="bg-[#333333] border-border text-white"
               />
             </div>
 
             {/* Descrição */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
-                Descrição <span className="text-gray-500">(opcional)</span>
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
+                Descrição <span className="text-muted-foreground">(opcional)</span>
               </label>
               <Textarea
                 value={form.descricao}
@@ -453,13 +453,13 @@ export default function ConfigICPs() {
                   setForm({ ...form, descricao: e.target.value })
                 }
                 placeholder="Descreva brevemente este perfil..."
-                className="bg-gray-700 border-gray-600 text-white min-h-[80px]"
+                className="bg-[#333333] border-border text-white min-h-[80px]"
               />
             </div>
 
             {/* Segmentos */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
                 <Tag className="w-4 h-4 inline mr-1" />
                 Segmentos de Mercado
               </label>
@@ -472,7 +472,7 @@ export default function ConfigICPs() {
 
             {/* Portes */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
                 <Building2 className="w-4 h-4 inline mr-1" />
                 Porte da Empresa
               </label>
@@ -484,7 +484,7 @@ export default function ConfigICPs() {
 
             {/* Faixa de Receita */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
                 <DollarSign className="w-4 h-4 inline mr-1" />
                 Faixa de Receita Anual (R$)
               </label>
@@ -496,9 +496,9 @@ export default function ConfigICPs() {
                     setForm({ ...form, faixaReceitaMin: e.target.value })
                   }
                   placeholder="Mínimo"
-                  className="bg-gray-700 border-gray-600 text-white"
+                  className="bg-[#333333] border-border text-white"
                 />
-                <span className="text-gray-500">até</span>
+                <span className="text-muted-foreground">até</span>
                 <Input
                   type="number"
                   value={form.faixaReceitaMax}
@@ -506,14 +506,14 @@ export default function ConfigICPs() {
                     setForm({ ...form, faixaReceitaMax: e.target.value })
                   }
                   placeholder="Máximo"
-                  className="bg-gray-700 border-gray-600 text-white"
+                  className="bg-[#333333] border-border text-white"
                 />
               </div>
             </div>
 
             {/* Cargos Decisor */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
                 <Users className="w-4 h-4 inline mr-1" />
                 Cargos do Decisor
               </label>
@@ -526,7 +526,7 @@ export default function ConfigICPs() {
 
             {/* Localizações */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
                 <MapPin className="w-4 h-4 inline mr-1" />
                 Localizações
               </label>
@@ -539,9 +539,9 @@ export default function ConfigICPs() {
 
             {/* Critérios Customizados */}
             <div>
-              <label className="block text-sm font-medium text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-foreground/80 mb-1">
                 Critérios Customizados{" "}
-                <span className="text-gray-500">(opcional)</span>
+                <span className="text-muted-foreground">(opcional)</span>
               </label>
               <CriteriosInput
                 value={form.criteriosCustom}
@@ -554,7 +554,7 @@ export default function ConfigICPs() {
               <Button
                 variant="outline"
                 onClick={resetForm}
-                className="border-gray-600"
+                className="border-border"
               >
                 Cancelar
               </Button>
@@ -578,16 +578,16 @@ export default function ConfigICPs() {
       {/* ICPs List */}
       {icpsQuery.isLoading ? (
         <div className="flex justify-center py-12">
-          <Loader className="w-8 h-8 animate-spin text-blue-400" />
+          <Loader className="w-8 h-8 animate-spin text-primary" />
         </div>
       ) : icpsList.length === 0 && !showForm ? (
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardContent className="py-12 text-center">
             <Target className="w-12 h-12 text-gray-600 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-300 mb-2">
+            <h3 className="text-lg font-semibold text-foreground/80 mb-2">
               Nenhum ICP cadastrado
             </h3>
-            <p className="text-gray-500 mb-4">
+            <p className="text-muted-foreground mb-4">
               Defina seus Perfis de Cliente Ideal para qualificar melhor seus
               leads e oportunidades.
             </p>
@@ -615,8 +615,8 @@ export default function ConfigICPs() {
                 key={icp.id}
                 className={`border transition-colors ${
                   icp.ativo
-                    ? "bg-gray-800 border-gray-700"
-                    : "bg-gray-800/50 border-gray-700/50 opacity-70"
+                    ? "bg-card border-border"
+                    : "bg-card/50 border-border/50 opacity-70"
                 }`}
               >
                 <CardContent className="p-5">
@@ -633,13 +633,13 @@ export default function ConfigICPs() {
                           {icp.nome}
                         </h3>
                         {!icp.ativo && (
-                          <span className="text-xs px-2 py-0.5 bg-gray-600 text-gray-300 rounded">
+                          <span className="text-xs px-2 py-0.5 bg-[#444444] text-foreground/80 rounded">
                             Inativo
                           </span>
                         )}
                       </div>
                       {icp.descricao && (
-                        <p className="text-gray-400 text-sm mt-1">
+                        <p className="text-muted-foreground text-sm mt-1">
                           {icp.descricao}
                         </p>
                       )}
@@ -649,7 +649,7 @@ export default function ConfigICPs() {
                         {segmentos.slice(0, 3).map((s, i) => (
                           <span
                             key={i}
-                            className="text-xs px-2 py-1 bg-blue-600/20 text-blue-300 rounded-full"
+                            className="text-xs px-2 py-1 bg-primary/20 text-primary rounded-full"
                           >
                             {s}
                           </span>
@@ -672,7 +672,7 @@ export default function ConfigICPs() {
                           </span>
                         )}
                         {segmentos.length > 3 && (
-                          <span className="text-xs px-2 py-1 text-gray-500">
+                          <span className="text-xs px-2 py-1 text-muted-foreground">
                             +{segmentos.length - 3} mais
                           </span>
                         )}
@@ -683,25 +683,25 @@ export default function ConfigICPs() {
                     <div className="flex items-center gap-2 ml-4">
                       <button
                         onClick={() => toggleActive(icp)}
-                        className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-2 hover:bg-[#333333] rounded-lg transition-colors"
                         title={icp.ativo ? "Desativar" : "Ativar"}
                       >
                         {icp.ativo ? (
                           <ToggleRight className="w-5 h-5 text-green-400" />
                         ) : (
-                          <ToggleLeft className="w-5 h-5 text-gray-500" />
+                          <ToggleLeft className="w-5 h-5 text-muted-foreground" />
                         )}
                       </button>
                       <button
                         onClick={() => openEdit(icp)}
-                        className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-2 hover:bg-[#333333] rounded-lg transition-colors"
                         title="Editar"
                       >
-                        <Pencil className="w-4 h-4 text-blue-400" />
+                        <Pencil className="w-4 h-4 text-primary" />
                       </button>
                       <button
                         onClick={() => setDeleteConfirmId(icp.id)}
-                        className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-2 hover:bg-[#333333] rounded-lg transition-colors"
                         title="Excluir"
                       >
                         <Trash2 className="w-4 h-4 text-red-400" />
@@ -710,12 +710,12 @@ export default function ConfigICPs() {
                         onClick={() =>
                           setExpandedId(isExpanded ? null : icp.id)
                         }
-                        className="p-2 hover:bg-gray-700 rounded-lg transition-colors"
+                        className="p-2 hover:bg-[#333333] rounded-lg transition-colors"
                       >
                         {isExpanded ? (
-                          <ChevronUp className="w-4 h-4 text-gray-400" />
+                          <ChevronUp className="w-4 h-4 text-muted-foreground" />
                         ) : (
-                          <ChevronDown className="w-4 h-4 text-gray-400" />
+                          <ChevronDown className="w-4 h-4 text-muted-foreground" />
                         )}
                       </button>
                     </div>
@@ -723,17 +723,17 @@ export default function ConfigICPs() {
 
                   {/* Expanded details */}
                   {isExpanded && (
-                    <div className="mt-5 pt-5 border-t border-gray-700 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div className="mt-5 pt-5 border-t border-border grid grid-cols-1 md:grid-cols-2 gap-4">
                       {segmentos.length > 0 && (
                         <div>
-                          <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                             <Tag className="w-3 h-3" /> Segmentos
                           </p>
                           <div className="flex flex-wrap gap-1">
                             {segmentos.map((s, i) => (
                               <span
                                 key={i}
-                                className="text-xs px-2 py-1 bg-blue-600/20 text-blue-300 rounded-full"
+                                className="text-xs px-2 py-1 bg-primary/20 text-primary rounded-full"
                               >
                                 {s}
                               </span>
@@ -744,7 +744,7 @@ export default function ConfigICPs() {
 
                       {portes.length > 0 && (
                         <div>
-                          <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                             <Building2 className="w-3 h-3" /> Porte
                           </p>
                           <div className="flex flex-wrap gap-1">
@@ -763,7 +763,7 @@ export default function ConfigICPs() {
 
                       {(icp.faixaReceitaMin || icp.faixaReceitaMax) && (
                         <div>
-                          <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                             <DollarSign className="w-3 h-3" /> Faixa de Receita
                           </p>
                           <p className="text-sm text-yellow-300">
@@ -775,7 +775,7 @@ export default function ConfigICPs() {
 
                       {cargos.length > 0 && (
                         <div>
-                          <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                             <Users className="w-3 h-3" /> Cargos Decisor
                           </p>
                           <div className="flex flex-wrap gap-1">
@@ -793,7 +793,7 @@ export default function ConfigICPs() {
 
                       {locais.length > 0 && (
                         <div>
-                          <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                          <p className="text-xs text-muted-foreground mb-2 flex items-center gap-1">
                             <MapPin className="w-3 h-3" /> Localizações
                           </p>
                           <div className="flex flex-wrap gap-1">
@@ -811,20 +811,20 @@ export default function ConfigICPs() {
 
                       {criterios.length > 0 && (
                         <div className="md:col-span-2">
-                          <p className="text-xs text-gray-500 mb-2">
+                          <p className="text-xs text-muted-foreground mb-2">
                             Critérios Customizados
                           </p>
                           <div className="space-y-1">
                             {criterios.map((c, i) => (
                               <div
                                 key={i}
-                                className="text-sm px-3 py-2 bg-gray-700/50 rounded-lg"
+                                className="text-sm px-3 py-2 bg-[#333333]/50 rounded-lg"
                               >
-                                <span className="text-gray-300 font-medium">
+                                <span className="text-foreground/80 font-medium">
                                   {c.label}
                                 </span>
                                 {c.value && (
-                                  <span className="text-gray-500 ml-2">
+                                  <span className="text-muted-foreground ml-2">
                                     → {c.value}
                                   </span>
                                 )}
@@ -847,11 +847,11 @@ export default function ConfigICPs() {
         open={deleteConfirmId !== null}
         onOpenChange={() => setDeleteConfirmId(null)}
       >
-        <DialogContent className="bg-gray-800 border-gray-700">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle>Confirmar Exclusão</DialogTitle>
           </DialogHeader>
-          <p className="text-gray-400">
+          <p className="text-muted-foreground">
             Tem certeza que deseja excluir este ICP? Esta ação não pode ser
             desfeita.
           </p>
@@ -859,7 +859,7 @@ export default function ConfigICPs() {
             <Button
               variant="outline"
               onClick={() => setDeleteConfirmId(null)}
-              className="border-gray-600"
+              className="border-border"
             >
               Cancelar
             </Button>

@@ -77,60 +77,60 @@ export default function Dashboard() {
       {/* Page Header */}
       <div>
         <h1 className="text-3xl font-bold">Dashboard</h1>
-        <p className="text-gray-400 mt-1">Visao geral de performance e pipeline</p>
+        <p className="text-muted-foreground mt-1">Visao geral de performance e pipeline</p>
       </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-foreground/80 flex items-center gap-2">
               <DollarSign className="w-4 h-4 text-green-400" />
               Valor Pipeline
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(kpis.totalValue)}</div>
-            <p className="text-xs text-gray-400 mt-1">{kpis.openDeals} deals em aberto</p>
+            <p className="text-xs text-muted-foreground mt-1">{kpis.openDeals} deals em aberto</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-300 flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-blue-400" />
+            <CardTitle className="text-sm font-medium text-foreground/80 flex items-center gap-2">
+              <TrendingUp className="w-4 h-4 text-primary" />
               Deals em Aberto
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{kpis.openDeals}</div>
-            <p className="text-xs text-gray-400 mt-1">Ganhos: {formatCurrency(kpis.wonValue)}</p>
+            <p className="text-xs text-muted-foreground mt-1">Ganhos: {formatCurrency(kpis.wonValue)}</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-foreground/80 flex items-center gap-2">
               <Target className="w-4 h-4 text-purple-400" />
               Taxa de Conversao
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{kpis.conversionRate}%</div>
-            <p className="text-xs text-gray-400 mt-1">{deals.length} deals total</p>
+            <p className="text-xs text-muted-foreground mt-1">{deals.length} deals total</p>
           </CardContent>
         </Card>
 
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium text-gray-300 flex items-center gap-2">
+            <CardTitle className="text-sm font-medium text-foreground/80 flex items-center gap-2">
               <Users className="w-4 h-4 text-amber-400" />
               Leads Ativos
             </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{kpis.totalLeads}</div>
-            <p className="text-xs text-gray-400 mt-1">
+            <p className="text-xs text-muted-foreground mt-1">
               {kpis.totalCompanies} contas | {kpis.pendingTasks} tarefas
             </p>
           </CardContent>
@@ -140,7 +140,7 @@ export default function Dashboard() {
       {/* Charts Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Pipeline Chart */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Funil de Vendas</CardTitle>
             <CardDescription>Distribuicao de deals por estagio</CardDescription>
@@ -166,7 +166,7 @@ export default function Dashboard() {
         </Card>
 
         {/* Pipeline Value Chart */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Valor por Estagio</CardTitle>
             <CardDescription>Valor acumulado no pipeline</CardDescription>
@@ -191,7 +191,7 @@ export default function Dashboard() {
       {/* Bottom Row */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Deal Status Distribution */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Status dos Deals</CardTitle>
             <CardDescription>Distribuicao atual</CardDescription>
@@ -218,7 +218,7 @@ export default function Dashboard() {
                 </PieChart>
               </ResponsiveContainer>
             ) : (
-              <div className="flex items-center justify-center h-[250px] text-gray-500">
+              <div className="flex items-center justify-center h-[250px] text-muted-foreground">
                 Nenhum deal cadastrado
               </div>
             )}
@@ -226,35 +226,35 @@ export default function Dashboard() {
         </Card>
 
         {/* Quick Stats */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <CardTitle>Resumo Rapido</CardTitle>
             <CardDescription>Metricas do sistema</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
-              <div className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-[#333333]/50 rounded-lg">
                 <div className="flex items-center gap-3">
-                  <Building2 className="w-5 h-5 text-blue-400" />
+                  <Building2 className="w-5 h-5 text-primary" />
                   <span>Contas</span>
                 </div>
                 <span className="text-xl font-bold">{companies.length}</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-[#333333]/50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <UserCheck className="w-5 h-5 text-green-400" />
                   <span>Leads</span>
                 </div>
                 <span className="text-xl font-bold">{leads.length}</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-[#333333]/50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <TrendingUp className="w-5 h-5 text-purple-400" />
                   <span>Deals</span>
                 </div>
                 <span className="text-xl font-bold">{deals.length}</span>
               </div>
-              <div className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+              <div className="flex items-center justify-between p-3 bg-[#333333]/50 rounded-lg">
                 <div className="flex items-center gap-3">
                   <ListTodo className="w-5 h-5 text-amber-400" />
                   <span>Tarefas Pendentes</span>

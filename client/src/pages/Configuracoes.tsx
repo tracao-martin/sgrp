@@ -94,20 +94,20 @@ export default function Configuracoes() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Configurações</h1>
-        <p className="text-gray-400 mt-1">Gerencie as configurações do sistema</p>
+        <p className="text-muted-foreground mt-1">Gerencie as configurações do sistema</p>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Minha Organização */}
-        <Card className="bg-gray-800 border-gray-700 lg:col-span-2">
+        <Card className="bg-card border-border lg:col-span-2">
           <CardHeader>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-blue-400" />
+                <Building2 className="w-5 h-5 text-primary" />
                 <CardTitle>Minha Organização</CardTitle>
               </div>
               {isAdmin() && (
-                <Button variant="outline" size="sm" onClick={openEditOrg} className="border-gray-600">
+                <Button variant="outline" size="sm" onClick={openEditOrg} className="border-border">
                   Editar
                 </Button>
               )}
@@ -117,47 +117,47 @@ export default function Configuracoes() {
           <CardContent>
             {orgQuery.isLoading ? (
               <div className="flex justify-center py-4">
-                <Loader className="w-6 h-6 animate-spin text-blue-400" />
+                <Loader className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : org ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="p-4 bg-gray-700/50 rounded-lg">
-                  <p className="text-xs text-gray-400 mb-1">Nome</p>
+                <div className="p-4 bg-[#333333]/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Nome</p>
                   <p className="font-medium">{org.nome}</p>
                 </div>
-                <div className="p-4 bg-gray-700/50 rounded-lg">
-                  <p className="text-xs text-gray-400 mb-1">CNPJ</p>
+                <div className="p-4 bg-[#333333]/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">CNPJ</p>
                   <p className="font-medium">{org.cnpj || "Não informado"}</p>
                 </div>
-                <div className="p-4 bg-gray-700/50 rounded-lg">
-                  <p className="text-xs text-gray-400 mb-1">Plano</p>
-                  <p className="font-medium capitalize text-blue-300">{planLabels[org.plano] || org.plano}</p>
+                <div className="p-4 bg-[#333333]/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Plano</p>
+                  <p className="font-medium capitalize text-primary">{planLabels[org.plano] || org.plano}</p>
                 </div>
-                <div className="p-4 bg-gray-700/50 rounded-lg">
-                  <p className="text-xs text-gray-400 mb-1">Limite de Usuários</p>
+                <div className="p-4 bg-[#333333]/50 rounded-lg">
+                  <p className="text-xs text-muted-foreground mb-1">Limite de Usuários</p>
                   <p className="font-medium">{org.maxUsuarios}</p>
                 </div>
                 {org.email && (
-                  <div className="p-4 bg-gray-700/50 rounded-lg">
-                    <p className="text-xs text-gray-400 mb-1">Email</p>
+                  <div className="p-4 bg-[#333333]/50 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Email</p>
                     <p className="font-medium">{org.email}</p>
                   </div>
                 )}
                 {org.telefone && (
-                  <div className="p-4 bg-gray-700/50 rounded-lg">
-                    <p className="text-xs text-gray-400 mb-1">Telefone</p>
+                  <div className="p-4 bg-[#333333]/50 rounded-lg">
+                    <p className="text-xs text-muted-foreground mb-1">Telefone</p>
                     <p className="font-medium">{org.telefone}</p>
                   </div>
                 )}
               </div>
             ) : (
-              <p className="text-gray-400 text-center py-4">Organização não encontrada</p>
+              <p className="text-muted-foreground text-center py-4">Organização não encontrada</p>
             )}
           </CardContent>
         </Card>
 
         {/* Minha Conta */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Lock className="w-5 h-5 text-yellow-400" />
@@ -169,7 +169,7 @@ export default function Configuracoes() {
             <div className="space-y-3">
               <Button
                 variant="outline"
-                className="w-full border-gray-600"
+                className="w-full border-border"
                 onClick={() => setShowPasswordDialog(true)}
               >
                 <Lock className="w-4 h-4 mr-2" />
@@ -180,10 +180,10 @@ export default function Configuracoes() {
         </Card>
 
         {/* Pipeline Stages */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Layers className="w-5 h-5 text-blue-400" />
+              <Layers className="w-5 h-5 text-primary" />
               <CardTitle>Estágios do Pipeline</CardTitle>
             </div>
             <CardDescription>Estágios do funil de vendas da sua organização</CardDescription>
@@ -191,14 +191,14 @@ export default function Configuracoes() {
           <CardContent>
             {stagesQuery.isLoading ? (
               <div className="flex justify-center py-4">
-                <Loader className="w-6 h-6 animate-spin text-blue-400" />
+                <Loader className="w-6 h-6 animate-spin text-primary" />
               </div>
             ) : (
               <div className="space-y-2">
                 {stages.map((stage: any, idx: number) => (
                   <div
                     key={stage.id}
-                    className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg"
+                    className="flex items-center justify-between p-3 bg-[#333333]/50 rounded-lg"
                   >
                     <div className="flex items-center gap-3">
                       <div
@@ -207,13 +207,13 @@ export default function Configuracoes() {
                       />
                       <span className="font-medium">{stage.nome}</span>
                     </div>
-                    <span className="text-sm text-gray-400">
+                    <span className="text-sm text-muted-foreground">
                       {stage.probabilidadeFechamento || 0}%
                     </span>
                   </div>
                 ))}
                 {stages.length === 0 && (
-                  <p className="text-center text-gray-400 py-4">Nenhum estágio configurado</p>
+                  <p className="text-center text-muted-foreground py-4">Nenhum estágio configurado</p>
                 )}
               </div>
             )}
@@ -221,7 +221,7 @@ export default function Configuracoes() {
         </Card>
 
         {/* Perfis de Acesso */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Users className="w-5 h-5 text-purple-400" />
@@ -234,13 +234,13 @@ export default function Configuracoes() {
               {[
                 { role: "Administrador", permissions: "Acesso total ao sistema, gerenciar org e usuários", color: "text-red-400" },
                 { role: "Gerente", permissions: "Gerenciar equipe, relatórios, configurações", color: "text-yellow-400" },
-                { role: "Vendedor", permissions: "Gerenciar leads, deals, atividades próprias", color: "text-blue-400" },
+                { role: "Vendedor", permissions: "Gerenciar leads, deals, atividades próprias", color: "text-primary" },
               ].map((item) => (
-                <div key={item.role} className="p-3 bg-gray-700/50 rounded-lg">
+                <div key={item.role} className="p-3 bg-[#333333]/50 rounded-lg">
                   <div className="flex items-center justify-between">
                     <span className={`font-medium ${item.color}`}>{item.role}</span>
                   </div>
-                  <p className="text-xs text-gray-400 mt-1">{item.permissions}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{item.permissions}</p>
                 </div>
               ))}
             </div>
@@ -248,7 +248,7 @@ export default function Configuracoes() {
         </Card>
 
         {/* Notificações */}
-        <Card className="bg-gray-800 border-gray-700">
+        <Card className="bg-card border-border">
           <CardHeader>
             <div className="flex items-center gap-2">
               <Bell className="w-5 h-5 text-yellow-400" />
@@ -264,26 +264,26 @@ export default function Configuracoes() {
                 { label: "Deal movido", desc: "Notificar quando um deal mudar de estágio", active: false },
                 { label: "Meta atingida", desc: "Notificar quando a meta mensal for atingida", active: true },
               ].map((item) => (
-                <div key={item.label} className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+                <div key={item.label} className="flex items-center justify-between p-3 bg-[#333333]/50 rounded-lg">
                   <div>
                     <p className="text-sm font-medium">{item.label}</p>
-                    <p className="text-xs text-gray-400">{item.desc}</p>
+                    <p className="text-xs text-muted-foreground">{item.desc}</p>
                   </div>
-                  <div className={`w-10 h-5 rounded-full ${item.active ? "bg-blue-600" : "bg-gray-600"} relative cursor-pointer`}>
+                  <div className={`w-10 h-5 rounded-full ${item.active ? "bg-primary" : "bg-[#444444]"} relative cursor-pointer`}>
                     <div className={`w-4 h-4 rounded-full bg-white absolute top-0.5 transition-all ${item.active ? "left-5" : "left-0.5"}`} />
                   </div>
                 </div>
               ))}
-              <p className="text-xs text-gray-500 text-center mt-2">Notificações serão implementadas em breve</p>
+              <p className="text-xs text-muted-foreground text-center mt-2">Notificações serão implementadas em breve</p>
             </div>
           </CardContent>
         </Card>
 
         {/* Integrações */}
-        <Card className="bg-gray-800 border-gray-700 lg:col-span-2">
+        <Card className="bg-card border-border lg:col-span-2">
           <CardHeader>
             <div className="flex items-center gap-2">
-              <Mail className="w-5 h-5 text-blue-400" />
+              <Mail className="w-5 h-5 text-primary" />
               <CardTitle>Integrações</CardTitle>
             </div>
             <CardDescription>Conecte com ferramentas externas</CardDescription>
@@ -298,10 +298,10 @@ export default function Configuracoes() {
                 { name: "Importação CSV", desc: "Importe leads e contatos", status: "Em breve" },
                 { name: "API REST", desc: "Acesse dados via API", status: "Em breve" },
               ].map((item) => (
-                <div key={item.name} className="p-4 bg-gray-700/50 rounded-lg border border-gray-600">
+                <div key={item.name} className="p-4 bg-[#333333]/50 rounded-lg border border-border">
                   <div>
                     <p className="font-medium text-sm">{item.name}</p>
-                    <p className="text-xs text-gray-400 mt-1">{item.desc}</p>
+                    <p className="text-xs text-muted-foreground mt-1">{item.desc}</p>
                     <span className="inline-block mt-2 px-2 py-0.5 text-xs bg-yellow-900/50 text-yellow-300 rounded">
                       {item.status}
                     </span>
@@ -315,52 +315,52 @@ export default function Configuracoes() {
 
       {/* Edit Organization Dialog */}
       <Dialog open={editOrg} onOpenChange={setEditOrg}>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-md">
+        <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader>
             <DialogTitle>Editar Organização</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div>
-              <label className="text-sm font-medium text-gray-300">Nome da Organização</label>
+              <label className="text-sm font-medium text-foreground/80">Nome da Organização</label>
               <Input
                 value={orgNome}
                 onChange={(e) => setOrgNome(e.target.value)}
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">CNPJ</label>
+              <label className="text-sm font-medium text-foreground/80">CNPJ</label>
               <Input
                 value={orgCnpj}
                 onChange={(e) => setOrgCnpj(e.target.value)}
                 placeholder="00.000.000/0000-00"
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Email</label>
+              <label className="text-sm font-medium text-foreground/80">Email</label>
               <Input
                 type="email"
                 value={orgEmail}
                 onChange={(e) => setOrgEmail(e.target.value)}
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Telefone</label>
+              <label className="text-sm font-medium text-foreground/80">Telefone</label>
               <Input
                 value={orgTelefone}
                 onChange={(e) => setOrgTelefone(e.target.value)}
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-700">
-              <Button variant="outline" onClick={() => setEditOrg(false)} className="border-gray-600">
+            <div className="flex gap-3 justify-end pt-4 border-t border-border">
+              <Button variant="outline" onClick={() => setEditOrg(false)} className="border-border">
                 Cancelar
               </Button>
               <Button
                 onClick={handleSaveOrg}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary/90"
                 disabled={updateOrgMutation.isPending}
               >
                 {updateOrgMutation.isPending ? <Loader className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
@@ -373,46 +373,46 @@ export default function Configuracoes() {
 
       {/* Change Password Dialog */}
       <Dialog open={showPasswordDialog} onOpenChange={setShowPasswordDialog}>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-sm">
+        <DialogContent className="bg-card border-border max-w-sm">
           <DialogHeader>
             <DialogTitle>Alterar Senha</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div>
-              <label className="text-sm font-medium text-gray-300">Senha Atual</label>
+              <label className="text-sm font-medium text-foreground/80">Senha Atual</label>
               <Input
                 type="password"
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Nova Senha</label>
+              <label className="text-sm font-medium text-foreground/80">Nova Senha</label>
               <Input
                 type="password"
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
                 placeholder="Mínimo 6 caracteres"
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Confirmar Nova Senha</label>
+              <label className="text-sm font-medium text-foreground/80">Confirmar Nova Senha</label>
               <Input
                 type="password"
                 value={confirmPassword}
                 onChange={(e) => setConfirmPassword(e.target.value)}
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-700">
-              <Button variant="outline" onClick={() => setShowPasswordDialog(false)} className="border-gray-600">
+            <div className="flex gap-3 justify-end pt-4 border-t border-border">
+              <Button variant="outline" onClick={() => setShowPasswordDialog(false)} className="border-border">
                 Cancelar
               </Button>
               <Button
                 onClick={handleChangePassword}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary/90"
                 disabled={changePasswordMutation.isPending}
               >
                 {changePasswordMutation.isPending ? <Loader className="w-4 h-4 animate-spin mr-2" /> : null}

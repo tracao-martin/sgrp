@@ -10,7 +10,7 @@ import { toast } from "sonner";
 const roleColors: Record<string, string> = {
   admin: "bg-red-900/60 text-red-200 border border-red-700",
   gerente: "bg-purple-900/60 text-purple-200 border border-purple-700",
-  vendedor: "bg-blue-900/60 text-blue-200 border border-blue-700",
+  vendedor: "bg-primary/20 text-primary/80 border border-primary/40",
 };
 
 const roleLabels: Record<string, string> = {
@@ -104,7 +104,7 @@ export default function Usuarios() {
   if (usersQuery.isLoading) {
     return (
       <div className="flex items-center justify-center h-96">
-        <Loader className="w-8 h-8 animate-spin text-blue-400" />
+        <Loader className="w-8 h-8 animate-spin text-primary" />
       </div>
     );
   }
@@ -115,11 +115,11 @@ export default function Usuarios() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold">Usuários</h1>
-          <p className="text-gray-400 mt-1">Gerenciamento de usuários e permissões</p>
+          <p className="text-muted-foreground mt-1">Gerenciamento de usuários e permissões</p>
         </div>
         <Button
           onClick={() => setShowInvite(true)}
-          className="bg-blue-600 hover:bg-blue-700"
+          className="bg-primary hover:bg-primary/90"
         >
           <UserPlus className="w-4 h-4 mr-2" />
           Novo Usuário
@@ -128,25 +128,25 @@ export default function Usuarios() {
 
       {/* Org Limit Banner */}
       {org && (
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
-                <Building2 className="w-5 h-5 text-blue-400" />
+                <Building2 className="w-5 h-5 text-primary" />
                 <div>
                   <p className="text-sm font-medium">{org.nome}</p>
-                  <p className="text-xs text-gray-400">
-                    Plano: <span className="capitalize text-blue-300">{org.plano}</span>
+                  <p className="text-xs text-muted-foreground">
+                    Plano: <span className="capitalize text-primary">{org.plano}</span>
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-4">
                 <div className="text-right">
                   <p className="text-sm font-medium">{activeUsers} / {maxUsers} usuários ativos</p>
-                  <div className="w-40 h-2 bg-gray-700 rounded-full mt-1">
+                  <div className="w-40 h-2 bg-[#333333] rounded-full mt-1">
                     <div
                       className={`h-2 rounded-full transition-all ${
-                        usagePercent >= 90 ? "bg-red-500" : usagePercent >= 70 ? "bg-yellow-500" : "bg-blue-500"
+                        usagePercent >= 90 ? "bg-red-500" : usagePercent >= 70 ? "bg-yellow-500" : "bg-primary"
                       }`}
                       style={{ width: `${Math.min(usagePercent, 100)}%` }}
                     />
@@ -160,20 +160,20 @@ export default function Usuarios() {
 
       {/* Stats */}
       <div className="grid grid-cols-4 gap-4">
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-900/30 rounded-lg">
-                <Users className="w-5 h-5 text-blue-400" />
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <Users className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{users.length}</p>
-                <p className="text-xs text-gray-400">Total</p>
+                <p className="text-xs text-muted-foreground">Total</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-red-900/30 rounded-lg">
@@ -181,12 +181,12 @@ export default function Usuarios() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{admins}</p>
-                <p className="text-xs text-gray-400">Admins</p>
+                <p className="text-xs text-muted-foreground">Admins</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
               <div className="p-2 bg-purple-900/30 rounded-lg">
@@ -194,20 +194,20 @@ export default function Usuarios() {
               </div>
               <div>
                 <p className="text-2xl font-bold">{gerentes}</p>
-                <p className="text-xs text-gray-400">Gerentes</p>
+                <p className="text-xs text-muted-foreground">Gerentes</p>
               </div>
             </div>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 bg-blue-900/30 rounded-lg">
-                <UserCheck className="w-5 h-5 text-blue-400" />
+              <div className="p-2 bg-primary/20 rounded-lg">
+                <UserCheck className="w-5 h-5 text-primary" />
               </div>
               <div>
                 <p className="text-2xl font-bold">{vendedores}</p>
-                <p className="text-xs text-gray-400">Vendedores</p>
+                <p className="text-xs text-muted-foreground">Vendedores</p>
               </div>
             </div>
           </CardContent>
@@ -217,10 +217,10 @@ export default function Usuarios() {
       {/* Search */}
       <div className="flex gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
+          <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Buscar por nome ou email..."
-            className="pl-10 bg-gray-800 border-gray-700"
+            className="pl-10 bg-card border-border"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -228,7 +228,7 @@ export default function Usuarios() {
       </div>
 
       {/* Table */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle>Lista de Usuários</CardTitle>
           <CardDescription>{filteredUsers.length} usuários encontrados</CardDescription>
@@ -237,47 +237,47 @@ export default function Usuarios() {
           {filteredUsers.length === 0 ? (
             <div className="text-center py-8">
               <Users className="w-12 h-12 text-gray-600 mx-auto mb-3" />
-              <p className="text-gray-400">Nenhum usuário encontrado</p>
-              <p className="text-gray-500 text-sm mt-1">Clique em "Novo Usuário" para adicionar membros à equipe</p>
+              <p className="text-muted-foreground">Nenhum usuário encontrado</p>
+              <p className="text-muted-foreground text-sm mt-1">Clique em "Novo Usuário" para adicionar membros à equipe</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
-                  <tr className="border-b border-gray-700">
-                    <th className="text-left py-3 px-4 font-medium text-gray-300">Nome</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-300">Email</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-300">Perfil</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-300">Departamento</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-300">Status</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-300">Último Acesso</th>
-                    <th className="text-left py-3 px-4 font-medium text-gray-300">Ações</th>
+                  <tr className="border-b border-border">
+                    <th className="text-left py-3 px-4 font-medium text-foreground/80">Nome</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground/80">Email</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground/80">Perfil</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground/80">Departamento</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground/80">Status</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground/80">Último Acesso</th>
+                    <th className="text-left py-3 px-4 font-medium text-foreground/80">Ações</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredUsers.map((user: any) => (
-                    <tr key={user.id} className="border-b border-gray-700 hover:bg-gray-700/50">
+                    <tr key={user.id} className="border-b border-border hover:bg-[#333333]/50">
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-xs font-bold">
+                          <div className="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-xs font-bold">
                             {user.name?.charAt(0).toUpperCase() || "U"}
                           </div>
                           <p className="font-medium">{user.name || "Sem nome"}</p>
                         </div>
                       </td>
-                      <td className="py-3 px-4 text-gray-400">{user.email || "-"}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{user.email || "-"}</td>
                       <td className="py-3 px-4">
-                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[user.role] || "bg-gray-700 text-gray-300"}`}>
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${roleColors[user.role] || "bg-[#333333] text-foreground/80"}`}>
                           {roleLabels[user.role] || user.role}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-gray-400">{user.departamento || "-"}</td>
+                      <td className="py-3 px-4 text-muted-foreground">{user.departamento || "-"}</td>
                       <td className="py-3 px-4">
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${user.ativo ? "bg-green-900/60 text-green-200" : "bg-red-900/60 text-red-200"}`}>
                           {user.ativo ? "Ativo" : "Inativo"}
                         </span>
                       </td>
-                      <td className="py-3 px-4 text-gray-400 text-xs">
+                      <td className="py-3 px-4 text-muted-foreground text-xs">
                         {user.lastSignedIn ? new Date(user.lastSignedIn).toLocaleString("pt-BR") : "-"}
                       </td>
                       <td className="py-3 px-4">
@@ -286,7 +286,7 @@ export default function Usuarios() {
                             variant="ghost"
                             size="sm"
                             onClick={() => openEditRole(user)}
-                            className="text-blue-400 hover:text-blue-300"
+                            className="text-primary hover:text-primary"
                             title="Alterar perfil"
                           >
                             <Shield className="w-4 h-4" />
@@ -313,30 +313,30 @@ export default function Usuarios() {
 
       {/* Edit Role Dialog */}
       <Dialog open={!!editUser} onOpenChange={(open) => !open && setEditUser(null)}>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-sm">
+        <DialogContent className="bg-card border-border max-w-sm">
           <DialogHeader>
             <DialogTitle>Alterar Perfil de {editUser?.name}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div>
-              <label className="text-sm font-medium text-gray-300">Perfil</label>
+              <label className="text-sm font-medium text-foreground/80">Perfil</label>
               <select
                 value={editRole}
                 onChange={(e) => setEditRole(e.target.value)}
-                className="w-full mt-1 bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-sm text-gray-300"
+                className="w-full mt-1 bg-[#333333] border border-border rounded-md px-3 py-2 text-sm text-foreground/80"
               >
                 <option value="vendedor">Vendedor</option>
                 <option value="gerente">Gerente</option>
                 <option value="admin">Administrador</option>
               </select>
             </div>
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-700">
-              <Button variant="outline" onClick={() => setEditUser(null)} className="border-gray-600">
+            <div className="flex gap-3 justify-end pt-4 border-t border-border">
+              <Button variant="outline" onClick={() => setEditUser(null)} className="border-border">
                 Cancelar
               </Button>
               <Button
                 onClick={handleUpdateRole}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary/90"
                 disabled={updateRoleMutation.isPending}
               >
                 {updateRoleMutation.isPending ? <Loader className="w-4 h-4 animate-spin mr-2" /> : null}
@@ -349,47 +349,47 @@ export default function Usuarios() {
 
       {/* Invite User Dialog */}
       <Dialog open={showInvite} onOpenChange={setShowInvite}>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-md">
+        <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader>
             <DialogTitle>Novo Usuário</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div>
-              <label className="text-sm font-medium text-gray-300">Nome completo *</label>
+              <label className="text-sm font-medium text-foreground/80">Nome completo *</label>
               <Input
                 value={inviteName}
                 onChange={(e) => setInviteName(e.target.value)}
                 placeholder="Ex: João Silva"
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Email *</label>
+              <label className="text-sm font-medium text-foreground/80">Email *</label>
               <Input
                 type="email"
                 value={inviteEmail}
                 onChange={(e) => setInviteEmail(e.target.value)}
                 placeholder="joao@empresa.com.br"
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Senha temporária *</label>
+              <label className="text-sm font-medium text-foreground/80">Senha temporária *</label>
               <Input
                 type="text"
                 value={invitePassword}
                 onChange={(e) => setInvitePassword(e.target.value)}
                 placeholder="Mínimo 6 caracteres"
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
-              <p className="text-xs text-gray-500 mt-1">O usuário poderá alterar a senha depois</p>
+              <p className="text-xs text-muted-foreground mt-1">O usuário poderá alterar a senha depois</p>
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Perfil</label>
+              <label className="text-sm font-medium text-foreground/80">Perfil</label>
               <select
                 value={inviteRole}
                 onChange={(e) => setInviteRole(e.target.value as any)}
-                className="w-full mt-1 bg-gray-700 border border-gray-600 rounded-md px-3 py-2 text-sm text-gray-300"
+                className="w-full mt-1 bg-[#333333] border border-border rounded-md px-3 py-2 text-sm text-foreground/80"
               >
                 <option value="vendedor">Vendedor</option>
                 <option value="gerente">Gerente</option>
@@ -403,13 +403,13 @@ export default function Usuarios() {
               </div>
             )}
 
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-700">
-              <Button variant="outline" onClick={() => setShowInvite(false)} className="border-gray-600">
+            <div className="flex gap-3 justify-end pt-4 border-t border-border">
+              <Button variant="outline" onClick={() => setShowInvite(false)} className="border-border">
                 Cancelar
               </Button>
               <Button
                 onClick={handleInvite}
-                className="bg-blue-600 hover:bg-blue-700"
+                className="bg-primary hover:bg-primary/90"
                 disabled={inviteMutation.isPending || activeUsers >= maxUsers}
               >
                 {inviteMutation.isPending ? <Loader className="w-4 h-4 animate-spin mr-2" /> : <UserPlus className="w-4 h-4 mr-2" />}

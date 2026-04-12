@@ -400,10 +400,10 @@ export default function ConfigFunis() {
       <div className="flex items-center justify-between">
         <div>
           <div className="flex items-center gap-3">
-            <Layers className="w-7 h-7 text-blue-400" />
+            <Layers className="w-7 h-7 text-primary" />
             <h1 className="text-2xl font-bold">Funis de Vendas</h1>
           </div>
-          <p className="text-gray-400 mt-1 ml-10">
+          <p className="text-muted-foreground mt-1 ml-10">
             Configure os funis, estágios, critérios de passagem e campos obrigatórios
           </p>
         </div>
@@ -418,22 +418,22 @@ export default function ConfigFunis() {
 
       {/* Stats */}
       <div className="grid grid-cols-3 gap-4">
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-blue-400">{totalPipelines}</p>
-            <p className="text-xs text-gray-400">Funis criados</p>
+            <p className="text-2xl font-bold text-primary">{totalPipelines}</p>
+            <p className="text-xs text-muted-foreground">Funis criados</p>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-green-400">{activePipelines}</p>
-            <p className="text-xs text-gray-400">Funis ativos</p>
+            <p className="text-xs text-muted-foreground">Funis ativos</p>
           </CardContent>
         </Card>
-        <Card className="bg-gray-800/50 border-gray-700">
+        <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-purple-400">{totalStages}</p>
-            <p className="text-xs text-gray-400">Estágios totais</p>
+            <p className="text-xs text-muted-foreground">Estágios totais</p>
           </CardContent>
         </Card>
       </div>
@@ -441,42 +441,42 @@ export default function ConfigFunis() {
       {/* Pipelines List */}
       <div className="space-y-4">
         {pipelines.map((pipeline) => (
-          <Card key={pipeline.id} className="bg-gray-800 border-gray-700 overflow-hidden">
+          <Card key={pipeline.id} className="bg-card border-border overflow-hidden">
             {/* Pipeline Header */}
             <div
-              className="flex items-center justify-between p-4 cursor-pointer hover:bg-gray-750"
+              className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#2f2f2f]"
               onClick={() =>
                 setExpandedPipeline(expandedPipeline === pipeline.id ? null : pipeline.id)
               }
             >
               <div className="flex items-center gap-3">
                 {expandedPipeline === pipeline.id ? (
-                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                  <ChevronDown className="w-5 h-5 text-muted-foreground" />
                 ) : (
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                  <ChevronRight className="w-5 h-5 text-muted-foreground" />
                 )}
                 <div>
                   <div className="flex items-center gap-2">
                     <h3 className="font-semibold text-lg">{pipeline.nome}</h3>
                     {pipeline.padrao && (
-                      <Badge className="bg-blue-600/20 text-blue-300 text-xs">Padrão</Badge>
+                      <Badge className="bg-primary/20 text-primary text-xs">Padrão</Badge>
                     )}
                     {!pipeline.ativo && (
-                      <Badge className="bg-gray-600/50 text-gray-400 text-xs">Inativo</Badge>
+                      <Badge className="bg-[#444444]/50 text-muted-foreground text-xs">Inativo</Badge>
                     )}
                   </div>
-                  <p className="text-sm text-gray-400">{pipeline.descricao}</p>
+                  <p className="text-sm text-muted-foreground">{pipeline.descricao}</p>
                 </div>
               </div>
               <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                <Badge variant="outline" className="border-gray-600 text-gray-300">
+                <Badge variant="outline" className="border-border text-foreground/80">
                   {pipeline.stages.length} estágios
                 </Badge>
                 <Button
                   variant="ghost"
                   size="sm"
                   onClick={() => handleDuplicatePipeline(pipeline.id)}
-                  className="text-gray-400 hover:text-white"
+                  className="text-muted-foreground hover:text-white"
                   title="Duplicar funil"
                 >
                   <Copy className="w-4 h-4" />
@@ -500,17 +500,17 @@ export default function ConfigFunis() {
 
             {/* Expanded: Stages */}
             {expandedPipeline === pipeline.id && (
-              <div className="border-t border-gray-700">
+              <div className="border-t border-border">
                 {/* Visual Pipeline Flow */}
-                <div className="p-4 bg-gray-850 overflow-x-auto">
+                <div className="p-4 bg-[#222222] overflow-x-auto">
                   <div className="flex items-center gap-1 min-w-max">
                     {pipeline.stages.map((stage, idx) => (
                       <React.Fragment key={stage.id}>
                         <div
                           className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all ${
                             expandedStage === stage.id
-                              ? "ring-2 ring-yellow-500 bg-gray-700"
-                              : "bg-gray-700/50 hover:bg-gray-700"
+                              ? "ring-2 ring-yellow-500 bg-[#333333]"
+                              : "bg-[#333333]/50 hover:bg-[#333333]"
                           }`}
                           onClick={() =>
                             setExpandedStage(expandedStage === stage.id ? null : stage.id)
@@ -521,10 +521,10 @@ export default function ConfigFunis() {
                             style={{ backgroundColor: stage.cor }}
                           />
                           <span className="text-xs font-medium whitespace-nowrap">{stage.nome}</span>
-                          <span className="text-xs text-gray-400">{stage.probabilidade}%</span>
+                          <span className="text-xs text-muted-foreground">{stage.probabilidade}%</span>
                         </div>
                         {idx < pipeline.stages.length - 1 && (
-                          <ArrowRight className="w-4 h-4 text-gray-500 flex-shrink-0" />
+                          <ArrowRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         )}
                       </React.Fragment>
                     ))}
@@ -547,22 +547,22 @@ export default function ConfigFunis() {
                       <div
                         className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-all ${
                           expandedStage === stage.id
-                            ? "bg-gray-700 ring-1 ring-gray-600"
-                            : "bg-gray-700/30 hover:bg-gray-700/50"
+                            ? "bg-[#333333] ring-1 ring-gray-600"
+                            : "bg-[#333333]/30 hover:bg-[#333333]/50"
                         }`}
                         onClick={() =>
                           setExpandedStage(expandedStage === stage.id ? null : stage.id)
                         }
                       >
                         <div className="flex items-center gap-3">
-                          <GripVertical className="w-4 h-4 text-gray-500" />
+                          <GripVertical className="w-4 h-4 text-muted-foreground" />
                           <div
                             className="w-4 h-4 rounded-full"
                             style={{ backgroundColor: stage.cor }}
                           />
                           <div>
                             <span className="font-medium">{stage.nome}</span>
-                            <span className="text-xs text-gray-400 ml-2">
+                            <span className="text-xs text-muted-foreground ml-2">
                               Ordem {stage.ordem} · {stage.probabilidade}%
                             </span>
                           </div>
@@ -573,7 +573,7 @@ export default function ConfigFunis() {
                             size="sm"
                             onClick={() => handleMoveStage(pipeline.id, stage.id, "up")}
                             disabled={idx === 0}
-                            className="text-gray-400 hover:text-white h-7 w-7 p-0"
+                            className="text-muted-foreground hover:text-white h-7 w-7 p-0"
                           >
                             <ArrowLeft className="w-3 h-3" />
                           </Button>
@@ -582,7 +582,7 @@ export default function ConfigFunis() {
                             size="sm"
                             onClick={() => handleMoveStage(pipeline.id, stage.id, "down")}
                             disabled={idx === pipeline.stages.length - 1}
-                            className="text-gray-400 hover:text-white h-7 w-7 p-0"
+                            className="text-muted-foreground hover:text-white h-7 w-7 p-0"
                           >
                             <ArrowRight className="w-3 h-3" />
                           </Button>
@@ -590,7 +590,7 @@ export default function ConfigFunis() {
                             variant="ghost"
                             size="sm"
                             onClick={() => openStageForm(pipeline.id, stage)}
-                            className="text-blue-400 hover:text-blue-300 h-7 w-7 p-0"
+                            className="text-primary hover:text-primary h-7 w-7 p-0"
                           >
                             <Pencil className="w-3 h-3" />
                           </Button>
@@ -607,8 +607,8 @@ export default function ConfigFunis() {
 
                       {/* Expanded Stage Detail */}
                       {expandedStage === stage.id && (
-                        <div className="ml-8 mt-2 mb-3 p-4 bg-gray-800/80 rounded-lg border border-gray-700 space-y-4">
-                          <p className="text-sm text-gray-300">{stage.descricao}</p>
+                        <div className="ml-8 mt-2 mb-3 p-4 bg-card/80 rounded-lg border border-border space-y-4">
+                          <p className="text-sm text-foreground/80">{stage.descricao}</p>
 
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {/* Critérios de Entrada */}
@@ -620,14 +620,14 @@ export default function ConfigFunis() {
                               {stage.criteriosEntrada.length > 0 ? (
                                 <ul className="space-y-1">
                                   {stage.criteriosEntrada.map((c, i) => (
-                                    <li key={i} className="text-sm text-gray-300 flex items-start gap-2">
+                                    <li key={i} className="text-sm text-foreground/80 flex items-start gap-2">
                                       <span className="text-green-400 mt-1">•</span>
                                       {c}
                                     </li>
                                   ))}
                                 </ul>
                               ) : (
-                                <p className="text-xs text-gray-500 italic">Nenhum critério definido</p>
+                                <p className="text-xs text-muted-foreground italic">Nenhum critério definido</p>
                               )}
                             </div>
 
@@ -640,33 +640,33 @@ export default function ConfigFunis() {
                               {stage.criteriosSaida.length > 0 ? (
                                 <ul className="space-y-1">
                                   {stage.criteriosSaida.map((c, i) => (
-                                    <li key={i} className="text-sm text-gray-300 flex items-start gap-2">
+                                    <li key={i} className="text-sm text-foreground/80 flex items-start gap-2">
                                       <span className="text-orange-400 mt-1">•</span>
                                       {c}
                                     </li>
                                   ))}
                                 </ul>
                               ) : (
-                                <p className="text-xs text-gray-500 italic">Nenhum critério definido</p>
+                                <p className="text-xs text-muted-foreground italic">Nenhum critério definido</p>
                               )}
                             </div>
 
                             {/* Campos Obrigatórios */}
                             <div className="space-y-2">
-                              <div className="flex items-center gap-2 text-blue-400">
+                              <div className="flex items-center gap-2 text-primary">
                                 <FileCheck className="w-4 h-4" />
                                 <span className="text-sm font-semibold">Campos Obrigatórios</span>
                               </div>
                               {stage.camposObrigatorios.length > 0 ? (
                                 <div className="flex flex-wrap gap-1">
                                   {stage.camposObrigatorios.map((c, i) => (
-                                    <Badge key={i} className="bg-blue-900/30 text-blue-300 text-xs">
+                                    <Badge key={i} className="bg-primary/20 text-primary text-xs">
                                       {c}
                                     </Badge>
                                   ))}
                                 </div>
                               ) : (
-                                <p className="text-xs text-gray-500 italic">Nenhum campo obrigatório</p>
+                                <p className="text-xs text-muted-foreground italic">Nenhum campo obrigatório</p>
                               )}
                             </div>
 
@@ -679,14 +679,14 @@ export default function ConfigFunis() {
                               {stage.evidenciasMinimas.length > 0 ? (
                                 <ul className="space-y-1">
                                   {stage.evidenciasMinimas.map((c, i) => (
-                                    <li key={i} className="text-sm text-gray-300 flex items-start gap-2">
+                                    <li key={i} className="text-sm text-foreground/80 flex items-start gap-2">
                                       <span className="text-yellow-400 mt-1">•</span>
                                       {c}
                                     </li>
                                   ))}
                                 </ul>
                               ) : (
-                                <p className="text-xs text-gray-500 italic">Nenhuma evidência definida</p>
+                                <p className="text-xs text-muted-foreground italic">Nenhuma evidência definida</p>
                               )}
                             </div>
                           </div>
@@ -696,13 +696,13 @@ export default function ConfigFunis() {
                   ))}
 
                   {pipeline.stages.length === 0 && (
-                    <div className="text-center py-8 text-gray-400">
+                    <div className="text-center py-8 text-muted-foreground">
                       <Layers className="w-10 h-10 mx-auto mb-3 opacity-30" />
                       <p>Nenhum estágio configurado</p>
                       <Button
                         variant="outline"
                         size="sm"
-                        className="mt-3 border-gray-600"
+                        className="mt-3 border-border"
                         onClick={() => openStageForm(pipeline.id)}
                       >
                         <Plus className="w-4 h-4 mr-2" />
@@ -719,32 +719,32 @@ export default function ConfigFunis() {
 
       {/* New Pipeline Dialog */}
       <Dialog open={showNewPipeline} onOpenChange={setShowNewPipeline}>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-md">
+        <DialogContent className="bg-card border-border max-w-md">
           <DialogHeader>
             <DialogTitle>Novo Funil de Vendas</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div>
-              <label className="text-sm font-medium text-gray-300">Nome *</label>
+              <label className="text-sm font-medium text-foreground/80">Nome *</label>
               <Input
                 value={newPipelineName}
                 onChange={(e) => setNewPipelineName(e.target.value)}
                 placeholder="Ex: Vendas Inbound, Expansão Enterprise..."
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
               />
             </div>
             <div>
-              <label className="text-sm font-medium text-gray-300">Descrição</label>
+              <label className="text-sm font-medium text-foreground/80">Descrição</label>
               <Textarea
                 value={newPipelineDesc}
                 onChange={(e) => setNewPipelineDesc(e.target.value)}
                 placeholder="Descreva o objetivo deste funil..."
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
                 rows={3}
               />
             </div>
             <div className="flex gap-3 justify-end pt-2">
-              <Button variant="outline" onClick={() => setShowNewPipeline(false)} className="border-gray-600">
+              <Button variant="outline" onClick={() => setShowNewPipeline(false)} className="border-border">
                 Cancelar
               </Button>
               <Button onClick={handleCreatePipeline} className="bg-yellow-500 hover:bg-yellow-600 text-black">
@@ -763,7 +763,7 @@ export default function ConfigFunis() {
           setEditingStage(null);
         }}
       >
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl max-h-[85vh] overflow-y-auto">
+        <DialogContent className="bg-card border-border max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {editingStage ? `Editar Estágio: ${editingStage.stage.nome}` : "Novo Estágio"}
@@ -772,16 +772,16 @@ export default function ConfigFunis() {
           <div className="space-y-4 pt-2">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-300">Nome *</label>
+                <label className="text-sm font-medium text-foreground/80">Nome *</label>
                 <Input
                   value={stageForm.nome}
                   onChange={(e) => setStageForm({ ...stageForm, nome: e.target.value })}
                   placeholder="Ex: Diagnóstico Realizado"
-                  className="mt-1 bg-gray-700 border-gray-600"
+                  className="mt-1 bg-[#333333] border-border"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-300">Probabilidade (%)</label>
+                <label className="text-sm font-medium text-foreground/80">Probabilidade (%)</label>
                 <Input
                   type="number"
                   min={0}
@@ -790,14 +790,14 @@ export default function ConfigFunis() {
                   onChange={(e) =>
                     setStageForm({ ...stageForm, probabilidade: parseInt(e.target.value) || 0 })
                   }
-                  className="mt-1 bg-gray-700 border-gray-600"
+                  className="mt-1 bg-[#333333] border-border"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-300">Cor</label>
+                <label className="text-sm font-medium text-foreground/80">Cor</label>
                 <div className="flex items-center gap-2 mt-1">
                   <input
                     type="color"
@@ -820,29 +820,29 @@ export default function ConfigFunis() {
                 </div>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-300">Descrição</label>
+                <label className="text-sm font-medium text-foreground/80">Descrição</label>
                 <Input
                   value={stageForm.descricao}
                   onChange={(e) => setStageForm({ ...stageForm, descricao: e.target.value })}
                   placeholder="Breve descrição do estágio"
-                  className="mt-1 bg-gray-700 border-gray-600"
+                  className="mt-1 bg-[#333333] border-border"
                 />
               </div>
             </div>
 
-            <Separator className="bg-gray-700" />
+            <Separator className="bg-[#333333]" />
 
             <div>
               <label className="text-sm font-medium text-green-400 flex items-center gap-2">
                 <ArrowRight className="w-4 h-4" />
                 Critérios de Entrada
               </label>
-              <p className="text-xs text-gray-500 mb-1">Um critério por linha. O que precisa acontecer para o deal entrar neste estágio.</p>
+              <p className="text-xs text-muted-foreground mb-1">Um critério por linha. O que precisa acontecer para o deal entrar neste estágio.</p>
               <Textarea
                 value={stageForm.criteriosEntrada}
                 onChange={(e) => setStageForm({ ...stageForm, criteriosEntrada: e.target.value })}
                 placeholder={"Reunião de diagnóstico confirmada\nDecisão ou influenciador presente"}
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
                 rows={3}
               />
             </div>
@@ -852,27 +852,27 @@ export default function ConfigFunis() {
                 <ArrowLeft className="w-4 h-4" />
                 Critérios de Saída
               </label>
-              <p className="text-xs text-gray-500 mb-1">Um critério por linha. O que precisa acontecer para o deal avançar para o próximo estágio.</p>
+              <p className="text-xs text-muted-foreground mb-1">Um critério por linha. O que precisa acontecer para o deal avançar para o próximo estágio.</p>
               <Textarea
                 value={stageForm.criteriosSaida}
                 onChange={(e) => setStageForm({ ...stageForm, criteriosSaida: e.target.value })}
                 placeholder={"Diagnóstico realizado\nDores mapeadas (SPIN)"}
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
                 rows={3}
               />
             </div>
 
             <div>
-              <label className="text-sm font-medium text-blue-400 flex items-center gap-2">
+              <label className="text-sm font-medium text-primary flex items-center gap-2">
                 <FileCheck className="w-4 h-4" />
                 Campos Obrigatórios
               </label>
-              <p className="text-xs text-gray-500 mb-1">Um campo por linha. Campos que devem ser preenchidos neste estágio.</p>
+              <p className="text-xs text-muted-foreground mb-1">Um campo por linha. Campos que devem ser preenchidos neste estágio.</p>
               <Textarea
                 value={stageForm.camposObrigatorios}
                 onChange={(e) => setStageForm({ ...stageForm, camposObrigatorios: e.target.value })}
                 placeholder={"Data da reunião\nParticipantes confirmados"}
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
                 rows={3}
               />
             </div>
@@ -882,24 +882,24 @@ export default function ConfigFunis() {
                 <Shield className="w-4 h-4" />
                 Evidências Mínimas
               </label>
-              <p className="text-xs text-gray-500 mb-1">Um item por linha. Evidências que comprovam o avanço real do deal.</p>
+              <p className="text-xs text-muted-foreground mb-1">Um item por linha. Evidências que comprovam o avanço real do deal.</p>
               <Textarea
                 value={stageForm.evidenciasMinimas}
                 onChange={(e) => setStageForm({ ...stageForm, evidenciasMinimas: e.target.value })}
                 placeholder={"Convite de calendário aceito\nEmail de confirmação"}
-                className="mt-1 bg-gray-700 border-gray-600"
+                className="mt-1 bg-[#333333] border-border"
                 rows={3}
               />
             </div>
 
-            <div className="flex gap-3 justify-end pt-2 border-t border-gray-700">
+            <div className="flex gap-3 justify-end pt-2 border-t border-border">
               <Button
                 variant="outline"
                 onClick={() => {
                   setShowNewStage(null);
                   setEditingStage(null);
                 }}
-                className="border-gray-600"
+                className="border-border"
               >
                 Cancelar
               </Button>

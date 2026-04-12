@@ -16,13 +16,13 @@ const insightColors: Record<string, string> = {
   opportunity: "border-green-500",
   risk: "border-red-500",
   warning: "border-yellow-500",
-  insight: "border-blue-500",
+  insight: "border-primary",
 };
 
 const priorityBadge: Record<string, string> = {
   alta: "bg-red-500/20 text-red-400",
   media: "bg-yellow-500/20 text-yellow-400",
-  baixa: "bg-blue-500/20 text-blue-400",
+  baixa: "bg-primary/20 text-primary",
 };
 
 export default function ExpertComercial() {
@@ -107,37 +107,37 @@ export default function ExpertComercial() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Expert Comercial</h1>
-        <p className="text-gray-400 mt-1">Assistente inteligente para análise e recomendações de vendas</p>
+        <p className="text-muted-foreground mt-1">Assistente inteligente para análise e recomendações de vendas</p>
       </div>
 
       {/* Real Insights Grid */}
       <div>
         <h2 className="text-lg font-semibold mb-3">Insights do Pipeline</h2>
         {loadingInsights ? (
-          <div className="flex items-center gap-2 text-gray-400">
+          <div className="flex items-center gap-2 text-muted-foreground">
             <Loader2 className="w-4 h-4 animate-spin" />
             Analisando dados...
           </div>
         ) : insights.length === 0 ? (
-          <p className="text-gray-500 text-sm">Nenhum insight disponível. Adicione mais dados ao pipeline.</p>
+          <p className="text-muted-foreground text-sm">Nenhum insight disponível. Adicione mais dados ao pipeline.</p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {insights.map((insight: any, idx: number) => {
               const IconComponent = insightIcons[insight.type] || Lightbulb;
               const borderColor = insightColors[insight.type] || "border-gray-500";
-              const badge = priorityBadge[insight.priority] || "bg-gray-500/20 text-gray-400";
+              const badge = priorityBadge[insight.priority] || "bg-gray-500/20 text-muted-foreground";
               return (
-                <Card key={idx} className={`bg-gray-800 border-gray-700 border-l-4 ${borderColor}`}>
+                <Card key={idx} className={`bg-card border-border border-l-4 ${borderColor}`}>
                   <CardHeader className="pb-2">
                     <div className="flex items-start justify-between">
                       <CardTitle className="text-sm font-medium text-gray-200">
                         {insight.title}
                       </CardTitle>
-                      <IconComponent className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <IconComponent className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                     </div>
                   </CardHeader>
                   <CardContent>
-                    <p className="text-sm text-gray-400 mb-2">{insight.description}</p>
+                    <p className="text-sm text-muted-foreground mb-2">{insight.description}</p>
                     <span className={`text-xs px-2 py-1 rounded-full ${badge}`}>
                       Prioridade {insight.priority}
                     </span>
@@ -150,38 +150,38 @@ export default function ExpertComercial() {
       </div>
 
       {/* Chat Interface */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Bot className="w-5 h-5 text-blue-400" />
+            <Bot className="w-5 h-5 text-primary" />
             Chat com Expert
           </CardTitle>
           <CardDescription>Faça perguntas sobre seus dados e receba recomendações baseadas no pipeline real</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Chat Messages */}
-          <div className="bg-gray-900 rounded-lg p-4 h-96 overflow-y-auto space-y-4">
+          <div className="bg-[#1c1c1c] rounded-lg p-4 h-96 overflow-y-auto space-y-4">
             {messages.map((msg, idx) => (
               <div
                 key={idx}
                 className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
                 {msg.role === "assistant" && (
-                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                     <Bot className="w-4 h-4" />
                   </div>
                 )}
                 <div
                   className={`max-w-xs lg:max-w-lg px-4 py-3 rounded-lg ${
                     msg.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-700 text-gray-100"
+                      ? "bg-primary text-primary-foreground"
+                      : "bg-[#333333] text-foreground"
                   }`}
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 </div>
                 {msg.role === "user" && (
-                  <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-[#444444] flex items-center justify-center flex-shrink-0">
                     <User className="w-4 h-4" />
                   </div>
                 )}
@@ -189,11 +189,11 @@ export default function ExpertComercial() {
             ))}
             {chatMutation.isPending && (
               <div className="flex gap-3 justify-start">
-                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center flex-shrink-0">
                   <Bot className="w-4 h-4" />
                 </div>
-                <div className="bg-gray-700 px-4 py-3 rounded-lg">
-                  <div className="flex items-center gap-2 text-gray-400 text-sm">
+                <div className="bg-[#333333] px-4 py-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-muted-foreground text-sm">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Analisando...
                   </div>
@@ -207,7 +207,7 @@ export default function ExpertComercial() {
           <div className="flex gap-2">
             <Input
               placeholder="Ex: Qual o valor total do pipeline? Quais deals estão parados?"
-              className="bg-gray-700 border-gray-600"
+              className="bg-[#333333] border-border"
               value={input}
               onChange={(e) => setInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && handleSend()}
@@ -215,7 +215,7 @@ export default function ExpertComercial() {
             />
             <Button
               onClick={handleSend}
-              className="bg-blue-600 hover:bg-blue-700"
+              className="bg-primary hover:bg-primary/90"
               disabled={chatMutation.isPending || !input.trim()}
             >
               {chatMutation.isPending ? (
@@ -229,7 +229,7 @@ export default function ExpertComercial() {
       </Card>
 
       {/* Real Performance Metrics */}
-      <Card className="bg-gray-800 border-gray-700">
+      <Card className="bg-card border-border">
         <CardHeader>
           <CardTitle>Métricas de Performance</CardTitle>
           <CardDescription>Dados calculados em tempo real a partir do pipeline</CardDescription>
@@ -237,23 +237,23 @@ export default function ExpertComercial() {
         <CardContent>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
-              <p className="text-xs text-gray-400 mb-1">Total de Deals</p>
+              <p className="text-xs text-muted-foreground mb-1">Total de Deals</p>
               <p className="text-xl font-bold">{metrics.totalDeals}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Taxa de Ganho</p>
+              <p className="text-xs text-muted-foreground mb-1">Taxa de Ganho</p>
               <p className="text-xl font-bold text-green-400">{metrics.winRate}%</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Valor Médio do Deal</p>
+              <p className="text-xs text-muted-foreground mb-1">Valor Médio do Deal</p>
               <p className="text-xl font-bold">{formatCurrency(metrics.avgDealValue)}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Tarefas Pendentes</p>
+              <p className="text-xs text-muted-foreground mb-1">Tarefas Pendentes</p>
               <p className="text-xl font-bold text-yellow-400">{metrics.pendingTasks}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Tarefas Atrasadas</p>
+              <p className="text-xs text-muted-foreground mb-1">Tarefas Atrasadas</p>
               <p className="text-xl font-bold text-red-400">{metrics.overdueTasks}</p>
             </div>
           </div>

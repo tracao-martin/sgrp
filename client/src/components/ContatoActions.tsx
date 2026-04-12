@@ -65,11 +65,11 @@ export function ContatoActions({ contato, onSuccess }: ContatoActionsProps) {
       {/* View */}
       <Dialog open={openView} onOpenChange={setOpenView}>
         <DialogTrigger asChild>
-          <Button variant="ghost" size="sm" className="text-blue-400 hover:text-blue-300">
+          <Button variant="ghost" size="sm" className="text-primary hover:text-primary">
             <Eye className="w-4 h-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
+        <DialogContent className="bg-card border-border max-w-2xl">
           <DialogHeader>
             <DialogTitle>Detalhes do Contato</DialogTitle>
             <DialogDescription>{contato.nome}</DialogDescription>
@@ -77,19 +77,19 @@ export function ContatoActions({ contato, onSuccess }: ContatoActionsProps) {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-xs text-gray-400">Nome</label>
+                <label className="text-xs text-muted-foreground">Nome</label>
                 <p className="text-white font-medium">{contato.nome}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Cargo</label>
+                <label className="text-xs text-muted-foreground">Cargo</label>
                 <p className="text-white font-medium">{contato.cargo || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Email</label>
+                <label className="text-xs text-muted-foreground">Email</label>
                 <p className="text-white font-medium">{contato.email || "-"}</p>
               </div>
               <div>
-                <label className="text-xs text-gray-400">Telefone</label>
+                <label className="text-xs text-muted-foreground">Telefone</label>
                 <p className="text-white font-medium">{contato.telefone || "-"}</p>
               </div>
             </div>
@@ -104,7 +104,7 @@ export function ContatoActions({ contato, onSuccess }: ContatoActionsProps) {
             <Edit className="w-4 h-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-gray-800 border-gray-700 max-w-2xl">
+        <DialogContent className="bg-card border-border max-w-2xl">
           <DialogHeader>
             <DialogTitle>Editar Contato</DialogTitle>
             <DialogDescription>Atualize os dados do contato</DialogDescription>
@@ -112,41 +112,41 @@ export function ContatoActions({ contato, onSuccess }: ContatoActionsProps) {
           <form onSubmit={handleUpdate} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-300">Nome</label>
+                <label className="text-sm font-medium text-foreground/80">Nome</label>
                 <Input
                   value={formData.nome}
                   onChange={(e) => setFormData({ ...formData, nome: e.target.value })}
-                  className="bg-gray-700 border-gray-600 mt-1"
+                  className="bg-[#333333] border-border mt-1"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-300">Cargo</label>
+                <label className="text-sm font-medium text-foreground/80">Cargo</label>
                 <Input
                   value={formData.cargo}
                   onChange={(e) => setFormData({ ...formData, cargo: e.target.value })}
-                  className="bg-gray-700 border-gray-600 mt-1"
+                  className="bg-[#333333] border-border mt-1"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-300">Email</label>
+                <label className="text-sm font-medium text-foreground/80">Email</label>
                 <Input
                   type="email"
                   value={formData.email}
                   onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="bg-gray-700 border-gray-600 mt-1"
+                  className="bg-[#333333] border-border mt-1"
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-300">Telefone</label>
+                <label className="text-sm font-medium text-foreground/80">Telefone</label>
                 <Input
                   value={formData.telefone}
                   onChange={(e) => setFormData({ ...formData, telefone: e.target.value })}
-                  className="bg-gray-700 border-gray-600 mt-1"
+                  className="bg-[#333333] border-border mt-1"
                 />
               </div>
             </div>
-            <div className="flex gap-3 justify-end pt-4 border-t border-gray-700">
-              <Button type="button" variant="outline" onClick={() => setOpenEdit(false)} className="border-gray-600">
+            <div className="flex gap-3 justify-end pt-4 border-t border-border">
+              <Button type="button" variant="outline" onClick={() => setOpenEdit(false)} className="border-border">
                 Cancelar
               </Button>
               <Button type="submit" className="bg-green-600 hover:bg-green-700" disabled={updateMutation.isPending}>
@@ -165,13 +165,13 @@ export function ContatoActions({ contato, onSuccess }: ContatoActionsProps) {
             <Trash2 className="w-4 h-4" />
           </Button>
         </DialogTrigger>
-        <DialogContent className="bg-gray-800 border-gray-700">
+        <DialogContent className="bg-card border-border">
           <DialogHeader>
             <DialogTitle>Deletar Contato</DialogTitle>
             <DialogDescription>Tem certeza que deseja deletar "{contato.nome}"?</DialogDescription>
           </DialogHeader>
           <div className="flex gap-3 justify-end pt-4">
-            <Button type="button" variant="outline" onClick={() => setOpenDelete(false)} className="border-gray-600">
+            <Button type="button" variant="outline" onClick={() => setOpenDelete(false)} className="border-border">
               Cancelar
             </Button>
             <Button type="button" className="bg-red-600 hover:bg-red-700" onClick={handleDelete} disabled={deleteMutation.isPending}>
