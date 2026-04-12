@@ -199,3 +199,70 @@
 - [x] Garantir isolamento multi-tenant (org_id filter)
 - [x] Escrever testes vitest para procedures ICP (14 testes)
 - [x] Deploy no VPS e testar - ICP criado com sucesso 12/04/2026
+
+## Configurações - Frontend Completo (Dados Mockados)
+
+### Funis (Pipeline)
+- [ ] Página /configuracoes/funis com listagem de funis (ex: Vendas Novas, Expansão, Inbound)
+- [ ] Cada funil mostra seus estágios em ordem com drag-and-drop visual
+- [ ] Cada estágio: nome, cor, critérios de entrada, critérios de saída, campos obrigatórios, evidências mínimas
+- [ ] Criar/editar/excluir funil
+- [ ] Criar/editar/excluir/reordenar estágios dentro de um funil
+- [ ] Estágios padrão: Novo Lead, Diagnóstico Agendado, Diagnóstico Realizado, Oportunidade Qualificada, Solução Desenhada, Proposta Apresentada, Negociação, Commit, Ganho, Perdido
+
+### Probabilidade
+- [ ] Página /configuracoes/probabilidade com tabela de probabilidade por estágio
+- [ ] Cada estágio do funil ativo mostra: nome, probabilidade padrão (%), slider ou input
+- [ ] Opção de ajuste fino por funil (se houver múltiplos funis)
+- [ ] Visualização gráfica da curva de probabilidade por estágio
+
+### Produtos
+- [ ] Página /configuracoes/produtos com catálogo de produtos/serviços
+- [ ] Campos: nome, descrição, categoria, preço base, recorrência (mensal/anual/único), ativo/inativo
+- [ ] CRUD completo com cards ou tabela
+- [ ] Filtro por categoria e status
+- [ ] Tags de categoria com cores
+
+### Metas
+- [ ] Página /configuracoes/metas com definição de metas de vendas
+- [ ] Metas por período (mensal/trimestral/anual)
+- [ ] Metas por vendedor, equipe ou organização
+- [ ] Campos: período, responsável, valor meta, tipo (receita nova, expansão, total)
+- [ ] Visualização de progresso (barra de progresso ou gauge)
+- [ ] Histórico de metas anteriores
+
+### Cadências
+- [ ] Página /configuracoes/cadencias com sequências de follow-up
+- [ ] Cada cadência: nome, descrição, gatilho (ex: novo lead, deal parado, pós-proposta)
+- [ ] Steps da cadência: dia, tipo de ação (email, ligação, WhatsApp, tarefa), template, intervalo
+- [ ] Timeline visual dos steps
+- [ ] Ativar/desativar cadência
+- [ ] CRUD completo
+
+### Mensagens Rápidas (ADIADO para próxima etapa)
+- [ ] ~Página /configuracoes/mensagens-rapidas com templates de mensagens~
+- [ ] Campos: título, categoria (prospecção, follow-up, proposta, objeção, fechamento), conteúdo com variáveis
+- [ ] Variáveis dinâmicas: {{nome_contato}}, {{empresa}}, {{produto}}, {{valor}}, {{vendedor}}
+- [ ] Preview do template com variáveis preenchidas
+- [ ] CRUD completo com busca por categoria
+
+### E-mails por CCO (ADIADO para próxima etapa)
+- [ ] ~Página /configuracoes/emails-cco com configuração de captura de e-mails~
+- [ ] Endereço de CCO único por organização (gerado automaticamente)
+- [ ] Instruções de como usar (copiar endereço, adicionar no CCO do email)
+- [ ] Lista de e-mails capturados recentes (mockado)
+- [ ] Regras de associação automática (por domínio da empresa, por contato)
+
+### Geral
+- [ ] Página /configuracoes/geral com configurações gerais da organização
+- [ ] Dados da empresa: nome, CNPJ, logo, segmento, tamanho
+- [ ] Preferências: moeda, fuso horário, formato de data
+- [ ] Notificações: ativar/desativar tipos de notificação
+- [ ] Plano atual e limites (usuários, armazenamento)
+- [ ] Zona de perigo: exportar dados, excluir organização
+
+### Integração e Navegação
+- [ ] Todas as rotas registradas em App.tsx
+- [ ] Menu lateral de Configurações atualizado com todas as sub-rotas
+- [ ] Navegação fluida entre todas as páginas de configuração
+- [ ] Deploy no VPS e teste de navegação completo

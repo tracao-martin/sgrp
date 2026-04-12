@@ -19,6 +19,11 @@ import ExpertComercial from "./pages/ExpertComercial";
 import Configuracoes from "./pages/Configuracoes";
 import Usuarios from "./pages/Usuarios";
 import ConfigICPs from "./pages/ConfigICPs";
+import ConfigFunis from "./pages/ConfigFunis";
+import ConfigProbabilidade from "./pages/ConfigProbabilidade";
+import ConfigProdutos from "./pages/ConfigProdutos";
+import ConfigMetas from "./pages/ConfigMetas";
+import ConfigCadencias from "./pages/ConfigCadencias";
 
 function Router() {
   return (
@@ -37,6 +42,11 @@ function Router() {
       <Route path={"/configuracoes"} component={() => <SGRPLayout><Configuracoes /></SGRPLayout>} />
       <Route path={"/usuarios"} component={() => <SGRPLayout><Usuarios /></SGRPLayout>} />
       <Route path={"/configuracoes/icps"} component={() => <SGRPLayout><ConfigICPs /></SGRPLayout>} />
+      <Route path={"/configuracoes/funis"} component={() => <SGRPLayout><ConfigFunis /></SGRPLayout>} />
+      <Route path={"/configuracoes/probabilidade"} component={() => <SGRPLayout><ConfigProbabilidade /></SGRPLayout>} />
+      <Route path={"/configuracoes/produtos"} component={() => <SGRPLayout><ConfigProdutos /></SGRPLayout>} />
+      <Route path={"/configuracoes/metas"} component={() => <SGRPLayout><ConfigMetas /></SGRPLayout>} />
+      <Route path={"/configuracoes/cadencias"} component={() => <SGRPLayout><ConfigCadencias /></SGRPLayout>} />
       <Route path={"/admin/usuarios"} component={() => <SGRPLayout><Usuarios /></SGRPLayout>} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />

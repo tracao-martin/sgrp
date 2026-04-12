@@ -122,14 +122,12 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
 
   const configItems = [
     { label: "Geral", href: "/configuracoes" },
-    { label: "Cadências", href: "/configuracoes" },
-    { label: "Probabilidade", href: "/configuracoes" },
-    { label: "Funis", href: "/configuracoes" },
+    { label: "Funis", href: "/configuracoes/funis" },
+    { label: "Probabilidade", href: "/configuracoes/probabilidade" },
     { label: "ICPs", href: "/configuracoes/icps" },
-    { label: "Produtos", href: "/configuracoes" },
-    { label: "Metas", href: "/configuracoes" },
-    { label: "Mensagens Rápidas", href: "/configuracoes" },
-    { label: "E-mails por CCO", href: "/configuracoes" },
+    { label: "Produtos", href: "/configuracoes/produtos" },
+    { label: "Metas", href: "/configuracoes/metas" },
+    { label: "Cadências", href: "/configuracoes/cadencias" },
   ];
 
   return (
