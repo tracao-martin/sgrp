@@ -334,11 +334,14 @@
 
 ## Bug Fix: Criação de Lead não salva campos corretamente
 
-- [ ] Auditar schema Drizzle da tabela leads (todos os campos)
-- [ ] Auditar procedure tRPC crm.leads.create (campos aceitos vs campos enviados)
-- [ ] Auditar formulário frontend de criação de lead (campos enviados na mutation)
-- [ ] Verificar mapeamento snake_case vs camelCase na criação (mesma causa raiz do bug anterior)
-- [ ] Corrigir backend para aceitar e persistir todos os campos do formulário
-- [ ] Corrigir frontend para enviar todos os campos preenchidos
-- [ ] Testar criação de lead end-to-end com todos os campos
-- [ ] Deploy no VPS e validar
+- [x] Auditar schema Drizzle da tabela leads (todos os campos) - schema OK, todos os campos existem
+- [x] Auditar procedure tRPC crm.leads.create (campos aceitos vs campos enviados) - backend aceita todos os campos
+- [x] Auditar formulário frontend de criação de lead (campos enviados na mutation) - CAUSA RAIZ: handleCreateLead só enviava 5 campos
+- [x] Verificar mapeamento snake_case vs camelCase na criação - corrigido mapLeadToRow e LeadDetail
+- [x] Corrigir frontend para enviar todos os campos preenchidos (telefone, email, cargo, empresa, linkedin, site, cpf_cnpj, setor, regiao, porte, cadencia)
+- [x] Corrigir edição inline no LeadDetail para persistir no banco (updateField agora chama updateMutation)
+- [x] Corrigir handleConvert, handleDisqualify, handleRetire para chamar backend
+- [x] Sincronizar enum de status entre DB e frontend (contatado, desqualificado, aposentado)
+- [x] Corrigir bug NaN no pageSize do localStorage
+- [x] Testar criação de lead end-to-end com todos os campos - CONFIRMADO: 16 campos salvos corretamente
+- [x] Deploy no VPS e validar - CONFIRMADO 12/04/2026
