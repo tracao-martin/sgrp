@@ -315,7 +315,9 @@
 
 ## Ajustes Leads Page - Ordem das Abas e Kanban DnD
 
-- [ ] Inverter ordem das abas: "Leads Ativos" primeiro (padrão), "Cadência" segundo
-- [ ] Implementar drag-and-drop real no Kanban de Cadência (arrastar cards entre colunas)
-- [ ] Ao mover card no Kanban, registrar atividade na Timeline (usuário, data/hora, fase anterior → fase nova)
-- [ ] Build e deploy no VPS
+- [x] Inverter ordem das abas: "Leads Ativos" primeiro (padrão), "Cadência" segundo
+- [x] Implementar drag-and-drop real no Kanban de Cadência (arrastar cards entre colunas)
+- [x] Ao mover card no Kanban, registrar atividade na Timeline (usuário, data/hora, fase anterior → fase nova)
+- [x] Botão "Histórico" com painel expansível mostrando todas as movimentações
+- [x] Toast de confirmação ao mover lead com nome da fase destino
+- [x] Build e deploy no VPS - CONFIRMADO 12/04/2026
