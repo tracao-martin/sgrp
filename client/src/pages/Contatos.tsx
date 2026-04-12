@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Filter, Loader } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { ContatoModal } from "@/components/ContatoModal";
 
 export default function Contatos() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,10 +38,7 @@ export default function Contatos() {
           <h1 className="text-3xl font-bold">Contatos</h1>
           <p className="text-gray-400 mt-1">Gerenciamento de contatos e relacionamentos</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Contato
-        </Button>
+        <ContatoModal onSuccess={() => {}} />
       </div>
 
       {/* Filters */}

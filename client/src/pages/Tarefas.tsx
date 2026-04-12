@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, CheckCircle2, Circle } from "lucide-react";
+import { TarefaModal } from "@/components/TarefaModal";
 
 const tarefasData = [
   {
@@ -71,10 +72,7 @@ export default function Tarefas() {
           <h1 className="text-3xl font-bold">Tarefas</h1>
           <p className="text-gray-400 mt-1">Gerenciamento de tarefas e ações</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Tarefa
-        </Button>
+        <TarefaModal onSuccess={() => {}} />
       </div>
 
       {/* Filters */}

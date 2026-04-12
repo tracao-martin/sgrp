@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Plus, Search, Filter, Loader } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { ContaModal } from "@/components/ContaModal";
 
 const statusColors = {
   ativa: "bg-green-900 text-green-200",
@@ -38,10 +39,7 @@ export default function Contas() {
           <h1 className="text-3xl font-bold">Contas</h1>
           <p className="text-gray-400 mt-1">Gerenciamento de contas e empresas</p>
         </div>
-        <Button className="bg-blue-600 hover:bg-blue-700">
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Conta
-        </Button>
+        <ContaModal onSuccess={() => companiesQuery.refetch()} />
       </div>
 
       {/* Filters */}
