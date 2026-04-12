@@ -12,10 +12,12 @@ import {
   pipelineStages,
   tasks,
   icps,
+  accountContacts,
 } from "../../drizzle/schema";
 import { icpsRouter } from "./icps";
 import { leadCadencesRouter, disqualifyReasonsRouter } from "./cadences";
-import { eq, desc, and, asc, lte } from "drizzle-orm";
+import { accountContactsRouter } from "./accountContacts";
+import { eq, desc, and, asc, lte, inArray } from "drizzle-orm";
 
 // Helper to get orgId from context user
 function orgId(ctx: { user: { organizationId: number } }) {
@@ -89,6 +91,14 @@ export const companiesRouter = router({
         tamanho: z.enum(["micro", "pequena", "media", "grande", "multinacional"]).optional(),
         receita_anual: z.number().optional(),
         status: z.enum(["ativa", "inativa", "prospect"]).optional(),
+        icp_id: z.number().optional(),
+        lead_source: z.string().optional(),
+        site: z.string().optional(),
+        linkedin: z.string().optional(),
+        notes: z.string().optional(),
+        primary_contact_id: z.number().optional(),
+        primary_contact_name: z.string().optional(),
+        account_type: z.enum(["cliente_ativo", "cliente_inativo", "prospect"]).optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -120,6 +130,14 @@ export const companiesRouter = router({
         tamanho: z.enum(["micro", "pequena", "media", "grande", "multinacional"]).optional(),
         receita_anual: z.number().optional(),
         status: z.enum(["ativa", "inativa", "prospect"]).optional(),
+        icp_id: z.number().nullable().optional(),
+        lead_source: z.string().optional(),
+        site: z.string().optional(),
+        linkedin: z.string().optional(),
+        notes: z.string().optional(),
+        primary_contact_id: z.number().nullable().optional(),
+        primary_contact_name: z.string().optional(),
+        account_type: z.enum(["cliente_ativo", "cliente_inativo", "prospect"]).nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -164,7 +182,18 @@ export const contactsRouter = router({
       requirePermission(ctx.user, "manage_contacts");
       const db = await getDb();
       if (!db) return [];
-      return db.select().from(contacts).where(eq(contacts.organizationId, orgId(ctx))).orderBy(desc(contacts.createdAt));
+      const rows = await db.select().from(contacts).where(eq(contacts.organizationId, orgId(ctx))).orderBy(desc(contacts.createdAt));
+      // Enrich with company name
+      const companyIds = Array.from(new Set(rows.map(r => r.company_id).filter(Boolean)));
+      let companyMap = new Map<number, string>();
+      if (companyIds.length > 0) {
+        const companiesList = await db.select().from(companies).where(eq(companies.organizationId, orgId(ctx)));
+        companyMap = new Map(companiesList.map(c => [c.id, c.nome]));
+      }
+      return rows.map(r => ({
+        ...r,
+        empresa: companyMap.get(r.company_id) || null,
+      }));
     }),
 
   listByCompany: protectedProcedure
@@ -189,7 +218,14 @@ export const contactsRouter = router({
         .from(contacts)
         .where(and(eq(contacts.id, input.id), eq(contacts.organizationId, orgId(ctx))))
         .limit(1);
-      return result[0] || null;
+      if (!result[0]) return null;
+      // Enrich with company name
+      let empresa: string | null = null;
+      if (result[0].company_id) {
+        const comp = await db.select().from(companies).where(and(eq(companies.id, result[0].company_id), eq(companies.organizationId, orgId(ctx)))).limit(1);
+        empresa = comp[0]?.nome || null;
+      }
+      return { ...result[0], empresa };
     }),
 
   create: protectedProcedure
@@ -203,6 +239,8 @@ export const contactsRouter = router({
         departamento: z.string().optional(),
         linkedin: z.string().optional(),
         principal: z.boolean().optional(),
+        papel: z.enum(["decisor", "influenciador", "champion", "usuario", "tecnico", "outro"]).optional(),
+        notas: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -227,6 +265,9 @@ export const contactsRouter = router({
         departamento: z.string().optional(),
         linkedin: z.string().optional(),
         principal: z.boolean().optional(),
+        papel: z.enum(["decisor", "influenciador", "champion", "usuario", "tecnico", "outro"]).nullable().optional(),
+        notas: z.string().optional(),
+        company_id: z.number().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -1016,4 +1057,5 @@ export const crmRouter = router({
   icps: icpsRouter,
   cadences: leadCadencesRouter,
   disqualifyReasons: disqualifyReasonsRouter,
+  accountContacts: accountContactsRouter,
 });

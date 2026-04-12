@@ -407,3 +407,37 @@
 - [x] Feedback com toast de sucesso/erro
 - [ ] Auto-mapeamento de colunas por similaridade — nice to have
 - [ ] Download de modelo Excel — nice to have
+
+## Sprint 2: Accounts/Contacts 100% Completo
+
+### Schema & Backend
+- [ ] Adicionar campos na tabela companies: icp_id, lead_source, site, linkedin, notes, primary_contact_id, primary_contact_name
+- [ ] Adicionar campos na tabela contacts: papel (decisor/influenciador/champion/usuario), notas
+- [ ] Criar tabela account_contacts (stakeholders): account_id, contact_id, papel, notas
+- [ ] Gerar migration SQL e aplicar no DB
+- [ ] Adicionar companies.getById com contacts e deals relacionados
+- [ ] Adicionar contacts.getById com company info
+- [ ] Adicionar bulkUpdate para companies
+- [ ] Adicionar accountContacts router (CRUD stakeholders)
+
+### Contas (Accounts) - Frontend
+- [ ] Criar AccountDetail page (/contas/:id) com edição inline de todos os campos
+- [ ] AccountContactsSection (stakeholders com papel)
+- [ ] AccountDealsSection (deals vinculados à conta)
+- [ ] ActivityTimeline na AccountDetail
+- [ ] Filtros avançados (status, segmento, tamanho, ICP, lead_source)
+- [ ] Gerenciador de colunas visíveis
+- [ ] Paginação na tabela
+- [ ] Export Excel
+- [ ] Click na row navega para /contas/:id
+- [ ] Account Score Card no detalhe
+
+### Contatos (Contacts) - Frontend
+- [ ] Criar ContactDetail page (/contatos/:id) com edição inline
+- [ ] ActivityTimeline no ContactDetail
+- [ ] Deals vinculados ao contato
+- [ ] Filtros avançados (cargo, empresa, papel, departamento)
+- [ ] Gerenciador de colunas visíveis
+- [ ] Paginação na tabela
+- [ ] Export Excel
+- [ ] Click na row navega para /contatos/:id

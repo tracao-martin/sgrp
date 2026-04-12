@@ -31,6 +31,8 @@ export const notificationTipoEnum = pgEnum("notification_tipo", ["task_vencida",
 export const aiInsightTipoEnum = pgEnum("ai_insight_tipo", ["resumo", "recomendacao", "risco", "oportunidade"]);
 export const icpPorteEnum = pgEnum("icp_porte", ["micro", "pequena", "media", "grande", "multinacional"]);
 export const cadenciaStepTipoEnum = pgEnum("cadencia_step_tipo", ["email", "ligacao", "whatsapp", "tarefa", "linkedin"]);
+export const contactPapelEnum = pgEnum("contact_papel", ["decisor", "influenciador", "champion", "usuario", "tecnico", "outro"]);
+export const accountTypeEnum = pgEnum("account_type", ["cliente_ativo", "cliente_inativo", "prospect"]);
 
 // ============================================================================
 // TABLES
@@ -98,6 +100,14 @@ export const companies = pgTable("companies", {
   receita_anual: numeric("receita_anual", { precision: 15, scale: 2 }),
   responsavel_id: integer("responsavel_id"),
   status: companyStatusEnum("status").default("prospect").notNull(),
+  icp_id: integer("icp_id"),
+  lead_source: varchar("lead_source", { length: 100 }),
+  site: varchar("site", { length: 500 }),
+  linkedin: varchar("linkedin", { length: 500 }),
+  notes: text("notes"),
+  primary_contact_id: integer("primary_contact_id"),
+  primary_contact_name: varchar("primary_contact_name", { length: 255 }),
+  account_type: accountTypeEnum("account_type").default("prospect"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -119,12 +129,30 @@ export const contacts = pgTable("contacts", {
   departamento: varchar("departamento", { length: 100 }),
   linkedin: varchar("linkedin", { length: 255 }),
   principal: boolean("principal").default(false),
+  papel: contactPapelEnum("papel"),
+  notas: text("notas"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
 
 export type Contact = typeof contacts.$inferSelect;
 export type InsertContact = typeof contacts.$inferInsert;
+
+/**
+ * Account Contacts (Stakeholders) - Links contacts to companies with roles
+ */
+export const accountContacts = pgTable("account_contacts", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
+  company_id: integer("company_id").notNull(),
+  contact_id: integer("contact_id").notNull(),
+  papel: contactPapelEnum("papel"),
+  notas: text("notas"),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+});
+
+export type AccountContact = typeof accountContacts.$inferSelect;
+export type InsertAccountContact = typeof accountContacts.$inferInsert;
 
 /**
  * Leads - Potential opportunities
@@ -420,6 +448,7 @@ export const companiesRelations = relations(companies, ({ many, one }) => ({
     references: [organizations.id],
   }),
   contacts: many(contacts),
+  accountContacts: many(accountContacts),
   leads: many(leads),
   opportunities: many(opportunities),
   activities: many(activities),
@@ -439,9 +468,25 @@ export const contactsRelations = relations(contacts, ({ many, one }) => ({
     fields: [contacts.company_id],
     references: [companies.id],
   }),
+  accountContacts: many(accountContacts),
   activities: many(activities),
   tasks: many(tasks),
   opportunities: many(opportunities),
+}));
+
+export const accountContactsRelations = relations(accountContacts, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [accountContacts.organizationId],
+    references: [organizations.id],
+  }),
+  company: one(companies, {
+    fields: [accountContacts.company_id],
+    references: [companies.id],
+  }),
+  contact: one(contacts, {
+    fields: [accountContacts.contact_id],
+    references: [contacts.id],
+  }),
 }));
 
 export const leadsRelations = relations(leads, ({ many, one }) => ({

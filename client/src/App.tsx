@@ -25,6 +25,8 @@ import ConfigProbabilidade from "./pages/ConfigProbabilidade";
 import ConfigProdutos from "./pages/ConfigProdutos";
 import ConfigMetas from "./pages/ConfigMetas";
 import ConfigCadencias from "./pages/ConfigCadencias";
+import ContaDetalhe from "./pages/ContaDetalhe";
+import ContatoDetalhe from "./pages/ContatoDetalhe";
 
 function Router() {
   return (
@@ -35,7 +37,9 @@ function Router() {
       <Route path={"/leads"} component={() => <SGRPLayout><Leads /></SGRPLayout>} />
       <Route path={"/leads/:id"} component={() => <SGRPLayout><LeadDetail /></SGRPLayout>} />
       <Route path={"/contas"} component={() => <SGRPLayout><Contas /></SGRPLayout>} />
+      <Route path={"/contas/:id"} component={() => <SGRPLayout><ContaDetalhe /></SGRPLayout>} />
       <Route path={"/contatos"} component={() => <SGRPLayout><Contatos /></SGRPLayout>} />
+      <Route path={"/contatos/:id"} component={() => <SGRPLayout><ContatoDetalhe /></SGRPLayout>} />
       <Route path={"/funil-vendas"} component={() => <SGRPLayout><FunilVendas /></SGRPLayout>} />
       <Route path={"/tarefas"} component={() => <SGRPLayout><Tarefas /></SGRPLayout>} />
       <Route path={"/calendario"} component={() => <SGRPLayout><Calendario /></SGRPLayout>} />
