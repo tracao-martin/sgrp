@@ -2,62 +2,32 @@ import React, { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Plus, Search, Filter } from "lucide-react";
-
-const contatosData = [
-  {
-    id: 1,
-    name: "Roberto Silva",
-    company: "Acme Corporation",
-    title: "Diretor de TI",
-    email: "roberto@acme.com",
-    phone: "(11) 98765-4321",
-    temperature: "Quente",
-  },
-  {
-    id: 2,
-    name: "Fernanda Costa",
-    company: "Tech Solutions",
-    title: "Gerente de Projetos",
-    email: "fernanda@techsol.com",
-    phone: "(11) 99876-5432",
-    temperature: "Morno",
-  },
-  {
-    id: 3,
-    name: "Lucas Mendes",
-    company: "Innovation Labs",
-    title: "CTO",
-    email: "lucas@innovlab.com",
-    phone: "(11) 97654-3210",
-    temperature: "Quente",
-  },
-  {
-    id: 4,
-    name: "Patricia Gomes",
-    company: "Global Ventures",
-    title: "Analista",
-    email: "patricia@global.com",
-    phone: "(11) 96543-2109",
-    temperature: "Frio",
-  },
-];
-
-const temperatureColors = {
-  Quente: "bg-red-900 text-red-200",
-  Morno: "bg-yellow-900 text-yellow-200",
-  Frio: "bg-blue-900 text-blue-200",
-};
+import { Plus, Search, Filter, Loader } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
 export default function Contatos() {
   const [searchTerm, setSearchTerm] = useState("");
 
-  const filteredContatos = contatosData.filter(
-    (contato) =>
-      contato.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contato.company.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      contato.email.toLowerCase().includes(searchTerm.toLowerCase())
+  // Fetch contacts from tRPC (mock data for now)
+  const contacts = [
+    { id: 1, nome: "Roberto Silva", email: "roberto@acme.com", telefone: "(11) 98765-4321", cargo: "Diretor de TI" },
+    { id: 2, nome: "Fernanda Costa", email: "fernanda@tech.com", telefone: "(11) 99876-5432", cargo: "Gerente" },
+  ];
+  const contactsQuery = { isLoading: false, data: contacts };
+
+  const filteredContatos = contacts.filter(
+    (contato: any) =>
+      contato.nome?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      contato.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
+
+  if (false) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader className="w-8 h-8 animate-spin text-blue-400" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -78,7 +48,7 @@ export default function Contatos() {
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-3 w-4 h-4 text-gray-500" />
           <Input
-            placeholder="Buscar por nome, empresa ou email..."
+            placeholder="Buscar por nome ou email..."
             className="pl-10 bg-gray-800 border-gray-700"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -97,46 +67,42 @@ export default function Contatos() {
           <CardDescription>{filteredContatos.length} contatos encontrados</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="border-b border-gray-700">
-                  <th className="text-left py-3 px-4 font-medium text-gray-300">Nome</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-300">Empresa</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-300">Cargo</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-300">Email</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-300">Temperatura</th>
-                  <th className="text-left py-3 px-4 font-medium text-gray-300">Ações</th>
-                </tr>
-              </thead>
-              <tbody>
-                {filteredContatos.map((contato) => (
-                  <tr key={contato.id} className="border-b border-gray-700 hover:bg-gray-700/50">
-                    <td className="py-3 px-4">
-                      <p className="font-medium">{contato.name}</p>
-                    </td>
-                    <td className="py-3 px-4">{contato.company}</td>
-                    <td className="py-3 px-4 text-gray-400">{contato.title}</td>
-                    <td className="py-3 px-4 text-gray-400">{contato.email}</td>
-                    <td className="py-3 px-4">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs font-medium ${
-                          temperatureColors[contato.temperature as keyof typeof temperatureColors]
-                        }`}
-                      >
-                        {contato.temperature}
-                      </span>
-                    </td>
-                    <td className="py-3 px-4">
-                      <button className="text-blue-400 hover:text-blue-300 text-xs font-medium">
-                        Ver Detalhes
-                      </button>
-                    </td>
+          {filteredContatos.length === 0 ? (
+            <div className="text-center py-8">
+              <p className="text-gray-400">Nenhum contato encontrado</p>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="border-b border-gray-700">
+                    <th className="text-left py-3 px-4 font-medium text-gray-300">Nome</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-300">Email</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-300">Telefone</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-300">Cargo</th>
+                    <th className="text-left py-3 px-4 font-medium text-gray-300">Ações</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {filteredContatos.map((contato: any) => (
+                    <tr key={contato.id} className="border-b border-gray-700 hover:bg-gray-700/50">
+                      <td className="py-3 px-4">
+                        <p className="font-medium">{contato.nome}</p>
+                      </td>
+                      <td className="py-3 px-4 text-gray-400">{contato.email || "-"}</td>
+                      <td className="py-3 px-4 text-gray-400">{contato.telefone || "-"}</td>
+                      <td className="py-3 px-4 text-gray-400">{contato.cargo || "-"}</td>
+                      <td className="py-3 px-4">
+                        <button className="text-blue-400 hover:text-blue-300 text-xs font-medium">
+                          Ver Detalhes
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

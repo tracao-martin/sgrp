@@ -3,33 +3,39 @@ import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, L
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { TrendingUp, Users, DollarSign, Target } from "lucide-react";
 
-const pipelineData = [
-  { stage: "Lead Novo", deals: 45, value: 180000 },
-  { stage: "Tentativa", deals: 38, value: 152000 },
-  { stage: "Reunião", deals: 28, value: 112000 },
-  { stage: "Proposta", deals: 15, value: 60000 },
-  { stage: "Negociação", deals: 8, value: 32000 },
-];
-
-const revenueData = [
-  { month: "Jan", revenue: 45000 },
-  { month: "Fev", revenue: 52000 },
-  { month: "Mar", revenue: 48000 },
-  { month: "Abr", revenue: 61000 },
-  { month: "Mai", revenue: 55000 },
-  { month: "Jun", revenue: 67000 },
-];
-
-const topSellers = [
-  { name: "João Silva", revenue: 52000, percentage: 95 },
-  { name: "Maria Santos", revenue: 43000, percentage: 78 },
-  { name: "Carlos Costa", revenue: 36000, percentage: 65 },
-  { name: "Ana Oliveira", revenue: 29000, percentage: 52 },
-];
-
 const COLORS = ["#3b82f6", "#ef4444", "#10b981", "#f59e0b"];
 
 export default function Dashboard() {
+  // Mock data for demonstration
+  const totalCompanies = 12;
+  const totalLeads = 45;
+  const totalContacts = 38;
+
+  // Mock pipeline data for charts
+  const pipelineData = [
+    { stage: "Lead Novo", deals: 45, value: 180000 },
+    { stage: "Tentativa", deals: 38, value: 152000 },
+    { stage: "Reunião", deals: 28, value: 112000 },
+    { stage: "Proposta", deals: 15, value: 60000 },
+    { stage: "Negociação", deals: 8, value: 32000 },
+  ];
+
+  const revenueData = [
+    { month: "Jan", revenue: 45000 },
+    { month: "Fev", revenue: 52000 },
+    { month: "Mar", revenue: 48000 },
+    { month: "Abr", revenue: 61000 },
+    { month: "Mai", revenue: 55000 },
+    { month: "Jun", revenue: 67000 },
+  ];
+
+  const topSellers = [
+    { name: "João Silva", revenue: 52000, percentage: 95 },
+    { name: "Maria Santos", revenue: 43000, percentage: 78 },
+    { name: "Carlos Costa", revenue: 36000, percentage: 65 },
+    { name: "Ana Oliveira", revenue: 29000, percentage: 52 },
+  ];
+
   return (
     <div className="space-y-6">
       {/* Page Header */}
@@ -83,12 +89,14 @@ export default function Dashboard() {
           <CardHeader className="pb-3">
             <CardTitle className="text-sm font-medium text-gray-300 flex items-center gap-2">
               <Users className="w-4 h-4" />
-              Tarefas Pendentes
+              Total de Leads
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-red-400 mt-1">3 vencidas</p>
+            <div className="text-2xl font-bold">{totalLeads}</div>
+            <p className="text-xs text-gray-400 mt-1">
+              {totalCompanies} contas • {totalContacts} contatos
+            </p>
           </CardContent>
         </Card>
       </div>
