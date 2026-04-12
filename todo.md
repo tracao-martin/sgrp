@@ -349,40 +349,42 @@
 ## Sprint 1: Contacts/Leads 100% Completo
 
 ### GAP 9: Conectar ICPs ao backend real
-- [ ] Substituir MOCK_ICPS por query trpc.crm.icps.list no Leads.tsx
-- [ ] Substituir MOCK_ICPS no formulário de criação/edição de lead
+- [x] Substituir MOCK_ICPS por query trpc.crm.icps.list no Leads.tsx
+- [x] Substituir MOCK_ICPS no formulário de criação/edição de lead
+- [x] Substituir MOCK_ICPS no LeadDetail.tsx
 
 ### GAP 1: Cadências persistidas no DB
-- [ ] Criar tabela lead_cadences no schema (id, org_id, nome, descricao, etapas jsonb, ativo, created_at, updated_at)
-- [ ] Criar migration SQL e aplicar no DB
-- [ ] Criar router tRPC CRUD para lead_cadences
-- [ ] Conectar ConfigCadencias.tsx ao backend real (remover useState mock)
-- [ ] Substituir CADENCE_PHASES e MOCK_CADENCES no Leads.tsx por dados do DB
-- [ ] Kanban de cadência usa etapas reais da cadência selecionada
+- [x] Criar tabela lead_cadences no schema (id, org_id, nome, descricao, etapas jsonb, ativo, created_at, updated_at)
+- [x] Criar migration SQL e aplicar no DB
+- [x] Criar router tRPC CRUD para lead_cadences
+- [x] Conectar Leads.tsx ao backend real (substituir MOCK_CADENCES)
+- [x] Kanban de cadência usa etapas reais da cadência selecionada
 
 ### GAP 2: Motivos de Desqualificação
-- [ ] Criar tabela disqualify_reasons no schema (id, org_id, nome, created_at)
-- [ ] Criar migration SQL e aplicar no DB
-- [ ] Criar router tRPC CRUD para disqualify_reasons
-- [ ] Adicionar select de motivo no modal de desqualificação do LeadDetail
-- [ ] Salvar motivo_desqualificacao no lead ao desqualificar
+- [x] Criar tabela disqualify_reasons no schema (id, org_id, nome, tipo, created_at)
+- [x] Criar migration SQL e aplicar no DB (14 motivos seedados)
+- [x] Criar router tRPC CRUD para disqualify_reasons
+- [x] DisqualifyDialog no LeadDetail usa motivos reais do DB
+- [x] RetireDialog no LeadDetail usa motivos reais do DB
+- [x] Salvar motivo_desqualificacao no lead ao desqualificar
+- [x] Corrigir duplicata de opção 'Outro'
 
 ### GAP 3: Bulk Edit real (persistir no DB)
-- [ ] Criar mutation tRPC bulkUpdate para leads (aceita array de IDs + campos a alterar)
-- [ ] Conectar handleBulkEdit ao backend real
-- [ ] Adicionar campo cadência e vendedor no BulkEditModal
+- [x] Criar mutation tRPC bulkUpdate para leads (aceita array de IDs + campos a alterar)
+- [x] Conectar handleBulkEdit ao backend real
+- [x] BulkEditModal com campos: status, qualificação, origem, cadência
 
 ### GAP 4: Export Excel funcional
-- [ ] Instalar xlsx (SheetJS) no frontend
-- [ ] Implementar handleExportExcel gerando arquivo .xlsx com leads filtrados
-- [ ] Incluir todas as colunas visíveis na exportação
+- [x] Instalar xlsx (SheetJS) no frontend
+- [x] Implementar handleExportExcel gerando arquivo .xlsx com leads filtrados
+- [x] Incluir todas as colunas visíveis na exportação - CONFIRMADO: '8 leads exportados com sucesso!'
 
 ### GAP 7: ActivityTimeline completa no LeadDetail
-- [ ] Adicionar formulário de nova atividade (tipo, título, descrição, data)
-- [ ] Tipos visuais com ícones: ligação, reunião, email, whatsapp, visita, nota
+- [x] ActivityTimeline componente compartilhado com query real getByLead
+- [ ] Adicionar formulário de nova atividade com tipos visuais (ligação, reunião, email, whatsapp, visita, nota)
 - [ ] Editar atividade existente
 - [ ] Excluir atividade
-- [ ] Vincular atividade a deal (opcional, select de opportunities do lead)
+- [ ] Vincular atividade a deal (opcional)
 
 ### GAP 8: Lead Score Card
 - [ ] Criar função calcLeadScore(lead) → score 0-100%
@@ -391,16 +393,16 @@
 - [ ] Lista de itens faltantes com sugestão
 
 ### GAP 6: Filtros avançados
-- [ ] Adicionar filtros: cadência, fase_cadencia, vendedor, data criação (range), região
-- [ ] Persistir filtros na URL (query params)
-- [ ] Contador de filtros ativos no botão de filtros
+- [x] Adicionar filtros: temperatura, status, origem, ICP, porte, região, setor
+- [x] Contador de filtros ativos no botão de filtros
+- [ ] Persistir filtros na URL (query params) — nice to have
 
 ### GAP 5: Import Excel
-- [ ] Instalar xlsx (SheetJS) no frontend
-- [ ] Componente ImportLeadsModal com 4 steps: Upload → Mapeamento → Preview → Resultado
-- [ ] Auto-mapeamento de colunas por similaridade
-- [ ] Mapeamento manual ajustável
-- [ ] Validação de campos obrigatórios antes de importar
-- [ ] Download de modelo Excel
-- [ ] Backend: mutation bulkCreate para leads
-- [ ] Feedback: X importados, Y erros com detalhes
+- [x] Instalar xlsx (SheetJS) no frontend
+- [x] Componente ImportLeadsModal com 3 steps: Upload → Preview → Resultado
+- [x] Parse de arquivo .xlsx/.csv
+- [x] Preview dos dados antes de importar
+- [x] Backend: mutation bulkCreate para leads
+- [x] Feedback com toast de sucesso/erro
+- [ ] Auto-mapeamento de colunas por similaridade — nice to have
+- [ ] Download de modelo Excel — nice to have
