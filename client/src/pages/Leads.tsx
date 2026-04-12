@@ -978,7 +978,8 @@ export default function Leads() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(() => {
     const saved = localStorage.getItem("leads_pageSize");
-    return saved ? parseInt(saved) : 10;
+    const parsed = saved ? parseInt(saved) : 10;
+    return isNaN(parsed) || parsed <= 0 ? 10 : parsed;
   });
   const [selected, setSelected] = useState<Set<number>>(new Set());
   const [showCreateDialog, setShowCreateDialog] = useState(false);
