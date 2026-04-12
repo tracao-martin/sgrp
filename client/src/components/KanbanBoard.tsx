@@ -19,14 +19,24 @@ interface KanbanStage {
 
 interface Opportunity {
   id: number;
+  organizationId: number;
   titulo: string;
-  valor: number;
-  probabilidade: number;
-  stage_id: number;
-  company_id: number;
-  motivo_ganho?: string;
-  motivo_perda?: string;
-  status: string;
+  valor?: number | string | null;
+  probabilidade?: number | null;
+  stage_id?: number | null;
+  company_id?: number | null;
+  contact_id?: number | null;
+  motivo_ganho?: string | null;
+  motivo_perda?: string | null;
+  status: string | null;
+  qualificacao?: string | null;
+  origem?: string | null;
+  descricao?: string | null;
+  responsavel_id?: number | null;
+  valor_estimado?: number | string | null;
+  data_conversao?: Date | null;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 const STAGES: KanbanStage[] = [
@@ -92,7 +102,7 @@ export function KanbanBoard() {
       <div className="flex gap-4 p-4 min-w-max">
         {STAGES.map((stage) => {
           const stageOpps = getOpportunitiesByStage(stage.id);
-          const totalValue = stageOpps.reduce((sum, opp) => sum + opp.valor, 0);
+          const totalValue = stageOpps.reduce((sum, opp) => sum + (Number(opp.valor) || Number(opp.valor_estimado) || 0), 0);
 
           return (
             <div
@@ -134,11 +144,11 @@ export function KanbanBoard() {
                           {opp.titulo}
                         </h4>
                         <p className="text-xs text-gray-500 mt-1">
-                          {formatCurrency(opp.valor)}
+                          {formatCurrency(Number(opp.valor ?? opp.valor_estimado ?? 0))}
                         </p>
                         <div className="flex gap-2 mt-2">
                           <Badge variant="outline" className="text-xs">
-                            {opp.probabilidade}%
+                            {opp.probabilidade ?? 0}%
                           </Badge>
                           <Badge
                             variant={
@@ -181,11 +191,11 @@ export function KanbanBoard() {
             <div className="space-y-3 text-sm">
               <div>
                 <span className="font-semibold">Valor:</span>{" "}
-                {formatCurrency(selectedDeal.valor)}
+                {formatCurrency(Number(selectedDeal.valor ?? selectedDeal.valor_estimado ?? 0))}
               </div>
               <div>
                 <span className="font-semibold">Probabilidade:</span>{" "}
-                {selectedDeal.probabilidade}%
+                {selectedDeal.probabilidade ?? 0}%
               </div>
               <div>
                 <span className="font-semibold">Status:</span> {selectedDeal.status}

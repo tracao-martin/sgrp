@@ -3,7 +3,7 @@ import { protectedProcedure, router } from "../_core/trpc";
 import { invokeLLM } from "../_core/llm";
 import { getDb } from "../db";
 import { opportunities, leads, companies, activities, tasks, pipelineStages } from "../../drizzle/schema";
-import { count, sum, eq, sql } from "drizzle-orm";
+import { count, sum, eq, and, sql } from "drizzle-orm";
 
 export const expertRouter = router({
   chat: protectedProcedure
@@ -19,12 +19,13 @@ export const expertRouter = router({
       if (!db) throw new Error("Database not available");
 
       // Gather pipeline context
-      const [dealsData] = await db.select({ total: count(), totalValue: sum(opportunities.valor) }).from(opportunities);
-      const [leadsData] = await db.select({ total: count() }).from(leads);
-      const [companiesData] = await db.select({ total: count() }).from(companies);
-      const [tasksData] = await db.select({ total: count() }).from(tasks);
-      const [activitiesData] = await db.select({ total: count() }).from(activities);
-      const stagesData = await db.select().from(pipelineStages).orderBy(pipelineStages.ordem);
+      const orgId = ctx.user.organizationId;
+      const [dealsData] = await db.select({ total: count(), totalValue: sum(opportunities.valor) }).from(opportunities).where(eq(opportunities.organizationId, orgId));
+      const [leadsData] = await db.select({ total: count() }).from(leads).where(eq(leads.organizationId, orgId));
+      const [companiesData] = await db.select({ total: count() }).from(companies).where(eq(companies.organizationId, orgId));
+      const [tasksData] = await db.select({ total: count() }).from(tasks).where(eq(tasks.organizationId, orgId));
+      const [activitiesData] = await db.select({ total: count() }).from(activities).where(eq(activities.organizationId, orgId));
+      const stagesData = await db.select().from(pipelineStages).where(eq(pipelineStages.organizationId, orgId)).orderBy(pipelineStages.ordem);
 
       // Get deals by stage
       const dealsByStage = await db
@@ -35,6 +36,7 @@ export const expertRouter = router({
         })
         .from(opportunities)
         .leftJoin(pipelineStages, eq(opportunities.stage_id, pipelineStages.id))
+        .where(eq(opportunities.organizationId, orgId))
         .groupBy(pipelineStages.nome);
 
       const pipelineContext = `
@@ -98,9 +100,10 @@ REGRAS:
     if (!db) return [];
 
     // Get deals data for insights
-    const allDeals = await db.select().from(opportunities);
-    const allLeads = await db.select().from(leads);
-    const allTasks = await db.select().from(tasks);
+    const orgId = ctx.user.organizationId;
+    const allDeals = await db.select().from(opportunities).where(eq(opportunities.organizationId, orgId));
+    const allLeads = await db.select().from(leads).where(eq(leads.organizationId, orgId));
+    const allTasks = await db.select().from(tasks).where(eq(tasks.organizationId, orgId));
 
     const insights: Array<{ type: string; title: string; description: string; priority: string }> = [];
 

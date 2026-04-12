@@ -4,32 +4,39 @@ import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { requireAdmin } from "../authorization";
 import { getDb } from "../db";
-import { users } from "../../drizzle/schema";
-import { eq } from "drizzle-orm";
+import { users, organizations } from "../../drizzle/schema";
+import { eq, and } from "drizzle-orm";
 
 export const authRouter = router({
-  me: publicProcedure.query((opts) => opts.ctx.user),
+  me: publicProcedure.query(async (opts) => {
+    if (!opts.ctx.user) return null;
+    // Enrich with organization info
+    const db = await getDb();
+    if (!db) return opts.ctx.user;
+    const org = await db.select().from(organizations).where(eq(organizations.id, opts.ctx.user.organizationId)).limit(1);
+    return {
+      ...opts.ctx.user,
+      organization: org[0] || null,
+    };
+  }),
 
   logout: publicProcedure.mutation(({ ctx }) => {
     const cookieOptions = getSessionCookieOptions(ctx.req);
     ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-    return {
-      success: true,
-    } as const;
+    return { success: true } as const;
   }),
 
   /**
-   * Get all users (admin only)
+   * Get all users in the same organization (admin/org-admin only)
    */
   getAllUsers: protectedProcedure.query(async ({ ctx }) => {
-    requireAdmin(ctx.user);
     const db = await getDb();
     if (!db) return [];
-    return db.select().from(users);
+    return db.select().from(users).where(eq(users.organizationId, ctx.user.organizationId)).orderBy(users.name);
   }),
 
   /**
-   * Update user role (admin only)
+   * Update user role (admin/org-admin only, same org)
    */
   updateUserRole: protectedProcedure
     .input(
@@ -39,51 +46,102 @@ export const authRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      requireAdmin(ctx.user);
+      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin") {
+        throw new Error("Apenas administradores podem alterar papéis");
+      }
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-
       await db
         .update(users)
         .set({ role: input.role })
-        .where(eq(users.id, input.userId));
-
+        .where(and(eq(users.id, input.userId), eq(users.organizationId, ctx.user.organizationId)));
       return { success: true };
     }),
 
   /**
-   * Deactivate user (admin only)
+   * Deactivate user (admin/org-admin only, same org)
    */
   deactivateUser: protectedProcedure
     .input(z.object({ userId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      requireAdmin(ctx.user);
+      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin") {
+        throw new Error("Apenas administradores podem desativar usuários");
+      }
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-
       await db
         .update(users)
         .set({ ativo: false })
-        .where(eq(users.id, input.userId));
-
+        .where(and(eq(users.id, input.userId), eq(users.organizationId, ctx.user.organizationId)));
       return { success: true };
     }),
 
   /**
-   * Activate user (admin only)
+   * Activate user (admin/org-admin only, same org)
    */
   activateUser: protectedProcedure
     .input(z.object({ userId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      requireAdmin(ctx.user);
+      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin") {
+        throw new Error("Apenas administradores podem ativar usuários");
+      }
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-
       await db
         .update(users)
         .set({ ativo: true })
-        .where(eq(users.id, input.userId));
+        .where(and(eq(users.id, input.userId), eq(users.organizationId, ctx.user.organizationId)));
+      return { success: true };
+    }),
 
+  /**
+   * Get organization info for the current user
+   */
+  getOrganization: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) return null;
+    const result = await db.select().from(organizations).where(eq(organizations.id, ctx.user.organizationId)).limit(1);
+    return result[0] || null;
+  }),
+
+  /**
+   * Update organization settings (org-admin only)
+   */
+  /**
+   * Change password for the current user
+   */
+  changePassword: protectedProcedure
+    .input(z.object({
+      currentPassword: z.string().min(1),
+      newPassword: z.string().min(6),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const [user] = await db.select().from(users).where(eq(users.id, ctx.user.id)).limit(1);
+      if (!user) throw new Error("Usu\u00e1rio n\u00e3o encontrado");
+      const bcrypt = await import("bcryptjs");
+      const valid = await bcrypt.compare(input.currentPassword, user.passwordHash);
+      if (!valid) throw new Error("Senha atual incorreta");
+      const newHash = await bcrypt.hash(input.newPassword, 10);
+      await db.update(users).set({ passwordHash: newHash, updatedAt: new Date() }).where(eq(users.id, ctx.user.id));
+      return { success: true };
+    }),
+
+  updateOrganization: protectedProcedure
+    .input(z.object({
+      nome: z.string().optional(),
+      cnpj: z.string().optional(),
+      email: z.string().email().optional(),
+      telefone: z.string().optional(),
+    }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin") {
+        throw new Error("Apenas administradores podem editar a organização");
+      }
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(organizations).set({ ...input, updatedAt: new Date() }).where(eq(organizations.id, ctx.user.organizationId));
       return { success: true };
     }),
 });

@@ -6,7 +6,7 @@ import { getSessionCookieOptions } from "./cookies";
 import * as db from "../db";
 
 /**
- * Register local authentication routes (login + register)
+ * Register local authentication routes (login + register-org)
  */
 export function registerAuthRoutes(app: Express) {
   // POST /api/auth/login - Local email/password login
@@ -54,6 +54,7 @@ export function registerAuthRoutes(app: Express) {
           email: user.email,
           name: user.name,
           role: user.role,
+          organizationId: user.organizationId,
         },
       });
     } catch (error) {
@@ -62,13 +63,13 @@ export function registerAuthRoutes(app: Express) {
     }
   });
 
-  // POST /api/auth/register - Create new account
-  app.post("/api/auth/register", async (req, res) => {
+  // POST /api/auth/register-org - Create new organization + admin user
+  app.post("/api/auth/register-org", async (req, res) => {
     try {
-      const { email, password, name } = req.body;
+      const { orgName, name, email, password } = req.body;
 
-      if (!email || !password || !name) {
-        return res.status(400).json({ error: "Nome, email e senha são obrigatórios" });
+      if (!orgName || !name || !email || !password) {
+        return res.status(400).json({ error: "Todos os campos são obrigatórios" });
       }
 
       if (password.length < 6) {
@@ -83,21 +84,48 @@ export function registerAuthRoutes(app: Express) {
         return res.status(409).json({ error: "Este email já está cadastrado" });
       }
 
-      // Hash password
-      const passwordHash = await bcrypt.hash(password, 12);
+      // Generate slug from org name
+      const slug = orgName
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
 
-      // Create user
+      // Check if slug already exists
+      const existingOrg = await db.getOrganizationBySlug(slug);
+      if (existingOrg) {
+        return res.status(409).json({ error: "Já existe uma organização com este nome" });
+      }
+
+      // 1. Create organization
+      const org = await db.createOrganization({
+        nome: orgName.trim(),
+        slug,
+        email: normalizedEmail,
+        plano: "trial",
+        maxUsuarios: 5,
+      });
+
+      // 2. Create admin user
+      const passwordHash = await bcrypt.hash(password, 12);
       const user = await db.createUser({
+        organizationId: org.id,
         email: normalizedEmail,
         passwordHash,
         name: name.trim(),
+        role: "admin",
+        isOrgAdmin: true,
       });
 
       if (!user) {
         return res.status(500).json({ error: "Erro ao criar conta" });
       }
 
-      // Create session token and auto-login
+      // 3. Seed default pipeline stages
+      await db.seedDefaultStages(org.id);
+
+      // 4. Auto-login
       const token = await sdk.createSessionToken(user.id, {
         email: user.email,
         name: user.name || "",
@@ -116,10 +144,17 @@ export function registerAuthRoutes(app: Express) {
           email: user.email,
           name: user.name,
           role: user.role,
+          organizationId: org.id,
+        },
+        organization: {
+          id: org.id,
+          nome: org.nome,
+          slug: org.slug,
+          plano: org.plano,
         },
       });
     } catch (error) {
-      console.error("[Auth] Register error:", error);
+      console.error("[Auth] Register-org error:", error);
       return res.status(500).json({ error: "Erro interno do servidor" });
     }
   });

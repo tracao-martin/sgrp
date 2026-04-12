@@ -125,3 +125,36 @@
 - [x] Remover arquivos de migração antigos (MySQL)
 - [x] Limpar imports não utilizados
 - [x] Validar build e testes após limpeza (21 testes OK, build OK)
+
+## Sprint 1 - Multi-Tenant
+### Bloco 1: Schema e Migração
+- [x] Adicionar tabela organizations no Drizzle schema
+- [x] Adicionar organization_id em todas as tabelas afetadas
+- [x] Adicionar is_org_admin em users
+- [x] Atualizar relations do Drizzle
+- [x] Gerar SQL de migração e executar no banco dev
+- [x] Atualizar seed-admin para criar organização padrão
+
+### Bloco 2: Backend Multi-Tenant
+- [x] Atualizar contexto tRPC para injetar organizationId
+- [x] Refatorar todas as funções de db.ts para receber organizationId
+- [x] Atualizar todas as procedures CRM para passar organizationId
+- [x] Atualizar procedures Expert para filtrar por org
+- [x] Criar endpoint POST /api/auth/register-org
+- [x] Criar função de seed de estágios padrão por organização
+
+### Bloco 3: Gerenciamento de Usuários
+- [x] Criar procedures: users.list, users.invite, users.updateRole, users.toggleActive
+- [x] Refatorar página Usuarios.tsx com CRUD completo (convite, alterar perfil, ativar/desativar)
+- [x] Adicionar indicador de limite de usuários por plano
+
+### Bloco 4: Frontend
+- [x] Atualizar Login.tsx com formulário de registro de organização
+- [x] Adicionar nome da organização na sidebar
+- [x] Adicionar seção Minha Organização em Configurações (com edição + alterar senha)
+- [x] Garantir estados vazios amigáveis em todas as páginas
+
+### Bloco 5: Testes e Validação
+- [x] Build e 21 testes passando após todas as mudanças
+- [ ] Deploy no VPS com banco multi-tenant
+- [ ] Testar fluxo completo no browser (registro org + login + CRUD)

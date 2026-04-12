@@ -8,6 +8,7 @@ import {
   numeric,
   boolean,
   serial,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 
@@ -15,6 +16,7 @@ import { relations } from "drizzle-orm";
 // ENUMS
 // ============================================================================
 
+export const orgPlanoEnum = pgEnum("org_plano", ["trial", "basico", "profissional", "enterprise"]);
 export const userRoleEnum = pgEnum("user_role", ["admin", "gerente", "vendedor"]);
 export const companyTamanhoEnum = pgEnum("company_tamanho", ["micro", "pequena", "media", "grande", "multinacional"]);
 export const companyStatusEnum = pgEnum("company_status", ["ativa", "inativa", "prospect"]);
@@ -33,15 +35,37 @@ export const aiInsightTipoEnum = pgEnum("ai_insight_tipo", ["resumo", "recomenda
 // ============================================================================
 
 /**
+ * Organizations (Tenants) - Each client company that uses the SGRP platform
+ */
+export const organizations = pgTable("organizations", {
+  id: serial("id").primaryKey(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 100 }).notNull().unique(),
+  cnpj: varchar("cnpj", { length: 20 }),
+  email: varchar("email", { length: 320 }),
+  telefone: varchar("telefone", { length: 20 }),
+  plano: orgPlanoEnum("plano").default("trial").notNull(),
+  ativo: boolean("ativo").default(true).notNull(),
+  maxUsuarios: integer("max_usuarios").default(5).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type Organization = typeof organizations.$inferSelect;
+export type InsertOrganization = typeof organizations.$inferInsert;
+
+/**
  * Core user table with role-based access control and local auth
  * Roles: admin (full access), gerente (manage team), vendedor (own data)
  */
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
   email: varchar("email", { length: 320 }).notNull().unique(),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   name: text("name"),
   role: userRoleEnum("role").default("vendedor").notNull(),
+  isOrgAdmin: boolean("is_org_admin").default(false).notNull(),
   departamento: varchar("departamento", { length: 255 }),
   ativo: boolean("ativo").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
@@ -53,12 +77,13 @@ export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
 /**
- * Companies (Contas) - Main business accounts
+ * Companies (Contas) - Main business accounts managed by the tenant
  */
 export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
   nome: varchar("nome", { length: 255 }).notNull(),
-  cnpj: varchar("cnpj", { length: 20 }).unique(),
+  cnpj: varchar("cnpj", { length: 20 }),
   email: varchar("email", { length: 320 }),
   telefone: varchar("telefone", { length: 20 }),
   website: varchar("website", { length: 255 }),
@@ -83,9 +108,10 @@ export type InsertCompany = typeof companies.$inferInsert;
  */
 export const contacts = pgTable("contacts", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
   company_id: integer("company_id").notNull(),
   nome: varchar("nome", { length: 255 }).notNull(),
-  email: varchar("email", { length: 320 }).unique(),
+  email: varchar("email", { length: 320 }),
   telefone: varchar("telefone", { length: 20 }),
   cargo: varchar("cargo", { length: 100 }),
   departamento: varchar("departamento", { length: 100 }),
@@ -103,6 +129,7 @@ export type InsertContact = typeof contacts.$inferInsert;
  */
 export const leads = pgTable("leads", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
   company_id: integer("company_id"),
   contact_id: integer("contact_id"),
   titulo: varchar("titulo", { length: 255 }).notNull(),
@@ -121,10 +148,11 @@ export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
 
 /**
- * Pipeline Stages - Customizable opportunity stages
+ * Pipeline Stages - Customizable opportunity stages per organization
  */
 export const pipelineStages = pgTable("pipeline_stages", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
   nome: varchar("nome", { length: 100 }).notNull(),
   ordem: integer("ordem").notNull(),
   cor: varchar("cor", { length: 7 }).default("#3B82F6"),
@@ -141,6 +169,7 @@ export type InsertPipelineStage = typeof pipelineStages.$inferInsert;
  */
 export const opportunities = pgTable("opportunities", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
   company_id: integer("company_id").notNull(),
   contact_id: integer("contact_id"),
   lead_id: integer("lead_id"),
@@ -167,6 +196,7 @@ export type InsertOpportunity = typeof opportunities.$inferInsert;
  */
 export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
   company_id: integer("company_id"),
   contact_id: integer("contact_id"),
   opportunity_id: integer("opportunity_id"),
@@ -187,6 +217,7 @@ export type InsertActivity = typeof activities.$inferInsert;
  */
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   descricao: text("descricao"),
   opportunity_id: integer("opportunity_id"),
@@ -209,8 +240,9 @@ export type InsertTask = typeof tasks.$inferInsert;
  */
 export const proposals = pgTable("proposals", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
   opportunity_id: integer("opportunity_id").notNull(),
-  numero: varchar("numero", { length: 50 }).unique().notNull(),
+  numero: varchar("numero", { length: 50 }).notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   descricao: text("descricao"),
   valor: numeric("valor", { precision: 15, scale: 2 }).notNull(),
@@ -248,6 +280,7 @@ export type InsertProposalItem = typeof proposalItems.$inferInsert;
  */
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
   usuario_id: integer("usuario_id").notNull(),
   tipo: notificationTipoEnum("tipo").notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
@@ -266,6 +299,7 @@ export type InsertNotification = typeof notifications.$inferInsert;
  */
 export const emailLogs = pgTable("email_logs", {
   id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
   usuario_id: integer("usuario_id").notNull(),
   tipo: varchar("tipo", { length: 100 }).notNull(),
   destinatario: varchar("destinatario", { length: 320 }).notNull(),
@@ -300,7 +334,32 @@ export type InsertAIInsight = typeof aiInsights.$inferInsert;
 // RELATIONS
 // ============================================================================
 
+export const organizationsRelations = relations(organizations, ({ many }) => ({
+  users: many(users),
+  companies: many(companies),
+  contacts: many(contacts),
+  leads: many(leads),
+  pipelineStages: many(pipelineStages),
+  opportunities: many(opportunities),
+  activities: many(activities),
+  tasks: many(tasks),
+  proposals: many(proposals),
+  notifications: many(notifications),
+  emailLogs: many(emailLogs),
+}));
+
+export const usersRelations = relations(users, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [users.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
 export const companiesRelations = relations(companies, ({ many, one }) => ({
+  organization: one(organizations, {
+    fields: [companies.organizationId],
+    references: [organizations.id],
+  }),
   contacts: many(contacts),
   leads: many(leads),
   opportunities: many(opportunities),
@@ -313,6 +372,10 @@ export const companiesRelations = relations(companies, ({ many, one }) => ({
 }));
 
 export const contactsRelations = relations(contacts, ({ many, one }) => ({
+  organization: one(organizations, {
+    fields: [contacts.organizationId],
+    references: [organizations.id],
+  }),
   company: one(companies, {
     fields: [contacts.company_id],
     references: [companies.id],
@@ -323,6 +386,10 @@ export const contactsRelations = relations(contacts, ({ many, one }) => ({
 }));
 
 export const leadsRelations = relations(leads, ({ many, one }) => ({
+  organization: one(organizations, {
+    fields: [leads.organizationId],
+    references: [organizations.id],
+  }),
   company: one(companies, {
     fields: [leads.company_id],
     references: [companies.id],
@@ -338,7 +405,19 @@ export const leadsRelations = relations(leads, ({ many, one }) => ({
   opportunities: many(opportunities),
 }));
 
+export const pipelineStagesRelations = relations(pipelineStages, ({ one, many }) => ({
+  organization: one(organizations, {
+    fields: [pipelineStages.organizationId],
+    references: [organizations.id],
+  }),
+  opportunities: many(opportunities),
+}));
+
 export const opportunitiesRelations = relations(opportunities, ({ many, one }) => ({
+  organization: one(organizations, {
+    fields: [opportunities.organizationId],
+    references: [organizations.id],
+  }),
   company: one(companies, {
     fields: [opportunities.company_id],
     references: [companies.id],
@@ -366,6 +445,10 @@ export const opportunitiesRelations = relations(opportunities, ({ many, one }) =
 }));
 
 export const activitiesRelations = relations(activities, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [activities.organizationId],
+    references: [organizations.id],
+  }),
   company: one(companies, {
     fields: [activities.company_id],
     references: [companies.id],
@@ -385,6 +468,10 @@ export const activitiesRelations = relations(activities, ({ one }) => ({
 }));
 
 export const tasksRelations = relations(tasks, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [tasks.organizationId],
+    references: [organizations.id],
+  }),
   opportunity: one(opportunities, {
     fields: [tasks.opportunity_id],
     references: [opportunities.id],
@@ -404,6 +491,10 @@ export const tasksRelations = relations(tasks, ({ one }) => ({
 }));
 
 export const proposalsRelations = relations(proposals, ({ many, one }) => ({
+  organization: one(organizations, {
+    fields: [proposals.organizationId],
+    references: [organizations.id],
+  }),
   opportunity: one(opportunities, {
     fields: [proposals.opportunity_id],
     references: [opportunities.id],
@@ -423,6 +514,10 @@ export const proposalItemsRelations = relations(proposalItems, ({ one }) => ({
 }));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [notifications.organizationId],
+    references: [organizations.id],
+  }),
   usuario: one(users, {
     fields: [notifications.usuario_id],
     references: [users.id],
@@ -430,6 +525,10 @@ export const notificationsRelations = relations(notifications, ({ one }) => ({
 }));
 
 export const emailLogsRelations = relations(emailLogs, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [emailLogs.organizationId],
+    references: [organizations.id],
+  }),
   usuario: one(users, {
     fields: [emailLogs.usuario_id],
     references: [users.id],

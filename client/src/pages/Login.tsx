@@ -4,8 +4,7 @@ import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, ArrowRight, Eye, EyeOff } from "lucide-react";
-import { trpc } from "@/lib/trpc";
+import { Loader2, ArrowRight, Eye, EyeOff, Building2 } from "lucide-react";
 
 export default function Login() {
   const { isAuthenticated, loading, refresh } = useAuth();
@@ -17,6 +16,7 @@ export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [name, setName] = useState("");
+  const [orgName, setOrgName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -33,10 +33,10 @@ export default function Login() {
     setSubmitting(true);
 
     try {
-      const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register";
+      const endpoint = mode === "login" ? "/api/auth/login" : "/api/auth/register-org";
       const body = mode === "login"
         ? { email, password }
-        : { email, password, name };
+        : { email, password, name, orgName };
 
       const res = await fetch(endpoint, {
         method: "POST",
@@ -110,25 +110,42 @@ export default function Login() {
                   : "text-gray-400 hover:text-gray-200"
               }`}
             >
-              Criar Conta
+              Criar Empresa
             </button>
           </div>
 
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {mode === "register" && (
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-gray-300 text-sm">Nome completo</Label>
-                <Input
-                  id="name"
-                  type="text"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Seu nome"
-                  required
-                  className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
-                />
-              </div>
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="orgName" className="text-gray-300 text-sm flex items-center gap-2">
+                    <Building2 className="w-4 h-4" />
+                    Nome da Empresa
+                  </Label>
+                  <Input
+                    id="orgName"
+                    type="text"
+                    value={orgName}
+                    onChange={(e) => setOrgName(e.target.value)}
+                    placeholder="Ex: Minha Empresa Ltda"
+                    required
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-gray-300 text-sm">Seu nome completo</Label>
+                  <Input
+                    id="name"
+                    type="text"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    placeholder="Seu nome"
+                    required
+                    className="bg-gray-800 border-gray-700 text-white placeholder:text-gray-500 focus:border-blue-500"
+                  />
+                </div>
+              </>
             )}
 
             <div className="space-y-2">
@@ -181,16 +198,24 @@ export default function Login() {
               {submitting ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  {mode === "login" ? "Entrando..." : "Criando conta..."}
+                  {mode === "login" ? "Entrando..." : "Criando empresa..."}
                 </>
               ) : (
                 <>
-                  {mode === "login" ? "Entrar" : "Criar Conta"}
+                  {mode === "login" ? "Entrar" : "Criar Empresa e Conta"}
                   <ArrowRight className="w-5 h-5" />
                 </>
               )}
             </Button>
           </form>
+
+          {/* Info for register mode */}
+          {mode === "register" && (
+            <div className="bg-blue-900/20 border border-blue-800/30 rounded-lg p-3 text-xs text-blue-300">
+              <p>Ao criar sua empresa, você será o administrador e poderá convidar sua equipe depois.</p>
+              <p className="mt-1">Inclui 14 dias de teste gratuito.</p>
+            </div>
+          )}
 
           {/* Features */}
           <div className="space-y-3 pt-2">
@@ -208,8 +233,8 @@ export default function Login() {
                 <div className="w-2 h-2 bg-blue-400 rounded-full" />
               </div>
               <div>
-                <p className="text-sm font-medium text-white">Previsão com IA</p>
-                <p className="text-xs text-gray-500">Análise de probabilidade de fechamento</p>
+                <p className="text-sm font-medium text-white">Vendas Consultivas (SPIN)</p>
+                <p className="text-xs text-gray-500">Metodologia integrada ao seu pipeline</p>
               </div>
             </div>
             <div className="flex items-start gap-3">
@@ -217,8 +242,8 @@ export default function Login() {
                 <div className="w-2 h-2 bg-blue-400 rounded-full" />
               </div>
               <div>
-                <p className="text-sm font-medium text-white">Automações Nativas</p>
-                <p className="text-xs text-gray-500">E-mails, tarefas e notificações automáticas</p>
+                <p className="text-sm font-medium text-white">Multi-Equipe</p>
+                <p className="text-xs text-gray-500">Cada empresa com seus dados isolados</p>
               </div>
             </div>
           </div>
