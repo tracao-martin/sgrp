@@ -269,9 +269,9 @@
 - [x] Deploy no VPS e teste de navegação completo - CONFIRMADO 12/04/2026
 
 ## Identidade Visual - Tração Comercial
-- [ ] Atualizar CSS variables globais para Preto #1C1C1C, Amarelo #ffbf19, Branco #ffffff
-- [ ] Atualizar SGRPLayout (sidebar, header, navegação) com novas cores
-- [ ] Atualizar página de Login com novas cores
-- [ ] Atualizar todas as páginas principais (Dashboard, Leads, Contas, Contatos, Funil, Tarefas, Calendário, Previsão, Expert)
-- [ ] Atualizar todas as páginas de Configuração (Funis, Probabilidade, ICPs, Produtos, Metas, Cadências, Geral)
-- [ ] Deploy no VPS e validação visual completa
+- [x] Atualizar CSS variables globais para Preto #1C1C1C, Amarelo #ffbf19, Branco #ffffff
+- [x] Atualizar SGRPLayout (sidebar, header, navegação) com novas cores - logo TC amarelo
+- [x] Atualizar página de Login com novas cores - gradiente preto, logo TC
+- [x] Atualizar todas as páginas principais (Dashboard, Leads, Contas, Contatos, Funil, Tarefas, Calendário, Previsão, Expert) - 30 arquivos
+- [x] Atualizar todas as páginas de Configuração (Funis, Probabilidade, ICPs, Produtos, Metas, Cadências, Geral)
+- [x] Deploy no VPS e validação visual completa - CONFIRMADO 12/04/2026
