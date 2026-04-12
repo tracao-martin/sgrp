@@ -154,13 +154,13 @@ function mapLeadToRow(lead: any): LeadRow {
     icp: lead.icp || "",
     visivelPara: "Todos",
     cadencia: lead.cadencia || "",
-    faseCadencia: lead.faseCadencia || "",
+    faseCadencia: lead.fase_cadencia || lead.faseCadencia || "",
     linkedin: lead.linkedin || "",
     site: lead.site || "",
-    cpfCnpj: lead.cpfCnpj || "",
+    cpfCnpj: lead.cpf_cnpj || lead.cpfCnpj || "",
     notas: lead.descricao || "",
     valor_estimado: lead.valor_estimado ? parseFloat(lead.valor_estimado) : null,
-    motivoDesqualificacao: lead.motivoDesqualificacao || "",
+    motivoDesqualificacao: lead.motivoDesqualificacao || lead.motivo_desqualificacao || "",
     createdAt: lead.createdAt || new Date().toISOString(),
   };
 }
@@ -767,41 +767,39 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
     onError: (err: any) => toast.error(`Erro ao salvar movimentação: ${err.message}`),
   });
 
-  // Track lead-to-phase assignments (local state for mock)
-  const [leadPhases, setLeadPhases] = useState<Record<number, string>>(() => {
-    const initial: Record<number, string> = {};
-    leads.forEach((lead, idx) => {
+  // Helper: map a lead's faseCadencia string to a CADENCE_PHASES id
+  const mapFaseToPhaseId = useCallback((faseCadencia: string): string => {
+    if (!faseCadencia) return "sem_cadencia";
+    const lower = faseCadencia.toLowerCase().trim();
+    // Try exact match first
+    const exact = CADENCE_PHASES.find(p => p.nome.toLowerCase() === lower);
+    if (exact) return exact.id;
+    // Try id match
+    const byId = CADENCE_PHASES.find(p => p.id === lower);
+    if (byId) return byId.id;
+    // Try partial match (phase name contains faseCadencia or vice versa)
+    const partial = CADENCE_PHASES.find(p =>
+      p.nome.toLowerCase().includes(lower) || lower.includes(p.nome.toLowerCase())
+    );
+    if (partial) return partial.id;
+    return "sem_cadencia";
+  }, []);
+
+  // Track lead-to-phase assignments, always synced from DB data
+  const [leadPhases, setLeadPhases] = useState<Record<number, string>>({});
+
+  // Sync leadPhases from DB whenever leads data changes
+  useEffect(() => {
+    const newPhases: Record<number, string> = {};
+    leads.forEach(lead => {
       if (lead.faseCadencia) {
-        // Map to a phase ID
-        const phaseMatch = CADENCE_PHASES.find(p =>
-          p.nome.toLowerCase().includes(lead.faseCadencia.toLowerCase())
-        );
-        initial[lead.id] = phaseMatch?.id || "sem_cadencia";
-      } else if (lead.cadencia) {
-        // Distribute across phases for demo
-        const phaseIdx = (idx % (CADENCE_PHASES.length - 1)) + 1;
-        initial[lead.id] = CADENCE_PHASES[phaseIdx].id;
+        newPhases[lead.id] = mapFaseToPhaseId(lead.faseCadencia);
       } else {
-        initial[lead.id] = "sem_cadencia";
+        newPhases[lead.id] = "sem_cadencia";
       }
     });
-    return initial;
-  });
-
-  // Update leadPhases when leads change
-  useEffect(() => {
-    setLeadPhases(prev => {
-      const updated = { ...prev };
-      leads.forEach((lead, idx) => {
-        if (!(lead.id in updated)) {
-          updated[lead.id] = lead.cadencia
-            ? CADENCE_PHASES[((idx % (CADENCE_PHASES.length - 1)) + 1)].id
-            : "sem_cadencia";
-        }
-      });
-      return updated;
-    });
-  }, [leads]);
+    setLeadPhases(newPhases);
+  }, [leads, mapFaseToPhaseId]);
 
   // Group leads by phase
   const leadsByPhase = useMemo(() => {
