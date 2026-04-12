@@ -12,6 +12,83 @@ import {
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { ActivityTimeline } from "@/components/ActivityTimeline";
+import { Progress } from "@/components/ui/progress";
+
+// ============================================================================
+// LEAD SCORE CARD
+// ============================================================================
+
+const SCORE_ITEMS = [
+  { key: "titulo", label: "Nome", weight: 1 },
+  { key: "email", label: "Email", weight: 1 },
+  { key: "telefone", label: "Telefone", weight: 1 },
+  { key: "empresa", label: "Empresa", weight: 1 },
+  { key: "cargo", label: "Cargo", weight: 1 },
+  { key: "cpf_cnpj", label: "CPF/CNPJ", weight: 1 },
+  { key: "setor", label: "Setor", weight: 1 },
+  { key: "porte", label: "Porte", weight: 1 },
+  { key: "regiao", label: "Regi\u00e3o", weight: 1 },
+  { key: "origem", label: "Canal de Origem", weight: 1 },
+  { key: "icp", label: "ICP", weight: 1 },
+  { key: "cadencia", label: "Cad\u00eancia", weight: 1 },
+];
+
+function LeadScoreCard({ lead, localFields }: { lead: any; localFields: any }) {
+  const filled = useMemo(() => {
+    return SCORE_ITEMS.map(item => {
+      let value = "";
+      if (item.key === "titulo") value = lead?.titulo || "";
+      else if (item.key === "email") value = localFields.email || "";
+      else if (item.key === "telefone") value = localFields.telefone || "";
+      else if (item.key === "empresa") value = localFields.empresa || "";
+      else if (item.key === "cargo") value = localFields.cargo || "";
+      else if (item.key === "cpf_cnpj") value = localFields.cpfCnpj || "";
+      else if (item.key === "setor") value = localFields.setor || "";
+      else if (item.key === "porte") value = localFields.porte || "";
+      else if (item.key === "regiao") value = localFields.regiao || "";
+      else if (item.key === "origem") value = lead?.origem || "";
+      else if (item.key === "icp") value = localFields.icp || "";
+      else if (item.key === "cadencia") value = localFields.cadencia || "";
+      return { ...item, filled: !!value.trim() };
+    });
+  }, [lead, localFields]);
+
+  const score = filled.filter(f => f.filled).length;
+  const total = SCORE_ITEMS.length;
+  const percent = Math.round((score / total) * 100);
+
+  const missing = filled.filter(f => !f.filled);
+
+  return (
+    <div className="bg-card border border-border rounded-lg p-4 mb-4">
+      <div className="flex items-center justify-between mb-2">
+        <span className="text-sm font-semibold">Score do Lead</span>
+        <span className={`text-lg font-bold ${
+          percent >= 80 ? "text-green-400" : percent >= 50 ? "text-amber-400" : "text-red-400"
+        }`}>
+          {score}/{total}
+        </span>
+      </div>
+      <Progress value={percent} className="h-2.5 mb-2" />
+      <p className="text-xs text-muted-foreground mb-2">
+        {percent >= 80
+          ? "Lead bem qualificado. Dados completos para abordagem."
+          : percent >= 50
+          ? "Dados parciais. Preencha os campos faltantes para melhorar a qualifica\u00e7\u00e3o."
+          : "Dados insuficientes. Priorize o preenchimento dos campos abaixo."}
+      </p>
+      {missing.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mt-1">
+          {missing.map(m => (
+            <span key={m.key} className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20">
+              {m.label}
+            </span>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -618,7 +695,9 @@ export default function LeadDetail() {
       {/* Two-column layout */}
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
         {/* Left: Lead Data */}
-        <div className="lg:col-span-2 bg-card border border-border rounded-lg p-5 space-y-4">
+        <div className="lg:col-span-2 space-y-0">
+          <LeadScoreCard lead={lead} localFields={localFields} />
+          <div className="bg-card border border-border rounded-lg p-5 space-y-4">
           <h2 className="text-sm font-semibold mb-3">Dados do Contato</h2>
 
           <InlineField label="Nome" value={(lead as any).titulo || ""} onSave={v => updateField("nome", v)} />
@@ -689,6 +768,7 @@ export default function LeadDetail() {
             onSave={v => updateField("temperatura", v)}
             type="temperature"
           />
+        </div>
         </div>
 
         {/* Right: Activity Timeline */}

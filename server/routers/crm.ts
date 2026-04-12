@@ -579,7 +579,7 @@ export const activitiesRouter = router({
   create: protectedProcedure
     .input(
       z.object({
-        tipo: z.enum(["email", "chamada", "reuniao", "nota", "proposta", "outro"]),
+        tipo: z.enum(["email", "chamada", "reuniao", "nota", "proposta", "whatsapp", "visita", "outro"]),
         titulo: z.string().min(1),
         descricao: z.string().optional(),
         opportunity_id: z.number().optional(),
@@ -606,6 +606,23 @@ export const activitiesRouter = router({
       const db = await getDb();
       if (!db) return [];
       return db.select().from(activities).where(eq(activities.organizationId, orgId(ctx))).orderBy(desc(activities.data_atividade));
+    }),
+
+  update: protectedProcedure
+    .input(
+      z.object({
+        id: z.number(),
+        tipo: z.enum(["email", "chamada", "reuniao", "nota", "proposta", "whatsapp", "visita", "outro"]).optional(),
+        titulo: z.string().optional(),
+        descricao: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const { id, ...data } = input;
+      await db.update(activities).set(data as any).where(and(eq(activities.id, id), eq(activities.organizationId, orgId(ctx))));
+      return { success: true };
     }),
 
   delete: protectedProcedure

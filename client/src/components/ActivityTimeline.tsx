@@ -1,29 +1,133 @@
 import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   Phone, Mail, Calendar, MessageSquare, FileText, Plus, Loader, Trash2, Clock,
+  Pencil, MapPin, Send, MoreHorizontal,
 } from "lucide-react";
 
-const activityIcons: Record<string, React.ReactNode> = {
-  ligacao: <Phone className="w-4 h-4" />,
-  email: <Mail className="w-4 h-4" />,
-  reuniao: <Calendar className="w-4 h-4" />,
-  whatsapp: <MessageSquare className="w-4 h-4" />,
-  nota: <FileText className="w-4 h-4" />,
-};
+// ============================================================================
+// TYPES & CONSTANTS
+// ============================================================================
 
-const activityColors: Record<string, string> = {
-  ligacao: "bg-primary",
-  email: "bg-green-500",
-  reuniao: "bg-purple-500",
-  whatsapp: "bg-emerald-500",
-  nota: "bg-gray-500",
-};
+const ACTIVITY_TYPES = [
+  { value: "chamada", label: "Ligação", icon: Phone, color: "bg-blue-500" },
+  { value: "email", label: "Email", icon: Mail, color: "bg-green-500" },
+  { value: "reuniao", label: "Reunião", icon: Calendar, color: "bg-purple-500" },
+  { value: "whatsapp", label: "WhatsApp", icon: MessageSquare, color: "bg-emerald-500" },
+  { value: "visita", label: "Visita", icon: MapPin, color: "bg-orange-500" },
+  { value: "proposta", label: "Proposta", icon: Send, color: "bg-yellow-500" },
+  { value: "nota", label: "Nota", icon: FileText, color: "bg-gray-500" },
+  { value: "outro", label: "Outro", icon: MoreHorizontal, color: "bg-gray-600" },
+] as const;
+
+function getActivityMeta(tipo: string) {
+  return ACTIVITY_TYPES.find(t => t.value === tipo) || ACTIVITY_TYPES[ACTIVITY_TYPES.length - 1];
+}
+
+// ============================================================================
+// ACTIVITY FORM DIALOG
+// ============================================================================
+
+function ActivityFormDialog({
+  open,
+  onClose,
+  onSubmit,
+  isPending,
+  initialData,
+  title,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onSubmit: (data: { tipo: string; descricao: string }) => void;
+  isPending: boolean;
+  initialData?: { tipo: string; descricao: string };
+  title: string;
+}) {
+  const [tipo, setTipo] = useState(initialData?.tipo || "nota");
+  const [descricao, setDescricao] = useState(initialData?.descricao || "");
+
+  React.useEffect(() => {
+    if (open) {
+      setTipo(initialData?.tipo || "nota");
+      setDescricao(initialData?.descricao || "");
+    }
+  }, [open, initialData]);
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-card border-border max-w-md">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          {/* Activity Type Grid */}
+          <div>
+            <label className="text-sm font-medium text-foreground/80 mb-2 block">Tipo de Atividade</label>
+            <div className="grid grid-cols-4 gap-2">
+              {ACTIVITY_TYPES.map(t => {
+                const Icon = t.icon;
+                const isSelected = tipo === t.value;
+                return (
+                  <button
+                    key={t.value}
+                    type="button"
+                    onClick={() => setTipo(t.value)}
+                    className={`flex flex-col items-center gap-1 py-2 px-1 rounded-lg border text-xs transition-all ${
+                      isSelected
+                        ? "border-primary bg-primary/10 text-primary"
+                        : "border-border bg-[#333333]/50 text-muted-foreground hover:border-primary/50"
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    {t.label}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Description */}
+          <div>
+            <label className="text-sm font-medium text-foreground/80">Descrição</label>
+            <textarea
+              value={descricao}
+              onChange={(e) => setDescricao(e.target.value)}
+              className="w-full mt-1 bg-[#333333] border border-border rounded-md px-3 py-2 text-sm min-h-[100px] resize-none focus:ring-1 focus:ring-primary focus:border-primary"
+              placeholder="Descreva a atividade..."
+            />
+          </div>
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={onClose} className="border-border">
+            Cancelar
+          </Button>
+          <Button
+            onClick={() => onSubmit({ tipo, descricao })}
+            className="bg-primary hover:bg-primary/90"
+            disabled={isPending || !descricao.trim()}
+          >
+            {isPending ? (
+              <Loader className="w-4 h-4 animate-spin mr-2" />
+            ) : initialData ? (
+              <Pencil className="w-4 h-4 mr-2" />
+            ) : (
+              <Plus className="w-4 h-4 mr-2" />
+            )}
+            {initialData ? "Salvar" : "Registrar"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ============================================================================
+// MAIN COMPONENT
+// ============================================================================
 
 interface ActivityTimelineProps {
   opportunityId?: number;
@@ -33,13 +137,11 @@ interface ActivityTimelineProps {
 
 export function ActivityTimeline({ opportunityId, contactId, leadId }: ActivityTimelineProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
-  const [newActivity, setNewActivity] = useState({
-    tipo: "nota",
-    descricao: "",
-  });
+  const [editingActivity, setEditingActivity] = useState<any>(null);
 
   const utils = trpc.useUtils();
 
+  // Queries
   const oppQuery = trpc.crm.activities.getByOpportunity.useQuery(
     { opportunityId: opportunityId! },
     { enabled: !!opportunityId }
@@ -57,14 +159,22 @@ export function ActivityTimeline({ opportunityId, contactId, leadId }: ActivityT
     { enabled: !opportunityId && !contactId && !leadId }
   );
   const activitiesQuery = opportunityId ? oppQuery : leadId ? leadQuery : contactId ? contactQuery : allQuery;
-
   const activities = activitiesQuery.data || [];
 
+  // Mutations
   const createMutation = trpc.crm.activities.create.useMutation({
     onSuccess: () => {
       toast.success("Atividade registrada!");
       setShowAddDialog(false);
-      setNewActivity({ tipo: "nota", descricao: "" });
+      utils.crm.activities.invalidate();
+    },
+    onError: (err: any) => toast.error(`Erro: ${err.message}`),
+  });
+
+  const updateMutation = trpc.crm.activities.update.useMutation({
+    onSuccess: () => {
+      toast.success("Atividade atualizada!");
+      setEditingActivity(null);
       utils.crm.activities.invalidate();
     },
     onError: (err: any) => toast.error(`Erro: ${err.message}`),
@@ -78,15 +188,31 @@ export function ActivityTimeline({ opportunityId, contactId, leadId }: ActivityT
     onError: (err: any) => toast.error(`Erro: ${err.message}`),
   });
 
-  const handleCreate = () => {
+  const handleCreate = (data: { tipo: string; descricao: string }) => {
     createMutation.mutate({
-      tipo: newActivity.tipo as any,
-      titulo: newActivity.descricao.slice(0, 50) || "Atividade",
-      descricao: newActivity.descricao,
+      tipo: data.tipo as any,
+      titulo: data.descricao.slice(0, 50) || "Atividade",
+      descricao: data.descricao,
       opportunity_id: opportunityId || undefined,
       contact_id: contactId || undefined,
       lead_id: leadId || undefined,
     });
+  };
+
+  const handleUpdate = (data: { tipo: string; descricao: string }) => {
+    if (!editingActivity) return;
+    updateMutation.mutate({
+      id: editingActivity.id,
+      tipo: data.tipo as any,
+      titulo: data.descricao.slice(0, 50) || "Atividade",
+      descricao: data.descricao,
+    });
+  };
+
+  const handleDelete = (id: number) => {
+    if (confirm("Tem certeza que deseja excluir esta atividade?")) {
+      deleteMutation.mutate({ id });
+    }
   };
 
   return (
@@ -110,6 +236,7 @@ export function ActivityTimeline({ opportunityId, contactId, leadId }: ActivityT
           <div className="text-center py-6 text-muted-foreground">
             <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p>Nenhuma atividade registrada</p>
+            <p className="text-xs mt-1">Clique em "Registrar" para adicionar a primeira atividade</p>
           </div>
         ) : (
           <div className="relative">
@@ -117,97 +244,88 @@ export function ActivityTimeline({ opportunityId, contactId, leadId }: ActivityT
             <div className="absolute left-4 top-0 bottom-0 w-px bg-[#333333]" />
 
             <div className="space-y-4">
-              {activities.map((activity: any) => (
-                <div key={activity.id} className="flex gap-4 relative">
-                  {/* Icon */}
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center z-10 ${
-                      activityColors[activity.tipo] || "bg-[#444444]"
-                    }`}
-                  >
-                    {activityIcons[activity.tipo] || <FileText className="w-4 h-4" />}
-                  </div>
+              {activities.map((activity: any) => {
+                const meta = getActivityMeta(activity.tipo);
+                const Icon = meta.icon;
+                const createdAt = activity.createdAt || activity.data_atividade || activity.created_at;
 
-                  {/* Content */}
-                  <div className="flex-1 bg-[#333333]/50 rounded-lg p-3 group">
-                    <div className="flex items-start justify-between">
-                      <div>
-                        <span className="text-xs font-medium text-muted-foreground uppercase">
-                          {activity.tipo}
-                        </span>
-                        <p className="text-sm mt-1">{activity.descricao}</p>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground">
-                          {activity.createdAt
-                            ? new Date(activity.createdAt).toLocaleDateString("pt-BR")
-                            : ""}
-                        </span>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          className="opacity-0 group-hover:opacity-100 text-red-400 hover:text-red-300 h-6 w-6 p-0"
-                          onClick={() => deleteMutation.mutate({ id: activity.id })}
-                        >
-                          <Trash2 className="w-3 h-3" />
-                        </Button>
+                return (
+                  <div key={activity.id} className="flex gap-4 relative">
+                    {/* Icon */}
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 ${meta.color}`}
+                    >
+                      <Icon className="w-4 h-4 text-white" />
+                    </div>
+
+                    {/* Content */}
+                    <div className="flex-1 bg-[#333333]/50 rounded-lg p-3 group">
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                              {meta.label}
+                            </span>
+                            <span className="text-xs text-muted-foreground">
+                              {createdAt
+                                ? new Date(createdAt).toLocaleDateString("pt-BR", {
+                                    day: "2-digit",
+                                    month: "short",
+                                    year: "numeric",
+                                    hour: "2-digit",
+                                    minute: "2-digit",
+                                  })
+                                : ""}
+                            </span>
+                          </div>
+                          <p className="text-sm mt-1 whitespace-pre-wrap break-words">{activity.descricao}</p>
+                        </div>
+                        <div className="flex items-center gap-1 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-muted-foreground hover:text-foreground h-7 w-7 p-0"
+                            onClick={() => setEditingActivity(activity)}
+                          >
+                            <Pencil className="w-3 h-3" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-red-400 hover:text-red-300 h-7 w-7 p-0"
+                            onClick={() => handleDelete(activity.id)}
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </Button>
+                        </div>
                       </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
       </CardContent>
 
       {/* Add Activity Dialog */}
-      <Dialog open={showAddDialog} onOpenChange={setShowAddDialog}>
-        <DialogContent className="bg-card border-border max-w-md">
-          <DialogHeader>
-            <DialogTitle>Registrar Atividade</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Tipo</label>
-              <select
-                value={newActivity.tipo}
-                onChange={(e) => setNewActivity({ ...newActivity, tipo: e.target.value })}
-                className="w-full mt-1 bg-[#333333] border border-border rounded-md px-3 py-2 text-sm"
-              >
-                <option value="nota">Nota</option>
-                <option value="chamada">Ligação</option>
-                <option value="email">Email</option>
-                <option value="reuniao">Reunião</option>
-                <option value="proposta">Proposta</option>
-                <option value="outro">Outro</option>
-              </select>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Descrição</label>
-              <textarea
-                value={newActivity.descricao}
-                onChange={(e) => setNewActivity({ ...newActivity, descricao: e.target.value })}
-                className="w-full mt-1 bg-[#333333] border border-border rounded-md px-3 py-2 text-sm min-h-[100px]"
-                placeholder="Descreva a atividade..."
-              />
-            </div>
-            <div className="flex gap-3 justify-end pt-2 border-t border-border">
-              <Button variant="outline" onClick={() => setShowAddDialog(false)} className="border-border">
-                Cancelar
-              </Button>
-              <Button
-                onClick={handleCreate}
-                className="bg-primary hover:bg-primary/90"
-                disabled={createMutation.isPending || !newActivity.descricao}
-              >
-                {createMutation.isPending ? <Loader className="w-4 h-4 animate-spin mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
-                Registrar
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ActivityFormDialog
+        open={showAddDialog}
+        onClose={() => setShowAddDialog(false)}
+        onSubmit={handleCreate}
+        isPending={createMutation.isPending}
+        title="Registrar Atividade"
+      />
+
+      {/* Edit Activity Dialog */}
+      <ActivityFormDialog
+        open={!!editingActivity}
+        onClose={() => setEditingActivity(null)}
+        onSubmit={handleUpdate}
+        isPending={updateMutation.isPending}
+        initialData={editingActivity ? { tipo: editingActivity.tipo, descricao: editingActivity.descricao || "" } : undefined}
+        title="Editar Atividade"
+      />
     </Card>
   );
 }
