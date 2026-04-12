@@ -15,6 +15,13 @@
       "when": 1776016258058,
       "tag": "0001_sad_hemingway",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1776023860237,
+      "tag": "0002_remarkable_molecule_man",
+      "breakpoints": true
     }
   ]
 }

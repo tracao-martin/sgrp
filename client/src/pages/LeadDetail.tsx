@@ -12,6 +12,7 @@ import {
   Calendar, Plus, Pencil, Check, X, ExternalLink,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
+import { ActivityTimeline } from "@/components/ActivityTimeline";
 
 // ============================================================================
 // TYPES & CONSTANTS
@@ -715,7 +716,7 @@ export default function LeadDetail() {
 
         {/* Right: Activity Timeline */}
         <div className="lg:col-span-3 bg-card border border-border rounded-lg p-5">
-          <SimpleTimeline leadId={leadId || 0} />
+          <ActivityTimeline leadId={leadId || 0} />
         </div>
       </div>
 

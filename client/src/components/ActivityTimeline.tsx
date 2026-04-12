@@ -28,9 +28,10 @@ const activityColors: Record<string, string> = {
 interface ActivityTimelineProps {
   opportunityId?: number;
   contactId?: number;
+  leadId?: number;
 }
 
-export function ActivityTimeline({ opportunityId, contactId }: ActivityTimelineProps) {
+export function ActivityTimeline({ opportunityId, contactId, leadId }: ActivityTimelineProps) {
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [newActivity, setNewActivity] = useState({
     tipo: "nota",
@@ -45,13 +46,17 @@ export function ActivityTimeline({ opportunityId, contactId }: ActivityTimelineP
   );
   const contactQuery = trpc.crm.activities.getByContact.useQuery(
     { contactId: contactId! },
-    { enabled: !!contactId && !opportunityId }
+    { enabled: !!contactId && !opportunityId && !leadId }
+  );
+  const leadQuery = trpc.crm.activities.getByLead.useQuery(
+    { leadId: leadId! },
+    { enabled: !!leadId && !opportunityId && !contactId }
   );
   const allQuery = trpc.crm.activities.list.useQuery(
     undefined,
-    { enabled: !opportunityId && !contactId }
+    { enabled: !opportunityId && !contactId && !leadId }
   );
-  const activitiesQuery = opportunityId ? oppQuery : contactId ? contactQuery : allQuery;
+  const activitiesQuery = opportunityId ? oppQuery : leadId ? leadQuery : contactId ? contactQuery : allQuery;
 
   const activities = activitiesQuery.data || [];
 
@@ -80,6 +85,7 @@ export function ActivityTimeline({ opportunityId, contactId }: ActivityTimelineP
       descricao: newActivity.descricao,
       opportunity_id: opportunityId || undefined,
       contact_id: contactId || undefined,
+      lead_id: leadId || undefined,
     });
   };
 

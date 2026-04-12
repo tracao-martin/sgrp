@@ -321,3 +321,12 @@
 - [x] Botão "Histórico" com painel expansível mostrando todas as movimentações
 - [x] Toast de confirmação ao mover lead com nome da fase destino
 - [x] Build e deploy no VPS - CONFIRMADO 12/04/2026
+
+## Bug Fix: Kanban Cadência não persiste movimentações
+
+- [ ] Adicionar campo cadence_phase na tabela leads (ou usar campo existente)
+- [ ] Criar procedure tRPC para atualizar fase da cadência do lead
+- [ ] Criar atividade na timeline ao mover lead (tipo: cadence_move, com fase anterior e nova)
+- [ ] Atualizar frontend Kanban para chamar mutation ao mover card
+- [ ] Timeline de Atividades no detalhe do lead deve mostrar movimentações
+- [ ] Build, deploy e testar no VPS

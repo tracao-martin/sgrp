@@ -258,7 +258,7 @@ export const leadsRouter = router({
       z.object({
         status: z.string().optional(),
         qualificacao: z.string().optional(),
-        limit: z.number().default(50),
+        limit: z.number().default(100),
       })
     )
     .query(async ({ ctx, input }) => {
@@ -309,18 +309,32 @@ export const leadsRouter = router({
         origem: z.string().optional(),
         qualificacao: z.enum(["frio", "morno", "quente", "qualificado"]).optional(),
         valor_estimado: z.number().optional(),
+        telefone: z.string().optional(),
+        email: z.string().optional(),
+        cargo: z.string().optional(),
+        empresa: z.string().optional(),
+        linkedin: z.string().optional(),
+        site: z.string().optional(),
+        cpf_cnpj: z.string().optional(),
+        setor: z.string().optional(),
+        regiao: z.string().optional(),
+        porte: z.string().optional(),
+        icp_id: z.number().optional(),
+        cadencia: z.string().optional(),
+        fase_cadencia: z.string().optional(),
+        notas: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_leads");
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      await db.insert(leads).values({
+      const result = await db.insert(leads).values({
         ...input,
         organizationId: orgId(ctx),
         responsavel_id: ctx.user.id,
-      } as any);
-      return { success: true };
+      } as any).returning();
+      return result[0] || { success: true };
     }),
 
   updateQualification: protectedProcedure
@@ -370,7 +384,21 @@ export const leadsRouter = router({
         origem: z.string().optional(),
         qualificacao: z.enum(["frio", "morno", "quente", "qualificado"]).optional(),
         valor_estimado: z.number().optional(),
-        status: z.enum(["novo", "contatado", "qualificado", "convertido", "perdido"]).optional(),
+        status: z.enum(["novo", "em_contato", "qualificado", "convertido", "perdido"]).optional(),
+        telefone: z.string().optional(),
+        email: z.string().optional(),
+        cargo: z.string().optional(),
+        empresa: z.string().optional(),
+        linkedin: z.string().optional(),
+        site: z.string().optional(),
+        cpf_cnpj: z.string().optional(),
+        setor: z.string().optional(),
+        regiao: z.string().optional(),
+        porte: z.string().optional(),
+        icp_id: z.number().nullable().optional(),
+        cadencia: z.string().nullable().optional(),
+        fase_cadencia: z.string().nullable().optional(),
+        notas: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -378,7 +406,41 @@ export const leadsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       const { id, ...updateData } = input;
-      await db.update(leads).set(updateData as any).where(and(eq(leads.id, id), eq(leads.organizationId, orgId(ctx))));
+      await db.update(leads).set({ ...updateData, updatedAt: new Date() } as any).where(and(eq(leads.id, id), eq(leads.organizationId, orgId(ctx))));
+      return { success: true };
+    }),
+
+  // Move lead to a different cadence phase + log activity
+  moveCadencePhase: protectedProcedure
+    .input(
+      z.object({
+        leadId: z.number(),
+        faseAnterior: z.string(),
+        faseNova: z.string(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      requirePermission(ctx.user, "manage_leads");
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+
+      // Update lead's cadence phase
+      await db
+        .update(leads)
+        .set({ fase_cadencia: input.faseNova, updatedAt: new Date() } as any)
+        .where(and(eq(leads.id, input.leadId), eq(leads.organizationId, orgId(ctx))));
+
+      // Log the activity in the activities table
+      await db.insert(activities).values({
+        organizationId: orgId(ctx),
+        lead_id: input.leadId,
+        tipo: "outro" as any,
+        titulo: `Movido na cadência: ${input.faseAnterior} → ${input.faseNova}`,
+        descricao: `Lead movido de "${input.faseAnterior}" para "${input.faseNova}" por ${ctx.user.name || "Usuário"}`,
+        usuario_id: ctx.user.id,
+        data_atividade: new Date(),
+      } as any);
+
       return { success: true };
     }),
 
@@ -422,6 +484,18 @@ export const activitiesRouter = router({
         .orderBy(desc(activities.data_atividade));
     }),
 
+  getByLead: protectedProcedure
+    .input(z.object({ leadId: z.number() }))
+    .query(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) return [];
+      return db
+        .select()
+        .from(activities)
+        .where(and(eq(activities.lead_id, input.leadId), eq(activities.organizationId, orgId(ctx))))
+        .orderBy(desc(activities.data_atividade));
+    }),
+
   create: protectedProcedure
     .input(
       z.object({
@@ -431,6 +505,7 @@ export const activitiesRouter = router({
         opportunity_id: z.number().optional(),
         contact_id: z.number().optional(),
         company_id: z.number().optional(),
+        lead_id: z.number().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -441,7 +516,7 @@ export const activitiesRouter = router({
         organizationId: orgId(ctx),
         usuario_id: ctx.user.id,
         data_atividade: new Date(),
-      });
+      } as any);
       return { success: true };
     }),
 

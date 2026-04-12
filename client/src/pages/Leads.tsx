@@ -758,6 +758,15 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
   const [activityLog, setActivityLog] = useState<ActivityLogEntry[]>([]);
   const [showLog, setShowLog] = useState(false);
 
+  const utils = trpc.useUtils();
+  const movePhaseMutation = trpc.crm.leads.moveCadencePhase.useMutation({
+    onSuccess: () => {
+      utils.crm.leads.invalidate();
+      utils.crm.activities.invalidate();
+    },
+    onError: (err: any) => toast.error(`Erro ao salvar movimentação: ${err.message}`),
+  });
+
   // Track lead-to-phase assignments (local state for mock)
   const [leadPhases, setLeadPhases] = useState<Record<number, string>>(() => {
     const initial: Record<number, string> = {};
@@ -848,15 +857,22 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
     const fromPhase = CADENCE_PHASES.find(p => p.id === currentPhaseId);
     const toPhase = CADENCE_PHASES.find(p => p.id === targetPhaseId);
 
-    // Move the lead
+    // Move the lead (optimistic local update)
     setLeadPhases(prev => ({ ...prev, [draggedLeadId!]: targetPhaseId }));
 
-    // Log the activity
+    // Persist to database via tRPC
+    movePhaseMutation.mutate({
+      leadId: lead.id,
+      faseAnterior: fromPhase?.nome || "Sem Cadência",
+      faseNova: toPhase?.nome || targetPhaseId,
+    });
+
+    // Log the activity locally for immediate UI feedback
     const newEntry: ActivityLogEntry = {
       id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       leadId: lead.id,
       leadNome: lead.nome,
-      usuario: "Administrador", // Current user
+      usuario: "Administrador",
       data: new Date().toISOString(),
       faseAnterior: fromPhase?.nome || "Desconhecida",
       faseNova: toPhase?.nome || "Desconhecida",
