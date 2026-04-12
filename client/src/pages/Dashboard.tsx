@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { TrendingUp, Users, DollarSign, Target, Building2, UserCheck, ListTodo } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 
-const COLORS = ["#3b82f6", "#10b981", "#ef4444", "#f59e0b", "#8b5cf6"];
+const COLORS = ["#ffbf19", "#10b981", "#ef4444", "#8b5cf6", "#f97316"];
 
 export default function Dashboard() {
   // Fetch real data
@@ -148,18 +148,18 @@ export default function Dashboard() {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={pipelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="stage" stroke="#9ca3af" fontSize={12} />
-                <YAxis stroke="#9ca3af" />
+                <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
+                <XAxis dataKey="stage" stroke="#b0b0b0" fontSize={12} />
+                <YAxis stroke="#b0b0b0" />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "8px" }}
+                  contentStyle={{ backgroundColor: "#2a2a2a", border: "1px solid #404040", borderRadius: "8px", color: "#fff" }}
                   formatter={(value: any, name: string) => {
                     if (name === "Valor") return [formatCurrency(value), name];
                     return [value, name];
                   }}
                 />
                 <Legend />
-                <Bar dataKey="deals" fill="#3b82f6" name="Quantidade" radius={[4, 4, 0, 0]} />
+                <Bar dataKey="deals" fill="#ffbf19" name="Quantidade" radius={[4, 4, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </CardContent>
@@ -174,11 +174,11 @@ export default function Dashboard() {
           <CardContent>
             <ResponsiveContainer width="100%" height={300}>
               <BarChart data={pipelineData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#374151" />
-                <XAxis dataKey="stage" stroke="#9ca3af" fontSize={12} />
-                <YAxis stroke="#9ca3af" tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#404040" />
+                <XAxis dataKey="stage" stroke="#b0b0b0" fontSize={12} />
+                <YAxis stroke="#b0b0b0" tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: "#1f2937", border: "1px solid #374151", borderRadius: "8px" }}
+                  contentStyle={{ backgroundColor: "#2a2a2a", border: "1px solid #404040", borderRadius: "8px", color: "#fff" }}
                   formatter={(value: any) => [formatCurrency(value), "Valor"]}
                 />
                 <Bar dataKey="value" fill="#10b981" name="Valor (R$)" radius={[4, 4, 0, 0]} />

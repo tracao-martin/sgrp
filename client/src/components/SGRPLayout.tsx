@@ -141,8 +141,8 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
         {/* Logo + Org Name */}
         <div className="p-4 border-b border-[#2a2a2a]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center font-bold">
-              SG
+            <div className="w-10 h-10 bg-primary text-primary-foreground rounded-lg flex items-center justify-center font-bold text-sm">
+              TC
             </div>
             {sidebarOpen && (
               <div>

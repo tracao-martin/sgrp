@@ -18,7 +18,7 @@ const temperatureColors: Record<string, string> = {
 };
 
 const statusColors: Record<string, string> = {
-  novo: "bg-slate-700 text-slate-200",
+  novo: "bg-[#333333] text-foreground/80",
   contatado: "bg-primary/20 text-primary/80",
   qualificado: "bg-green-900/60 text-green-200",
   convertido: "bg-purple-900/60 text-purple-200",

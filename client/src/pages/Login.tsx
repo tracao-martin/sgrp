@@ -63,7 +63,7 @@ export default function Login() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-950 via-gray-900 to-gray-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-[#111111] via-[#1c1c1c] to-[#111111] flex items-center justify-center p-4">
       {/* Animated background elements */}
       <div className="absolute inset-0 overflow-hidden">
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-primary rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-pulse" />
@@ -76,8 +76,8 @@ export default function Login() {
           {/* Header */}
           <div className="text-center space-y-4">
             <div className="flex justify-center">
-              <div className="w-16 h-16 bg-gradient-to-br from-blue-600 to-blue-700 rounded-xl flex items-center justify-center">
-                <span className="text-2xl font-bold text-white">SG</span>
+              <div className="w-16 h-16 bg-gradient-to-br from-primary to-primary/80 rounded-xl flex items-center justify-center">
+                <span className="text-2xl font-bold text-primary-foreground">TC</span>
               </div>
             </div>
             <div>
@@ -193,7 +193,7 @@ export default function Login() {
             <Button
               type="submit"
               disabled={submitting || loading}
-              className="w-full bg-primary hover:bg-primary/90 text-white py-6 rounded-lg font-semibold text-base transition-all flex items-center justify-center gap-2"
+              className="w-full bg-primary hover:bg-primary/90 text-primary-foreground py-6 rounded-lg font-semibold text-base transition-all flex items-center justify-center gap-2"
             >
               {submitting ? (
                 <>
@@ -211,7 +211,7 @@ export default function Login() {
 
           {/* Info for register mode */}
           {mode === "register" && (
-            <div className="bg-primary/15 border border-primary/30/30 rounded-lg p-3 text-xs text-primary">
+            <div className="bg-primary/15 border border-primary/30 rounded-lg p-3 text-xs text-primary">
               <p>Ao criar sua empresa, você será o administrador e poderá convidar sua equipe depois.</p>
               <p className="mt-1">Inclui 14 dias de teste gratuito.</p>
             </div>

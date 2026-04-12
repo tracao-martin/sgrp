@@ -97,7 +97,7 @@ export default function FunilVendas() {
   // Stage colors
   const stageColors: Record<number, string> = {};
   stages.forEach((s: any, i: number) => {
-    const colors = ["bg-slate-500", "bg-primary", "bg-purple-500", "bg-amber-500", "bg-emerald-500"];
+    const colors = ["bg-[#555555]", "bg-primary", "bg-purple-500", "bg-amber-500", "bg-emerald-500"];
     stageColors[s.id] = colors[i % colors.length];
   });
 
