@@ -116,4 +116,12 @@
 - [x] Iniciar app com PM2 e testar via dev.sgrp.tracaocomercial.com.br
 - [x] Validar fluxo completo de autenticação local no navegador (login testado com sucesso)
 - [x] Executar pnpm build e corrigir erros (build OK local + VPS)
-- [ ] Finalizar limpeza de OAuth Manus (renomear funções, remover textos inconsistentes)
+- [x] Finalizar limpeza de OAuth Manus (renomeado para auth.ts, funções e comentários limpos)
+
+## Auditoria e Limpeza de Projeto
+- [x] Identificar arquivos órfãos e não referenciados
+- [x] Identificar dependências npm não utilizadas
+- [x] Remover código legado OAuth/MySQL
+- [x] Remover arquivos de migração antigos (MySQL)
+- [x] Limpar imports não utilizados
+- [x] Validar build e testes após limpeza (21 testes OK, build OK)

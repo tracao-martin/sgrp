@@ -7,9 +7,8 @@ import * as db from "../db";
 
 /**
  * Register local authentication routes (login + register)
- * Replaces the previous Manus OAuth callback
  */
-export function registerOAuthRoutes(app: Express) {
+export function registerAuthRoutes(app: Express) {
   // POST /api/auth/login - Local email/password login
   app.post("/api/auth/login", async (req, res) => {
     try {
