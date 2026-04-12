@@ -93,13 +93,13 @@
 - [x] Testar CRUD end-to-end via browser (criar, editar, deletar lead testado com sucesso)
 
 ## Deploy VPS Hostinger
-- [ ] Conectar ao VPS e instalar Node.js, pnpm, Nginx, PM2, Certbot
-- [ ] Exportar código para GitHub (tracao-martin/sgrp)
-- [ ] Clonar repositório no VPS e fazer build
-- [ ] Configurar variáveis de ambiente e banco de dados
-- [ ] Configurar Nginx reverse proxy + SSL Let's Encrypt
-- [ ] Iniciar aplicação com PM2
-- [ ] Testar acesso via dev.sgrp.tracaocomercial.com.br
+- [x] Conectar ao VPS e instalar Node.js, pnpm, Nginx, PM2, Certbot
+- [x] Exportar código para GitHub (tracao-martin/sgrp)
+- [x] Clonar repositório no VPS e fazer build
+- [x] Configurar variáveis de ambiente e banco de dados
+- [x] Configurar Nginx reverse proxy + SSL Let's Encrypt
+- [x] Iniciar aplicação com PM2
+- [x] Testar acesso via dev.sgrp.tracaocomercial.com.br
 
 ## Migração PostgreSQL + Auth Local + Deploy VPS
 - [x] Trocar driver mysql2 por postgres (drizzle-orm/postgres-js)
@@ -109,11 +109,11 @@
 - [x] Criar páginas de login/registro local
 - [x] Remover dependências do OAuth Manus
 - [x] Testar build e testes localmente (21 testes passando)
-- [ ] Instalar PostgreSQL no VPS
-- [ ] Criar banco e tabelas no VPS
-- [ ] Configurar .env no VPS
-- [ ] Configurar Nginx reverse proxy + SSL Let's Encrypt
-- [ ] Iniciar app com PM2 e testar via dev.sgrp.tracaocomercial.com.br
-- [ ] Validar fluxo completo de autenticação local no navegador
-- [ ] Executar pnpm build e corrigir erros
+- [x] Instalar PostgreSQL no VPS (PostgreSQL 16, porta 5433)
+- [x] Criar banco e tabelas no VPS (sgrp DB + admin user criado)
+- [x] Configurar env no VPS (config.env com DATABASE_URL, JWT_SECRET)
+- [x] Configurar Nginx reverse proxy + SSL Let's Encrypt (certbot)
+- [x] Iniciar app com PM2 e testar via dev.sgrp.tracaocomercial.com.br
+- [x] Validar fluxo completo de autenticação local no navegador (login testado com sucesso)
+- [x] Executar pnpm build e corrigir erros (build OK local + VPS)
 - [ ] Finalizar limpeza de OAuth Manus (renomear funções, remover textos inconsistentes)
