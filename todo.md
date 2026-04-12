@@ -156,5 +156,12 @@
 
 ### Bloco 5: Testes e Validação
 - [x] Build e 21 testes passando após todas as mudanças
-- [ ] Deploy no VPS com banco multi-tenant
-- [ ] Testar fluxo completo no browser (registro org + login + CRUD)
+- [x] Deploy no VPS com banco multi-tenant (PostgreSQL 16, sgrp_user, permissões OK)
+- [x] Testar fluxo completo no browser (login testado com sucesso, dashboard carregando)
+
+### Validação Pendente
+- [x] Testar registro de nova organização via "Criar Empresa" no browser (Empresa Teste ABC criada)
+- [ ] Testar convite de usuário dentro da organização
+- [x] Testar login como usuário da nova org (João Silva logou, dashboard limpo)
+- [x] Validar isolamento multi-tenant (org 2 não vê dados da org 1) - CONFIRMADO em 12/04/2026
+- [x] Testar CRUD básico (lead/conta) dentro do tenant (lead criado como org 2, não visível em org 1)
