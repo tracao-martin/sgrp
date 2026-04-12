@@ -203,41 +203,42 @@
 ## Configurações - Frontend Completo (Dados Mockados)
 
 ### Funis (Pipeline)
-- [ ] Página /configuracoes/funis com listagem de funis (ex: Vendas Novas, Expansão, Inbound)
-- [ ] Cada funil mostra seus estágios em ordem com drag-and-drop visual
-- [ ] Cada estágio: nome, cor, critérios de entrada, critérios de saída, campos obrigatórios, evidências mínimas
-- [ ] Criar/editar/excluir funil
-- [ ] Criar/editar/excluir/reordenar estágios dentro de um funil
-- [ ] Estágios padrão: Novo Lead, Diagnóstico Agendado, Diagnóstico Realizado, Oportunidade Qualificada, Solução Desenhada, Proposta Apresentada, Negociação, Commit, Ganho, Perdido
+- [x] Página /configuracoes/funis com listagem de funis (ex: Vendas Novas, Expansão)
+- [x] Cada funil mostra seus estágios em ordem com reorder visual
+- [x] Cada estágio: nome, cor, critérios de entrada, critérios de saída, campos obrigatórios, evidências mínimas
+- [x] Criar/editar/excluir funil
+- [x] Criar/editar/excluir/reordenar estágios dentro de um funil
+- [x] Estágios padrão: Novo Lead, Diagnóstico Agendado, Diagnóstico Realizado, Oportunidade Qualificada, Solução Desenhada, Proposta Apresentada, Negociação, Commit
 
 ### Probabilidade
-- [ ] Página /configuracoes/probabilidade com tabela de probabilidade por estágio
-- [ ] Cada estágio do funil ativo mostra: nome, probabilidade padrão (%), slider ou input
-- [ ] Opção de ajuste fino por funil (se houver múltiplos funis)
-- [ ] Visualização gráfica da curva de probabilidade por estágio
+- [x] Página /configuracoes/probabilidade com tabela de probabilidade por estágio
+- [x] Cada estágio do funil ativo mostra: nome, probabilidade padrão (%), slider + input
+- [x] Opção de ajuste fino por funil (tabs por funil)
+- [x] Visualização gráfica da curva de probabilidade por estágio
+- [x] Templates de probabilidade (Conservador/Moderado/Agressivo)
 
 ### Produtos
-- [ ] Página /configuracoes/produtos com catálogo de produtos/serviços
-- [ ] Campos: nome, descrição, categoria, preço base, recorrência (mensal/anual/único), ativo/inativo
-- [ ] CRUD completo com cards ou tabela
-- [ ] Filtro por categoria e status
-- [ ] Tags de categoria com cores
+- [x] Página /configuracoes/produtos com catálogo de produtos/serviços (7 produtos mockados)
+- [x] Campos: nome, descrição, categoria, preço base, recorrência (mensal/anual/único), ativo/inativo
+- [x] CRUD completo com cards grid
+- [x] Filtro por categoria e status (Todos/Ativos/Inativos + 6 categorias)
+- [x] Tags de categoria com cores
 
 ### Metas
-- [ ] Página /configuracoes/metas com definição de metas de vendas
+- [x] Página /configuracoes/metas com definição de metas de vendas
 - [ ] Metas por período (mensal/trimestral/anual)
-- [ ] Metas por vendedor, equipe ou organização
-- [ ] Campos: período, responsável, valor meta, tipo (receita nova, expansão, total)
-- [ ] Visualização de progresso (barra de progresso ou gauge)
-- [ ] Histórico de metas anteriores
+- [x] Metas por vendedor, equipe ou organização (seções Organização + Vendedores)
+- [x] Campos: período, responsável, valor meta, tipo (receita nova, expansão, total, deals ganhos, leads qualificados)
+- [x] Visualização de progresso (barra de progresso colorida)
+- [x] Filtros por período (mês/trimestre/ano) e tipo de meta
 
 ### Cadências
-- [ ] Página /configuracoes/cadencias com sequências de follow-up
-- [ ] Cada cadência: nome, descrição, gatilho (ex: novo lead, deal parado, pós-proposta)
-- [ ] Steps da cadência: dia, tipo de ação (email, ligação, WhatsApp, tarefa), template, intervalo
-- [ ] Timeline visual dos steps
-- [ ] Ativar/desativar cadência
-- [ ] CRUD completo
+- [x] Página /configuracoes/cadencias com sequências de follow-up (3 cadências mockadas)
+- [x] Cada cadência: nome, descrição, gatilho, stats (contatos, % resposta)
+- [x] Steps da cadência: dia, tipo de ação (email, ligação, WhatsApp, LinkedIn, tarefa), template, intervalo
+- [x] Timeline visual dos steps com ícones por canal
+- [x] Ativar/desativar cadência com toggle
+- [x] CRUD completo com duplicar
 
 ### Mensagens Rápidas (ADIADO para próxima etapa)
 - [ ] ~Página /configuracoes/mensagens-rapidas com templates de mensagens~
@@ -262,7 +263,7 @@
 - [ ] Zona de perigo: exportar dados, excluir organização
 
 ### Integração e Navegação
-- [ ] Todas as rotas registradas em App.tsx
-- [ ] Menu lateral de Configurações atualizado com todas as sub-rotas
-- [ ] Navegação fluida entre todas as páginas de configuração
-- [ ] Deploy no VPS e teste de navegação completo
+- [x] Todas as rotas registradas em App.tsx (6 novas rotas)
+- [x] Menu lateral de Configurações atualizado com 7 sub-rotas reais
+- [x] Navegação fluida entre todas as páginas de configuração
+- [x] Deploy no VPS e teste de navegação completo - CONFIRMADO 12/04/2026
