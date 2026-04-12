@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Filter, Loader } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { ContaModal } from "@/components/ContaModal";
+import { ContaActions } from "@/components/ContaActions";
 
 const statusColors = {
   ativa: "bg-green-900 text-green-200",
@@ -102,9 +103,7 @@ export default function Contas() {
                       </td>
                       <td className="py-3 px-4 text-gray-400">{conta.segmento || "-"}</td>
                       <td className="py-3 px-4">
-                        <button className="text-blue-400 hover:text-blue-300 text-xs font-medium">
-                          Ver Detalhes
-                        </button>
+                        <ContaActions conta={conta} onSuccess={() => companiesQuery.refetch()} />
                       </td>
                     </tr>
                   ))}

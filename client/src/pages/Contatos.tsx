@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Filter, Loader } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { ContatoModal } from "@/components/ContatoModal";
+import { ContatoActions } from "@/components/ContatoActions";
 
 export default function Contatos() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -91,9 +92,7 @@ export default function Contatos() {
                       <td className="py-3 px-4 text-gray-400">{contato.telefone || "-"}</td>
                       <td className="py-3 px-4 text-gray-400">{contato.cargo || "-"}</td>
                       <td className="py-3 px-4">
-                        <button className="text-blue-400 hover:text-blue-300 text-xs font-medium">
-                          Ver Detalhes
-                        </button>
+                        <ContatoActions contato={contato} onSuccess={() => {}} />
                       </td>
                     </tr>
                   ))}

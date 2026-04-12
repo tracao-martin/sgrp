@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Plus, Search, Filter, Loader } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { LeadModal } from "@/components/LeadModal";
+import { LeadActions } from "@/components/LeadActions";
 
 const temperatureColors = {
   quente: "bg-red-900 text-red-200",
@@ -108,9 +109,7 @@ export default function Leads() {
                         {lead.valor_estimado ? `R$ ${(lead.valor_estimado / 1000).toFixed(0)}K` : "-"}
                       </td>
                       <td className="py-3 px-4">
-                        <button className="text-blue-400 hover:text-blue-300 text-xs font-medium">
-                          Ver Detalhes
-                        </button>
+                        <LeadActions lead={lead} onSuccess={() => leadsQuery.refetch()} />
                       </td>
                     </tr>
                   ))}
