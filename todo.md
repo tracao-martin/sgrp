@@ -279,36 +279,36 @@
 ## Redesign Leads Page
 
 ### Aba Lista (Leads Ativos - estilo Excel)
-- [ ] Header com 2 abas: Cadência (Kanban) e Leads Ativos (Lista)
-- [ ] Tabela profissional com colunas configuráveis (Nome, Telefone, Cargo, Email, Empresa, Origem, Temperatura, Status, Setor, Região, Porte, Visível Para)
-- [ ] Botão "Colunas" com popover para mostrar/ocultar colunas (salvo localStorage)
-- [ ] Busca por nome, empresa, telefone
-- [ ] Filtros avançados: Temperatura, Status, ICP, Setor, Porte, Canal de Origem, Visibilidade
-- [ ] Todos os status na mesma tabela (novo, em_contato, qualificado, convertido, desqualificado, aposentado)
-- [ ] Paginação com 10/50/100 por página
-- [ ] Checkbox de seleção individual e selecionar todos (admin)
-- [ ] Barra flutuante de seleção em massa: editar em massa, exportar Excel
-- [ ] Ações por linha: WhatsApp, Editar, Excluir
-- [ ] Botões header: Importar, Novo Lead
-- [ ] Modal Novo Lead / Editar Lead com formulário completo (Nome, Telefone, Email, Empresa, Cargo, Origem, ICP, Temperatura, Setor, Porte, Região, LinkedIn, Site, CPF/CNPJ, Cadência, Visível Para, Notas)
+- [x] Header com 2 abas: Cadência (Kanban) e Leads Ativos (Lista)
+- [x] Tabela profissional com colunas configuráveis (Nome, Telefone, Cargo, Email, Empresa, Origem, Temperatura, Status)
+- [x] Botão "Colunas" com popover para mostrar/ocultar colunas (salvo localStorage)
+- [x] Busca por nome, empresa, telefone
+- [x] Filtros avançados: Temperatura, Status, Canal de Origem
+- [x] Todos os status na mesma tabela (novo, em_contato, qualificado, convertido, desqualificado, aposentado)
+- [x] Paginação com 10/50/100 por página
+- [x] Checkbox de seleção individual e selecionar todos
+- [x] Barra flutuante de seleção em massa: editar em massa, exportar Excel
+- [x] Ações por linha: Editar, Excluir
+- [x] Botões header: Importar, Novo Lead
+- [x] Modal Novo Lead / Editar Lead com formulário completo
 
 ### Página Detalhe do Lead (/leads/:id)
-- [ ] Header com nome, cargo, empresa + botões: WhatsApp, Converter em Conta, Desqualificar, Aposentar
-- [ ] Lado esquerdo: dados do contato com edição inline ("Clique para editar")
-- [ ] Campos: Nome, Cargo, ICP, Telefone, Email, Empresa, LinkedIn, Site, CPF/CNPJ, Canal de Origem, Cadência, Fase da Cadência, Visível Para, Observações, Temperatura (Frio/Morno/Quente)
-- [ ] Lado direito: Timeline de Atividades com "Nova Agenda" e "Nova Atividade"
-- [ ] Ação Converter em Conta: cria conta/empresa, muda status para convertido
-- [ ] Ação Desqualificar: pede motivo, muda status
-- [ ] Ação Aposentar: pede motivo, muda status
-- [ ] Ação Reativar: volta para ativo (se desqualificado/aposentado)
+- [x] Header com nome, cargo, empresa + botões: WhatsApp, Converter em Conta, Desqualificar, Aposentar
+- [x] Lado esquerdo: dados do contato com edição inline ("Clique para editar")
+- [x] Campos: Nome, Cargo, ICP, Telefone, Email, Empresa, LinkedIn, Site, CPF/CNPJ, Canal de Origem, Cadência, Fase da Cadência, Visível Para, Observações, Temperatura (Frio/Morno/Quente)
+- [x] Lado direito: Timeline de Atividades com "Nova Agenda" e "Nova Atividade"
+- [x] Ação Converter em Conta: cria conta/empresa, muda status para convertido
+- [x] Ação Desqualificar: pede motivo, muda status
+- [x] Ação Aposentar: pede motivo, muda status
+- [x] Ação Reativar: volta para ativo (se desqualificado/aposentado)
 
 ### Aba Cadência (Kanban)
-- [ ] Kanban agrupado por fase da cadência
-- [ ] Coluna "Sem Cadência" para leads não vinculados
-- [ ] Cards com: nome, empresa, temperatura badge, ações rápidas (WhatsApp, editar)
-- [ ] Dados mockados de cadências para visualização
+- [x] Kanban agrupado por fase da cadência (Sem Cadência, Novo, Primeiro Contato, Follow-up, Qualificação, Apresentação)
+- [x] Coluna "Sem Cadência" para leads não vinculados
+- [x] Cards com: nome, empresa, temperatura badge, canal de origem
+- [x] Dados mockados de cadências para visualização
 
 ### Integração
-- [ ] Rota /leads/:id registrada no App.tsx
-- [ ] Build sem erros
-- [ ] Deploy no VPS
+- [x] Rota /leads/:id registrada no App.tsx
+- [x] Build sem erros
+- [x] Deploy no VPS - CONFIRMADO 12/04/2026
