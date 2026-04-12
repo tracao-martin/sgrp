@@ -168,21 +168,34 @@
 
 ## Sprint 2 - SPIN Methodology & Qualificação de Deals
 ### Schema & Backend
-- [ ] Adicionar campos SPIN na tabela opportunities (spin_situacao, spin_problema, spin_implicacao, spin_necessidade)
-- [ ] Adicionar 7 checkboxes de qualificação na tabela opportunities (tem_budget, tem_autoridade, tem_necessidade, tem_timing, tem_concorrente, tem_proximo_passo, tem_criterio_decisao)
-- [ ] Adicionar campo probabilidade_auto (calculada pelo estágio) vs probabilidade_manual
-- [ ] Adicionar campos motivo_ganho e motivo_perda (já existem no schema)
-- [ ] Atualizar procedures tRPC para suportar os novos campos
-- [ ] Implementar cálculo automático de probabilidade baseado no estágio do pipeline
+- [x] Adicionar campos SPIN na tabela opportunities (spin_situacao, spin_problema, spin_implicacao, spin_necessidade)
+- [x] Adicionar 7 checkboxes de qualificação na tabela opportunities (tem_budget, tem_autoridade, tem_necessidade, tem_timing, tem_concorrente, tem_proximo_passo, tem_criterio_decisao)
+- [x] Adicionar campo probabilidade_auto (calculada pelo estágio) vs probabilidade_manual
+- [x] Adicionar campos motivo_ganho e motivo_perda (já existem no schema)
+- [x] Atualizar procedures tRPC para suportar os novos campos
+- [x] Implementar cálculo automático de probabilidade baseado no estágio do pipeline
 
 ### Frontend
-- [ ] Criar aba/seção SPIN no detalhe da oportunidade
-- [ ] Criar seção de qualificação com 7 checkboxes no detalhe da oportunidade
-- [ ] Mostrar probabilidade automática (por estágio) com opção de override manual
-- [ ] Implementar modal de ganho/perda com campo de motivo obrigatório
-- [ ] Atualizar Kanban do Funil para mostrar indicadores SPIN e qualificação
+- [x] Criar aba/seção SPIN no detalhe da oportunidade
+- [x] Criar seção de qualificação com 7 checkboxes no detalhe da oportunidade
+- [x] Mostrar probabilidade automática (por estágio) com opção de override manual
+- [x] Implementar modal de ganho/perda com campo de motivo obrigatório
+- [x] Atualizar Kanban do Funil para mostrar indicadores SPIN e qualificação
 
 ### Testes & Deploy
-- [ ] Escrever testes vitest para os novos campos SPIN e qualificação
-- [ ] Deploy no VPS com migração de schema
-- [ ] Testar fluxo completo no browser
+- [x] Escrever testes vitest para os novos campos SPIN e qualificação (11 testes)
+- [x] Deploy no VPS com migração de schema (13 ALTER TABLE executados)
+- [ ] Testar fluxo completo no browser (pendente validação pelo usuário)
+
+## Configurações - ICP (Perfil de Cliente Ideal)
+- [ ] Criar tabela icps no schema Drizzle (id, organization_id, nome, descricao, segmentos, portes, faixa_receita_min, faixa_receita_max, cargos_decisor, localizacoes, criterios_custom, ativo, created_at, updated_at)
+- [ ] Gerar e aplicar migração SQL no VPS
+- [ ] Criar procedures tRPC para CRUD de ICPs (list, create, update, delete)
+- [ ] Criar página frontend /configuracoes/icps com listagem de ICPs
+- [ ] Implementar formulário Novo ICP com campos: Nome, Descrição, Segmentos, Portes, Faixa de Receita, Cargos Decisor, Localizações, Critérios Customizados
+- [ ] Implementar edição inline ou modal de ICP existente
+- [ ] Implementar exclusão de ICP com confirmação
+- [ ] Integrar rota /configuracoes/icps no menu Configurações do sidebar
+- [ ] Garantir isolamento multi-tenant (org_id filter)
+- [ ] Escrever testes vitest para procedures ICP
+- [ ] Deploy no VPS e testar

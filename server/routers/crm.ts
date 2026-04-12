@@ -11,7 +11,9 @@ import {
   users,
   pipelineStages,
   tasks,
+  icps,
 } from "../../drizzle/schema";
+import { icpsRouter } from "./icps";
 import { eq, desc, and, asc, lte } from "drizzle-orm";
 
 // Helper to get orgId from context user
@@ -839,4 +841,5 @@ export const crmRouter = router({
   pipelineStages: pipelineStagesRouter,
   tasks: tasksRouter,
   users: usersRouter,
+  icps: icpsRouter,
 });

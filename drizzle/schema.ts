@@ -29,6 +29,7 @@ export const taskStatusEnum = pgEnum("task_status", ["pendente", "em_progresso",
 export const proposalStatusEnum = pgEnum("proposal_status", ["rascunho", "enviada", "aceita", "rejeitada", "expirada"]);
 export const notificationTipoEnum = pgEnum("notification_tipo", ["task_vencida", "stage_mudou", "nova_atribuicao", "proposta_aceita", "lead_qualificado"]);
 export const aiInsightTipoEnum = pgEnum("ai_insight_tipo", ["resumo", "recomendacao", "risco", "oportunidade"]);
+export const icpPorteEnum = pgEnum("icp_porte", ["micro", "pequena", "media", "grande", "multinacional"]);
 
 // ============================================================================
 // TABLES
@@ -332,6 +333,29 @@ export type EmailLog = typeof emailLogs.$inferSelect;
 export type InsertEmailLog = typeof emailLogs.$inferInsert;
 
 /**
+ * ICPs - Ideal Customer Profiles
+ */
+export const icps = pgTable("icps", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  segmentos: text("segmentos"), // JSON array of strings
+  portes: text("portes"), // JSON array of porte enum values
+  faixaReceitaMin: numeric("faixa_receita_min", { precision: 15, scale: 2 }),
+  faixaReceitaMax: numeric("faixa_receita_max", { precision: 15, scale: 2 }),
+  cargosDecisor: text("cargos_decisor"), // JSON array of strings
+  localizacoes: text("localizacoes"), // JSON array of strings
+  criteriosCustom: text("criterios_custom"), // JSON array of { label, value } objects
+  ativo: boolean("ativo").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type ICP = typeof icps.$inferSelect;
+export type InsertICP = typeof icps.$inferInsert;
+
+/**
  * AI Insights - Store AI-generated summaries and insights
  */
 export const aiInsights = pgTable("ai_insights", {
@@ -362,6 +386,7 @@ export const organizationsRelations = relations(organizations, ({ many }) => ({
   proposals: many(proposals),
   notifications: many(notifications),
   emailLogs: many(emailLogs),
+  icps: many(icps),
 }));
 
 export const usersRelations = relations(users, ({ one }) => ({
@@ -555,5 +580,12 @@ export const aiInsightsRelations = relations(aiInsights, ({ one }) => ({
   opportunity: one(opportunities, {
     fields: [aiInsights.opportunity_id],
     references: [opportunities.id],
+  }),
+}));
+
+export const icpsRelations = relations(icps, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [icps.organizationId],
+    references: [organizations.id],
   }),
 }));

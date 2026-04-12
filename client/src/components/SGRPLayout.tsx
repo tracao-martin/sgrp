@@ -109,7 +109,9 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
   const { user, logout, isAdmin, isManagerOrAdmin } = useSGRPAuth();
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
-  const [configOpen, setConfigOpen] = useState(false);
+  const [configOpen, setConfigOpen] = useState(
+    location.startsWith("/configuracoes")
+  );
   const { data: orgData } = trpc.auth.getOrganization.useQuery(undefined, {
     enabled: !!user,
   });
@@ -123,7 +125,7 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
     { label: "Cadências", href: "/configuracoes" },
     { label: "Probabilidade", href: "/configuracoes" },
     { label: "Funis", href: "/configuracoes" },
-    { label: "ICPs", href: "/configuracoes" },
+    { label: "ICPs", href: "/configuracoes/icps" },
     { label: "Produtos", href: "/configuracoes" },
     { label: "Metas", href: "/configuracoes" },
     { label: "Mensagens Rápidas", href: "/configuracoes" },

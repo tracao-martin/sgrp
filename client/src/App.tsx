@@ -18,6 +18,7 @@ import PrevisaoReceita from "./pages/PrevisaoReceita";
 import ExpertComercial from "./pages/ExpertComercial";
 import Configuracoes from "./pages/Configuracoes";
 import Usuarios from "./pages/Usuarios";
+import ConfigICPs from "./pages/ConfigICPs";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function Router() {
       <Route path={"/expert-comercial"} component={() => <SGRPLayout><ExpertComercial /></SGRPLayout>} />
       <Route path={"/configuracoes"} component={() => <SGRPLayout><Configuracoes /></SGRPLayout>} />
       <Route path={"/usuarios"} component={() => <SGRPLayout><Usuarios /></SGRPLayout>} />
+      <Route path={"/configuracoes/icps"} component={() => <SGRPLayout><ConfigICPs /></SGRPLayout>} />
       <Route path={"/admin/usuarios"} component={() => <SGRPLayout><Usuarios /></SGRPLayout>} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
