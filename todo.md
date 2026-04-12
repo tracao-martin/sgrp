@@ -331,3 +331,14 @@
 - [x] Corrigir mapeamento snake_case (fase_cadencia) vs camelCase (faseCadencia) no frontend
 - [x] Timeline de Atividades no detalhe do lead mostra movimentações corretamente
 - [x] Build, deploy e testar no VPS - CONFIRMADO 12/04/2026
+
+## Bug Fix: Criação de Lead não salva campos corretamente
+
+- [ ] Auditar schema Drizzle da tabela leads (todos os campos)
+- [ ] Auditar procedure tRPC crm.leads.create (campos aceitos vs campos enviados)
+- [ ] Auditar formulário frontend de criação de lead (campos enviados na mutation)
+- [ ] Verificar mapeamento snake_case vs camelCase na criação (mesma causa raiz do bug anterior)
+- [ ] Corrigir backend para aceitar e persistir todos os campos do formulário
+- [ ] Corrigir frontend para enviar todos os campos preenchidos
+- [ ] Testar criação de lead end-to-end com todos os campos
+- [ ] Deploy no VPS e validar

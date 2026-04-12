@@ -472,7 +472,17 @@ export default function LeadDetail() {
     return rawLeads.find((l: any) => l.id === leadId) || null;
   }, [rawLeads, leadId]);
 
-  // Local state for fields not yet in backend
+  // Update mutation for persisting field changes
+  const updateMutation = trpc.crm.leads.update.useMutation({
+    onSuccess: () => {
+      utils.crm.leads.list.invalidate();
+    },
+    onError: (err: any) => {
+      toast.error(`Erro ao salvar: ${err.message}`);
+    },
+  });
+
+  // Local state for fields
   const [localFields, setLocalFields] = useState({
     telefone: "",
     cargo: "",
@@ -516,29 +526,81 @@ export default function LeadDetail() {
     }
   }, [lead]);
 
+  // Map frontend field names to backend field names (snake_case)
+  const fieldToBackendMap: Record<string, string> = {
+    nome: "titulo",
+    cargo: "cargo",
+    telefone: "telefone",
+    email: "email",
+    empresa: "empresa",
+    icp: "icp",
+    linkedin: "linkedin",
+    site: "site",
+    cpfCnpj: "cpf_cnpj",
+    cadencia: "cadencia",
+    faseCadencia: "fase_cadencia",
+    notas: "descricao",
+    temperatura: "qualificacao",
+    setor: "setor",
+    porte: "porte",
+    regiao: "regiao",
+    origem: "origem",
+  };
+
   const updateField = (field: string, value: string) => {
     setLocalFields(prev => ({ ...prev, [field]: value }));
-    toast.success(`${field} atualizado`);
+
+    // Persist to backend
+    if (leadId) {
+      const backendField = fieldToBackendMap[field] || field;
+      const payload: any = { id: leadId, [backendField]: value || undefined };
+      updateMutation.mutate(payload, {
+        onSuccess: () => toast.success(`${field} atualizado`),
+      });
+    }
   };
 
   // Actions
   const handleConvert = (data: { nomeEmpresa: string; segmento: string }) => {
-    toast.success(`Lead convertido em conta: ${data.nomeEmpresa}`);
-    setShowConvert(false);
-    // In the future: call backend to create company + update lead status
-    navigate("/contas");
+    if (leadId) {
+      updateMutation.mutate({ id: leadId, status: "convertido" as any }, {
+        onSuccess: () => {
+          toast.success(`Lead convertido em conta: ${data.nomeEmpresa}`);
+          setShowConvert(false);
+          navigate("/contas");
+        },
+      });
+    }
   };
 
   const handleDisqualify = (motivo: string) => {
-    toast.success("Lead desqualificado");
-    setShowDisqualify(false);
-    navigate("/leads");
+    if (leadId) {
+      updateMutation.mutate(
+        { id: leadId, status: "desqualificado" as any, descricao: motivo || undefined },
+        {
+          onSuccess: () => {
+            toast.success("Lead desqualificado");
+            setShowDisqualify(false);
+            navigate("/leads");
+          },
+        }
+      );
+    }
   };
 
   const handleRetire = (motivo: string) => {
-    toast.success("Lead aposentado");
-    setShowRetire(false);
-    navigate("/leads");
+    if (leadId) {
+      updateMutation.mutate(
+        { id: leadId, status: "aposentado" as any, descricao: motivo || undefined },
+        {
+          onSuccess: () => {
+            toast.success("Lead aposentado");
+            setShowRetire(false);
+            navigate("/leads");
+          },
+        }
+      );
+    }
   };
 
   const handleWhatsApp = () => {

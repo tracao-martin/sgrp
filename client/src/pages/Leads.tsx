@@ -83,7 +83,7 @@ const TEMPERATURE_OPTIONS = [
 ];
 const STATUS_OPTIONS = [
   { value: "novo", label: "Novo", color: "bg-[#333] text-foreground/80" },
-  { value: "em_contato", label: "Em Contato", color: "bg-primary/20 text-primary" },
+  { value: "contatado", label: "Contatado", color: "bg-primary/20 text-primary" },
   { value: "qualificado", label: "Qualificado", color: "bg-green-500/20 text-green-300" },
   { value: "convertido", label: "Convertido", color: "bg-purple-500/20 text-purple-300" },
   { value: "desqualificado", label: "Desqualificado", color: "bg-red-500/20 text-red-300" },
@@ -1095,9 +1095,21 @@ export default function Leads() {
     createMutation.mutate({
       titulo: data.nome,
       descricao: data.notas,
-      origem: data.origem,
-      qualificacao: data.temperatura as any,
-      valor_estimado: data.valor_estimado ? parseInt(data.valor_estimado) : undefined,
+      origem: data.origem || undefined,
+      qualificacao: (data.temperatura || "frio") as any,
+      valor_estimado: data.valor_estimado ? parseFloat(data.valor_estimado) : undefined,
+      telefone: data.telefone || undefined,
+      email: data.email || undefined,
+      cargo: data.cargo || undefined,
+      empresa: data.empresa || undefined,
+      linkedin: data.linkedin || undefined,
+      site: data.site || undefined,
+      cpf_cnpj: data.cpfCnpj || undefined,
+      setor: data.setor || undefined,
+      regiao: data.regiao || undefined,
+      porte: data.porte || undefined,
+      cadencia: data.cadencia || undefined,
+      notas: data.notas || undefined,
     } as any);
   };
 
@@ -1107,9 +1119,21 @@ export default function Leads() {
       id: editingLead.id,
       titulo: data.nome,
       descricao: data.notas,
-      origem: data.origem,
-      qualificacao: data.temperatura as any,
-      valor_estimado: data.valor_estimado ? parseInt(data.valor_estimado) : undefined,
+      origem: data.origem || undefined,
+      qualificacao: (data.temperatura || "frio") as any,
+      valor_estimado: data.valor_estimado ? parseFloat(data.valor_estimado) : undefined,
+      telefone: data.telefone || undefined,
+      email: data.email || undefined,
+      cargo: data.cargo || undefined,
+      empresa: data.empresa || undefined,
+      linkedin: data.linkedin || undefined,
+      site: data.site || undefined,
+      cpf_cnpj: data.cpfCnpj || undefined,
+      setor: data.setor || undefined,
+      regiao: data.regiao || undefined,
+      porte: data.porte || undefined,
+      cadencia: data.cadencia || undefined,
+      notas: data.notas || undefined,
     });
   };
 

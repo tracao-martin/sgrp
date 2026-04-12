@@ -384,7 +384,7 @@ export const leadsRouter = router({
         origem: z.string().optional(),
         qualificacao: z.enum(["frio", "morno", "quente", "qualificado"]).optional(),
         valor_estimado: z.number().optional(),
-        status: z.enum(["novo", "em_contato", "qualificado", "convertido", "perdido"]).optional(),
+        status: z.enum(["novo", "contatado", "qualificado", "desqualificado", "convertido", "aposentado"]).optional(),
         telefone: z.string().optional(),
         email: z.string().optional(),
         cargo: z.string().optional(),
