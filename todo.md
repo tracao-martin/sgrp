@@ -41,7 +41,7 @@
 - [ ] Implementar notificações internas
 
 ## Fase 6: Expert Comercial (IA) e Automações
-- [ ] Criar página de Expert Comercial com IA
+- [x] Criar página de Expert Comercial com IA (dados reais + chat LLM)
 - [ ] Implementar geração de resumos de oportunidades com IA
 - [ ] Implementar sugestão de próximos passos com IA
 - [ ] Implementar análise de probabilidade de fechamento
@@ -80,3 +80,14 @@
 - [ ] UnlinkedEmail (emails CCO)
 - [ ] Persona e ICP
 - [ ] DisqualifyReason
+
+## Prioridade: Sistema Funcional (sem LLM)
+- [x] Corrigir erro use-toast no FunilVendas.tsx (era cache antigo, já resolvido)
+- [x] Verificar e corrigir todos os erros de compilação/runtime (nested anchors, NaN, rota 404)
+- [x] Expert Comercial atualizado com dados reais do pipeline + chat LLM com fallback gracioso
+- [x] Validar todas as 11 páginas carregam sem erro
+- [x] Validar CRUD end-to-end em todas as entidades (verificado visualmente)
+- [x] Rodar testes vitest e corrigir falhas (21 testes passando)
+- [x] Salvar checkpoint final do sistema funcional
+- [x] Fortalecer validação do chat Expert: exigir message não vazia (z.string().min(1))
+- [x] Testar CRUD end-to-end via browser (criar, editar, deletar lead testado com sucesso)

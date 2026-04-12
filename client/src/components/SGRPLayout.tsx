@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { Link, useLocation } from "wouter";
 import { useSGRPAuth } from "@/_core/hooks/useSGRPAuth";
-import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -35,22 +34,21 @@ interface MenuItemProps {
 
 function MenuItem({ icon, label, href, isActive, badge }: MenuItemProps) {
   return (
-    <Link href={href}>
-      <a
-        className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
-          isActive
-            ? "bg-blue-600 text-white"
-            : "text-gray-300 hover:bg-gray-800 hover:text-white"
-        }`}
-      >
-        <span className="w-5 h-5">{icon}</span>
-        <span className="flex-1 text-sm font-medium">{label}</span>
-        {badge !== undefined && (
-          <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
-            {badge}
-          </span>
-        )}
-      </a>
+    <Link
+      href={href}
+      className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-colors ${
+        isActive
+          ? "bg-blue-600 text-white"
+          : "text-gray-300 hover:bg-gray-800 hover:text-white"
+      }`}
+    >
+      <span className="w-5 h-5">{icon}</span>
+      <span className="flex-1 text-sm font-medium">{label}</span>
+      {badge !== undefined && (
+        <span className="bg-red-500 text-white text-xs px-2 py-1 rounded-full">
+          {badge}
+        </span>
+      )}
     </Link>
   );
 }
@@ -88,16 +86,16 @@ function Submenu({
       {isOpen && (
         <div className="mt-2 ml-4 space-y-1 border-l border-gray-700 pl-4">
           {items.map((item) => (
-            <Link key={item.href} href={item.href}>
-              <a
-                className={`block px-3 py-2 rounded text-sm transition-colors ${
-                  currentPath === item.href
-                    ? "bg-blue-600 text-white"
-                    : "text-gray-400 hover:text-white hover:bg-gray-800"
-                }`}
-              >
-                {item.label}
-              </a>
+            <Link
+              key={item.href}
+              href={item.href}
+              className={`block px-3 py-2 rounded text-sm transition-colors ${
+                currentPath === item.href
+                  ? "bg-blue-600 text-white"
+                  : "text-gray-400 hover:text-white hover:bg-gray-800"
+              }`}
+            >
+              {item.label}
             </Link>
           ))}
         </div>

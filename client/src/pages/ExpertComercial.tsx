@@ -1,62 +1,105 @@
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Send, Lightbulb, TrendingUp, AlertCircle } from "lucide-react";
+import { Send, Lightbulb, TrendingUp, AlertCircle, AlertTriangle, Bot, User, Loader2 } from "lucide-react";
+import { trpc } from "@/lib/trpc";
 
-const insights = [
-  {
-    id: 1,
-    type: "opportunity",
-    title: "Oportunidade: Upsell com Acme Corp",
-    description: "Roberto Silva (Acme) tem 6 meses de contrato. Ideal para apresentar novo produto.",
-    action: "Ver Deal",
-    icon: TrendingUp,
-  },
-  {
-    id: 2,
-    type: "risk",
-    title: "Risco: Inatividade em Tech Solutions",
-    description: "Sem atividades há 15 dias. Recomenda-se follow-up para evitar perda.",
-    action: "Agendar Follow-up",
-    icon: AlertCircle,
-  },
-  {
-    id: 3,
-    type: "insight",
-    title: "Insight: Padrão de Conversão",
-    description: "Leads com 3+ atividades em 7 dias têm 78% de taxa de conversão.",
-    action: "Ver Análise",
-    icon: Lightbulb,
-  },
-];
+const insightIcons: Record<string, React.ElementType> = {
+  opportunity: TrendingUp,
+  risk: AlertCircle,
+  warning: AlertTriangle,
+  insight: Lightbulb,
+};
+
+const insightColors: Record<string, string> = {
+  opportunity: "border-green-500",
+  risk: "border-red-500",
+  warning: "border-yellow-500",
+  insight: "border-blue-500",
+};
+
+const priorityBadge: Record<string, string> = {
+  alta: "bg-red-500/20 text-red-400",
+  media: "bg-yellow-500/20 text-yellow-400",
+  baixa: "bg-blue-500/20 text-blue-400",
+};
 
 export default function ExpertComercial() {
-  const [messages, setMessages] = useState<Array<{ role: string; content: string }>>([
+  const [messages, setMessages] = useState<Array<{ role: "user" | "assistant"; content: string }>>([
     {
       role: "assistant",
-      content: "Olá! Sou o Expert Comercial do SGRP. Posso ajudar com análises de dados, recomendações de ações e insights sobre seu pipeline. O que você gostaria de saber?",
+      content: "Olá! Sou o Expert Comercial do SGRP. Posso ajudar com análises de dados do pipeline, recomendações de ações e insights sobre suas vendas. O que você gostaria de saber?",
     },
   ]);
   const [input, setInput] = useState("");
+  const chatEndRef = useRef<HTMLDivElement>(null);
 
-  const handleSend = () => {
-    if (!input.trim()) return;
+  // Fetch real insights from backend
+  const { data: insights = [], isLoading: loadingInsights } = trpc.expert.getInsights.useQuery();
 
-    setMessages([...messages, { role: "user", content: input }]);
+  // Fetch pipeline KPIs for metrics
+  const { data: deals = [] } = trpc.crm.opportunities.list.useQuery();
+  const { data: tasksList = [] } = trpc.crm.tasks.list.useQuery();
 
-    // Simulate AI response
-    setTimeout(() => {
+  // Chat mutation
+  const chatMutation = trpc.expert.chat.useMutation({
+    onSuccess: (data) => {
       setMessages((prev) => [
         ...prev,
-        {
-          role: "assistant",
-          content: `Entendi sua pergunta sobre "${input}". Analisando seus dados... [Resposta simulada do Expert Comercial]`,
-        },
+        { role: "assistant", content: data.content },
       ]);
-    }, 500);
+    },
+    onError: () => {
+      setMessages((prev) => [
+        ...prev,
+        { role: "assistant", content: "Desculpe, houve um erro ao processar sua pergunta. Tente novamente." },
+      ]);
+    },
+  });
 
+  // Auto-scroll chat
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  // Compute real metrics
+  const metrics = React.useMemo(() => {
+    const wonDeals = deals.filter((d: any) => d.status === "ganha");
+    const lostDeals = deals.filter((d: any) => d.status === "perdida");
+    const totalClosed = wonDeals.length + lostDeals.length;
+    const winRate = totalClosed > 0 ? Math.round((wonDeals.length / totalClosed) * 100) : 0;
+    const avgDealValue = deals.length > 0
+      ? deals.reduce((sum: number, d: any) => sum + Number(d.valor || 0), 0) / deals.length
+      : 0;
+    const overdueTasks = tasksList.filter((t: any) => {
+      if (!t.data_vencimento) return false;
+      return new Date(t.data_vencimento) < new Date() && t.status !== "concluida";
+    }).length;
+    const pendingTasks = tasksList.filter((t: any) => t.status !== "concluida").length;
+
+    return { winRate, avgDealValue, overdueTasks, pendingTasks, totalDeals: deals.length };
+  }, [deals, tasksList]);
+
+  const handleSend = () => {
+    if (!input.trim() || chatMutation.isPending) return;
+
+    const userMessage = input.trim();
+    setMessages((prev) => [...prev, { role: "user", content: userMessage }]);
     setInput("");
+
+    // Send to backend with history (last 10 messages for context)
+    const history = messages.slice(-10).map((m) => ({
+      role: m.role as "user" | "assistant",
+      content: m.content,
+    }));
+
+    chatMutation.mutate({ message: userMessage, history });
+  };
+
+  const formatCurrency = (value: number) => {
+    if (value >= 1000) return `R$ ${(value / 1000).toFixed(1)}K`;
+    return `R$ ${value.toLocaleString("pt-BR")}`;
   };
 
   return (
@@ -64,39 +107,56 @@ export default function ExpertComercial() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold">Expert Comercial</h1>
-        <p className="text-gray-400 mt-1">Assistente de IA para análise e recomendações</p>
+        <p className="text-gray-400 mt-1">Assistente inteligente para análise e recomendações de vendas</p>
       </div>
 
-      {/* Insights Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {insights.map((insight) => {
-          const IconComponent = insight.icon;
-          return (
-            <Card key={insight.id} className="bg-gray-800 border-gray-700">
-              <CardHeader className="pb-3">
-                <div className="flex items-start justify-between">
-                  <CardTitle className="text-sm font-medium text-gray-300">
-                    {insight.title}
-                  </CardTitle>
-                  <IconComponent className="w-4 h-4 text-blue-400" />
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <p className="text-sm text-gray-400">{insight.description}</p>
-                <Button variant="outline" size="sm" className="w-full border-gray-600">
-                  {insight.action}
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
+      {/* Real Insights Grid */}
+      <div>
+        <h2 className="text-lg font-semibold mb-3">Insights do Pipeline</h2>
+        {loadingInsights ? (
+          <div className="flex items-center gap-2 text-gray-400">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Analisando dados...
+          </div>
+        ) : insights.length === 0 ? (
+          <p className="text-gray-500 text-sm">Nenhum insight disponível. Adicione mais dados ao pipeline.</p>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {insights.map((insight: any, idx: number) => {
+              const IconComponent = insightIcons[insight.type] || Lightbulb;
+              const borderColor = insightColors[insight.type] || "border-gray-500";
+              const badge = priorityBadge[insight.priority] || "bg-gray-500/20 text-gray-400";
+              return (
+                <Card key={idx} className={`bg-gray-800 border-gray-700 border-l-4 ${borderColor}`}>
+                  <CardHeader className="pb-2">
+                    <div className="flex items-start justify-between">
+                      <CardTitle className="text-sm font-medium text-gray-200">
+                        {insight.title}
+                      </CardTitle>
+                      <IconComponent className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                    </div>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-sm text-gray-400 mb-2">{insight.description}</p>
+                    <span className={`text-xs px-2 py-1 rounded-full ${badge}`}>
+                      Prioridade {insight.priority}
+                    </span>
+                  </CardContent>
+                </Card>
+              );
+            })}
+          </div>
+        )}
       </div>
 
       {/* Chat Interface */}
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
-          <CardTitle>Chat com Expert</CardTitle>
-          <CardDescription>Faça perguntas sobre seus dados e receba recomendações</CardDescription>
+          <CardTitle className="flex items-center gap-2">
+            <Bot className="w-5 h-5 text-blue-400" />
+            Chat com Expert
+          </CardTitle>
+          <CardDescription>Faça perguntas sobre seus dados e receba recomendações baseadas no pipeline real</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           {/* Chat Messages */}
@@ -104,89 +164,97 @@ export default function ExpertComercial() {
             {messages.map((msg, idx) => (
               <div
                 key={idx}
-                className={`flex ${msg.role === "user" ? "justify-end" : "justify-start"}`}
+                className={`flex gap-3 ${msg.role === "user" ? "justify-end" : "justify-start"}`}
               >
+                {msg.role === "assistant" && (
+                  <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                    <Bot className="w-4 h-4" />
+                  </div>
+                )}
                 <div
-                  className={`max-w-xs lg:max-w-md px-4 py-2 rounded-lg ${
+                  className={`max-w-xs lg:max-w-lg px-4 py-3 rounded-lg ${
                     msg.role === "user"
                       ? "bg-blue-600 text-white"
                       : "bg-gray-700 text-gray-100"
                   }`}
                 >
-                  <p className="text-sm">{msg.content}</p>
+                  <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                 </div>
+                {msg.role === "user" && (
+                  <div className="w-8 h-8 rounded-full bg-gray-600 flex items-center justify-center flex-shrink-0">
+                    <User className="w-4 h-4" />
+                  </div>
+                )}
               </div>
             ))}
+            {chatMutation.isPending && (
+              <div className="flex gap-3 justify-start">
+                <div className="w-8 h-8 rounded-full bg-blue-600 flex items-center justify-center flex-shrink-0">
+                  <Bot className="w-4 h-4" />
+                </div>
+                <div className="bg-gray-700 px-4 py-3 rounded-lg">
+                  <div className="flex items-center gap-2 text-gray-400 text-sm">
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Analisando...
+                  </div>
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
           </div>
 
           {/* Input */}
           <div className="flex gap-2">
             <Input
-              placeholder="Faça uma pergunta ao Expert..."
+              placeholder="Ex: Qual o valor total do pipeline? Quais deals estão parados?"
               className="bg-gray-700 border-gray-600"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === "Enter" && handleSend()}
+              onKeyDown={(e) => e.key === "Enter" && handleSend()}
+              disabled={chatMutation.isPending}
             />
-            <Button onClick={handleSend} className="bg-blue-600 hover:bg-blue-700">
-              <Send className="w-4 h-4" />
+            <Button
+              onClick={handleSend}
+              className="bg-blue-600 hover:bg-blue-700"
+              disabled={chatMutation.isPending || !input.trim()}
+            >
+              {chatMutation.isPending ? (
+                <Loader2 className="w-4 h-4 animate-spin" />
+              ) : (
+                <Send className="w-4 h-4" />
+              )}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Recommendations */}
-      <Card className="bg-gray-800 border-gray-700">
-        <CardHeader>
-          <CardTitle>Recomendações Automáticas</CardTitle>
-          <CardDescription>Baseadas em análise de dados em tempo real</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="p-3 bg-gray-700 rounded-lg border-l-4 border-green-500">
-              <p className="font-medium text-sm">✓ Aumentar Follow-up</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Leads com 2+ contatos têm 45% mais chance de conversão
-              </p>
-            </div>
-            <div className="p-3 bg-gray-700 rounded-lg border-l-4 border-yellow-500">
-              <p className="font-medium text-sm">⚠ Revisar Probabilidades</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Alguns deals em "Proposta" têm baixa probabilidade. Considere reclassificar.
-              </p>
-            </div>
-            <div className="p-3 bg-gray-700 rounded-lg border-l-4 border-blue-500">
-              <p className="font-medium text-sm">→ Próximo Passo Sugerido</p>
-              <p className="text-xs text-gray-400 mt-1">
-                Para Acme Corp: Agendar reunião de revisão de contrato em 2 semanas
-              </p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Performance Metrics */}
+      {/* Real Performance Metrics */}
       <Card className="bg-gray-800 border-gray-700">
         <CardHeader>
           <CardTitle>Métricas de Performance</CardTitle>
+          <CardDescription>Dados calculados em tempo real a partir do pipeline</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <div>
-              <p className="text-xs text-gray-400 mb-1">Tempo Médio de Ciclo</p>
-              <p className="text-xl font-bold">45 dias</p>
+              <p className="text-xs text-gray-400 mb-1">Total de Deals</p>
+              <p className="text-xl font-bold">{metrics.totalDeals}</p>
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Taxa de Ganho</p>
-              <p className="text-xl font-bold text-green-400">42%</p>
+              <p className="text-xl font-bold text-green-400">{metrics.winRate}%</p>
             </div>
             <div>
               <p className="text-xs text-gray-400 mb-1">Valor Médio do Deal</p>
-              <p className="text-xl font-bold">R$ 38K</p>
+              <p className="text-xl font-bold">{formatCurrency(metrics.avgDealValue)}</p>
             </div>
             <div>
-              <p className="text-xs text-gray-400 mb-1">Atividades/Deal</p>
-              <p className="text-xl font-bold">7.2</p>
+              <p className="text-xs text-gray-400 mb-1">Tarefas Pendentes</p>
+              <p className="text-xl font-bold text-yellow-400">{metrics.pendingTasks}</p>
+            </div>
+            <div>
+              <p className="text-xs text-gray-400 mb-1">Tarefas Atrasadas</p>
+              <p className="text-xl font-bold text-red-400">{metrics.overdueTasks}</p>
             </div>
           </div>
         </CardContent>

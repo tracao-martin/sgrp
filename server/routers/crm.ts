@@ -8,6 +8,7 @@ import {
   leads,
   activities,
   opportunities,
+  users,
   pipelineStages,
   tasks,
   InsertCompany,
@@ -759,10 +760,38 @@ export const tasksRouter = router({
     }),
 });
 
+/// ============================================================================
+// USERS ROUTER
+// ============================================================================
+const usersRouter = router({
+  list: protectedProcedure.query(async ({ ctx }) => {
+    const db = await getDb();
+    if (!db) throw new Error("Database not available");
+    const result = await db.select().from(users).orderBy(users.name);
+    return result;
+  }),
+  updateRole: protectedProcedure
+    .input(z.object({ userId: z.number(), role: z.enum(["admin", "gerente", "vendedor"]) }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      await db.update(users).set({ role: input.role }).where(eq(users.id, input.userId));
+      return { success: true };
+    }),
+  toggleActive: protectedProcedure
+    .input(z.object({ userId: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      const db = await getDb();
+      if (!db) throw new Error("Database not available");
+      const [user] = await db.select().from(users).where(eq(users.id, input.userId));
+      if (!user) throw new Error("User not found");
+      await db.update(users).set({ ativo: !user.ativo }).where(eq(users.id, input.userId));
+      return { success: true };
+    }),
+});
 // ============================================================================
 // MAIN CRM ROUTER
 // ============================================================================
-
 export const crmRouter = router({
   companies: companiesRouter,
   contacts: contactsRouter,
@@ -771,4 +800,5 @@ export const crmRouter = router({
   opportunities: opportunitiesRouter,
   pipelineStages: pipelineStagesRouter,
   tasks: tasksRouter,
+  users: usersRouter,
 });

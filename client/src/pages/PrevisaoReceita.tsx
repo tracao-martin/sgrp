@@ -35,7 +35,7 @@ export default function PrevisaoReceita() {
 
     opportunities.forEach((opp: any) => {
       const stageName = stageMap[opp.stage_id] || "Desconhecido";
-      const value = opp.valor || 0;
+      const value = parseFloat(String(opp.valor || "0")) || 0;
       const prob = STAGE_PROBABILITY[stageName] || 50;
       const weighted = value * (prob / 100);
 
