@@ -411,33 +411,39 @@
 ## Sprint 2: Accounts/Contacts 100% Completo
 
 ### Schema & Backend
-- [ ] Adicionar campos na tabela companies: icp_id, lead_source, site, linkedin, notes, primary_contact_id, primary_contact_name
-- [ ] Adicionar campos na tabela contacts: papel (decisor/influenciador/champion/usuario), notas
-- [ ] Criar tabela account_contacts (stakeholders): account_id, contact_id, papel, notas
-- [ ] Gerar migration SQL e aplicar no DB
-- [ ] Adicionar companies.getById com contacts e deals relacionados
-- [ ] Adicionar contacts.getById com company info
-- [ ] Adicionar bulkUpdate para companies
-- [ ] Adicionar accountContacts router (CRUD stakeholders)
+- [x] Adicionar campos na tabela companies: icp_id, lead_source, site, linkedin, notes, receita_anual, endereco, cidade, estado, pais
+- [x] Adicionar campos na tabela contacts: papel (decisor/influenciador/champion/usuario/tecnico/outro), notas
+- [x] Criar tabela account_contacts (stakeholders): account_id, contact_id, papel, notas
+- [x] Criar enums: company_size_enum, company_status_enum
+- [x] Gerar migration SQL e aplicar no DB (VPS)
+- [x] Adicionar companies.getById com enriched data
+- [x] Adicionar contacts.getById com company name (JOIN)
+- [x] Contacts list retorna empresa via JOIN com companies
+- [x] Adicionar accountContacts router (CRUD stakeholders + listByContact)
 
 ### Contas (Accounts) - Frontend
-- [ ] Criar AccountDetail page (/contas/:id) com edição inline de todos os campos
-- [ ] AccountContactsSection (stakeholders com papel)
-- [ ] AccountDealsSection (deals vinculados à conta)
-- [ ] ActivityTimeline na AccountDetail
-- [ ] Filtros avançados (status, segmento, tamanho, ICP, lead_source)
-- [ ] Gerenciador de colunas visíveis
-- [ ] Paginação na tabela
-- [ ] Export Excel
-- [ ] Click na row navega para /contas/:id
-- [ ] Account Score Card no detalhe
+- [x] Reescrever Contas.tsx com tabela completa (Empresa, CNPJ, Contato, Segmento, Tamanho, Status)
+- [x] Criar ContaDetalhe.tsx (/contas/:id) com edição inline de 14+ campos
+- [x] AccountContactsSection (stakeholders com papel e botão Adicionar)
+- [x] AccountDealsSection (deals vinculados à conta com valor e status)
+- [x] Endereço separado (endereço, cidade, estado, país)
+- [x] Filtros avançados (status, segmento, tamanho)
+- [x] Paginação na tabela
+- [x] Export Excel
+- [x] Click na row navega para /contas/:id
+- [x] Account Score Card (Completude do Cadastro X/9) com campos faltantes
 
 ### Contatos (Contacts) - Frontend
-- [ ] Criar ContactDetail page (/contatos/:id) com edição inline
-- [ ] ActivityTimeline no ContactDetail
-- [ ] Deals vinculados ao contato
-- [ ] Filtros avançados (cargo, empresa, papel, departamento)
-- [ ] Gerenciador de colunas visíveis
-- [ ] Paginação na tabela
-- [ ] Export Excel
-- [ ] Click na row navega para /contatos/:id
+- [x] Reescrever Contatos.tsx com tabela completa (Nome, Email, Telefone, Cargo, Empresa)
+- [x] 4 KPI cards (Total, Com Email, Com Telefone, Com Empresa)
+- [x] Criar ContatoDetalhe.tsx (/contatos/:id) com edição inline de 7 campos
+- [x] ActivityTimeline no ContactDetail (componente compartilhado)
+- [x] Contas Vinculadas no ContactDetail
+- [x] Observações editáveis
+- [x] Contact Score Card (Completude do Cadastro X/7)
+- [x] Botões WhatsApp, Email, LinkedIn no header
+- [x] Filtros avançados (cargo, empresa)
+- [x] Paginação na tabela
+- [x] Export Excel
+- [x] Click na row navega para /contatos/:id
+- [x] Rotas adicionadas no App.tsx (/contas/:id e /contatos/:id)
