@@ -187,6 +187,8 @@ export const leads = pgTable("leads", {
   notas: text("notas"),
   motivo_desqualificacao: varchar("motivo_desqualificacao", { length: 255 }),
   cadencia_id: integer("cadencia_id"),
+  cadenceStageId: varchar("cadence_stage_id", { length: 255 }),
+  cadenceStageEnteredAt: timestamp("cadence_stage_entered_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
@@ -695,11 +697,8 @@ export const leadCadences = pgTable("lead_cadences", {
   organizationId: integer("organization_id").notNull(),
   nome: varchar("nome", { length: 255 }).notNull(),
   descricao: text("descricao"),
-  gatilho: varchar("gatilho", { length: 255 }),
   ativa: boolean("ativa").default(true).notNull(),
-  steps: text("steps"), // JSON array of { id, dia, tipo, titulo, descricao }
-  totalContatos: integer("total_contatos").default(0),
-  taxaResposta: integer("taxa_resposta").default(0),
+  stages: text("stages"), // JSON array of { id: string, name: string, order: number }
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });
