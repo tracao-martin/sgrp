@@ -19,7 +19,7 @@ export const adminRouter = router({
           email: organizations.email,
           plano: organizations.plano,
           ativo: organizations.ativo,
-          maxUsuarios: organizations.max_usuarios,
+          maxUsuarios: organizations.maxUsuarios,
           createdAt: organizations.createdAt,
         })
         .from(organizations)
