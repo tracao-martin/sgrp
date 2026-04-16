@@ -1,7 +1,7 @@
 import { desc, eq, count, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { db } from "../db";
+import { getDb } from "../db";
 import { organizations, users, companies, leads, opportunities } from "../../drizzle/schema";
 import { superadminProcedure, router } from "../_core/trpc";
 
@@ -10,6 +10,7 @@ export const adminRouter = router({
 
   organizations: router({
     list: superadminProcedure.query(async () => {
+      const db = await getDb();
       const orgs = await db
         .select({
           id: organizations.id,
@@ -26,6 +27,7 @@ export const adminRouter = router({
 
       const stats = await Promise.all(
         orgs.map(async (org) => {
+          const db = await getDb();
           const [userCount] = await db
             .select({ count: count() })
             .from(users)
@@ -57,6 +59,7 @@ export const adminRouter = router({
     list: superadminProcedure
       .input(z.object({ organizationId: z.number().optional() }).optional())
       .query(async ({ input }) => {
+        const db = await getDb();
         const rows = await db
           .select({
             id: users.id,
@@ -89,6 +92,7 @@ export const adminRouter = router({
         newPassword: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
       }))
       .mutation(async ({ input }) => {
+        const db = await getDb();
         const hash = await bcrypt.hash(input.newPassword, 12);
         await db
           .update(users)
@@ -103,6 +107,7 @@ export const adminRouter = router({
         role: z.enum(["superadmin", "admin", "gerente", "vendedor"]),
       }))
       .mutation(async ({ input }) => {
+        const db = await getDb();
         await db
           .update(users)
           .set({ role: input.role, updatedAt: new Date() })
@@ -113,6 +118,7 @@ export const adminRouter = router({
     toggleAtivo: superadminProcedure
       .input(z.object({ userId: z.number(), ativo: z.boolean() }))
       .mutation(async ({ input }) => {
+        const db = await getDb();
         await db
           .update(users)
           .set({ ativo: input.ativo, updatedAt: new Date() })
@@ -125,6 +131,7 @@ export const adminRouter = router({
 
   stats: router({
     overview: superadminProcedure.query(async () => {
+      const db = await getDb();
       const [[orgTotal], [userTotal], [companyTotal], [leadTotal], [oppTotal]] =
         await Promise.all([
           db.select({ count: count() }).from(organizations),
