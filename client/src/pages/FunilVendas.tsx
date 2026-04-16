@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Plus, Building2, DollarSign, Target, ChevronRight, CheckCircle2, Trophy, Ban } from "lucide-react";
+import { Plus, Building2, DollarSign, Target, ChevronRight, CheckCircle2, Trophy, Ban, AlertTriangle } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import DealDetailSheet from "@/components/DealDetailSheet";
@@ -22,6 +22,7 @@ export default function FunilVendas() {
   const { data: stages = [], isLoading: loadingStages } = trpc.crm.pipelineStages.list.useQuery();
   const { data: deals = [], isLoading: loadingDeals } = trpc.crm.opportunities.list.useQuery();
   const { data: companiesList = [] } = trpc.crm.companies.list.useQuery({});
+  const { data: contactsList = [] } = trpc.crm.contacts.list.useQuery({});
 
   const utils = trpc.useUtils();
 
@@ -31,6 +32,7 @@ export default function FunilVendas() {
       utils.crm.opportunities.list.invalidate();
       toast.success("Deal movido com sucesso!");
     },
+    onError: (err) => toast.error(err.message),
   });
 
   // Create deal mutation
@@ -127,12 +129,18 @@ export default function FunilVendas() {
     descricao: "",
     valor: "",
     company_id: "",
+    contact_id: "",
     stage_id: "",
   });
 
+  // Contacts filtered by selected company
+  const filteredContacts = (contactsList as any[]).filter(
+    (c: any) => !newDeal.company_id || String(c.company_id) === newDeal.company_id
+  );
+
   const handleCreateDeal = () => {
-    if (!newDeal.titulo || !newDeal.company_id || !newDeal.stage_id) {
-      toast.error("Preencha os campos obrigatórios");
+    if (!newDeal.titulo || !newDeal.company_id || !newDeal.contact_id || !newDeal.stage_id) {
+      toast.error("Preencha os campos obrigatórios: Título, Empresa, Contato e Estágio");
       return;
     }
     createDeal.mutate({
@@ -140,6 +148,7 @@ export default function FunilVendas() {
       descricao: newDeal.descricao || undefined,
       valor: newDeal.valor || "0",
       company_id: parseInt(newDeal.company_id),
+      contact_id: parseInt(newDeal.contact_id),
       stage_id: parseInt(newDeal.stage_id),
     });
   };
@@ -183,14 +192,38 @@ export default function FunilVendas() {
               </div>
               <div>
                 <Label>Empresa *</Label>
-                <Select value={newDeal.company_id} onValueChange={(v) => setNewDeal({ ...newDeal, company_id: v })}>
+                <Select
+                  value={newDeal.company_id}
+                  onValueChange={(v) => setNewDeal({ ...newDeal, company_id: v, contact_id: "" })}
+                >
                   <SelectTrigger className="bg-[#333333] border-border">
                     <SelectValue placeholder="Selecione a empresa" />
                   </SelectTrigger>
                   <SelectContent className="bg-[#333333] border-border">
-                    {companiesList.map((c: any) => (
+                    {(companiesList as any[]).map((c: any) => (
                       <SelectItem key={c.id} value={String(c.id)}>{c.nome}</SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div>
+                <Label>Contato *</Label>
+                <Select value={newDeal.contact_id} onValueChange={(v) => setNewDeal({ ...newDeal, contact_id: v })}>
+                  <SelectTrigger className="bg-[#333333] border-border">
+                    <SelectValue placeholder="Selecione o contato" />
+                  </SelectTrigger>
+                  <SelectContent className="bg-[#333333] border-border">
+                    {filteredContacts.length === 0 ? (
+                      <div className="px-3 py-2 text-sm text-muted-foreground">
+                        {newDeal.company_id ? "Nenhum contato nesta empresa" : "Selecione uma empresa primeiro"}
+                      </div>
+                    ) : (
+                      filteredContacts.map((c: any) => (
+                        <SelectItem key={c.id} value={String(c.id)}>
+                          {c.nome}{c.cargo ? ` — ${c.cargo}` : ""}
+                        </SelectItem>
+                      ))
+                    )}
                   </SelectContent>
                 </Select>
               </div>
@@ -276,7 +309,7 @@ export default function FunilVendas() {
                 {/* Stage Column */}
                 <div className={`bg-card/50 rounded-lg p-3 min-h-[400px] space-y-3 border-2 border-transparent ${draggedDeal !== null ? "border-dashed border-border" : ""}`}>
                   {stageDeals.map((deal: any) => {
-                    const company = companiesList.find((c: any) => c.id === deal.company_id);
+                    const company = (companiesList as any[]).find((c: any) => c.id === deal.company_id);
                     const prob = deal.probabilidadeManual ?? deal.probabilidadeAuto ?? deal.probabilidade ?? 0;
                     const qualScore = getQualScore(deal);
                     const hasManualProb = deal.probabilidadeManual !== null && deal.probabilidadeManual !== undefined;
@@ -287,12 +320,23 @@ export default function FunilVendas() {
                         draggable
                         onDragStart={(e) => handleDragStart(e, deal.id)}
                         onClick={() => handleDealClick(deal.id)}
-                        className={`bg-[#333333] border-border cursor-pointer hover:shadow-lg hover:shadow-primary/10 hover:border-primary/20 transition-all active:cursor-grabbing ${draggedDeal === deal.id ? "opacity-50" : ""}`}
+                        className={`cursor-pointer hover:shadow-lg hover:shadow-primary/10 transition-all active:cursor-grabbing ${
+                          deal.em_risco
+                            ? "bg-red-950/40 border-red-800/60 hover:border-red-600/60"
+                            : "bg-[#333333] border-border hover:border-primary/20"
+                        } ${draggedDeal === deal.id ? "opacity-50" : ""}`}
                       >
                         <CardContent className="p-3">
                           <div className="space-y-2">
                             <div>
-                              <p className="font-medium text-white text-sm leading-tight">{deal.titulo}</p>
+                              <div className="flex items-start justify-between gap-1">
+                                <p className="font-medium text-white text-sm leading-tight">{deal.titulo}</p>
+                                {deal.em_risco && (
+                                  <span title="Sem próximo passo agendado">
+                                    <AlertTriangle className="w-3.5 h-3.5 text-red-400 shrink-0 mt-0.5" />
+                                  </span>
+                                )}
+                              </div>
                               <div className="flex items-center gap-1 mt-1">
                                 <Building2 className="w-3 h-3 text-muted-foreground" />
                                 <p className="text-xs text-muted-foreground">{company?.nome || "—"}</p>

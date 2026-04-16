@@ -24,6 +24,7 @@ export const leadQualificacaoEnum = pgEnum("lead_qualificacao", ["frio", "morno"
 export const leadStatusEnum = pgEnum("lead_status", ["novo", "contatado", "qualificado", "desqualificado", "convertido", "aposentado"]);
 export const opportunityStatusEnum = pgEnum("opportunity_status", ["aberta", "ganha", "perdida", "cancelada"]);
 export const activityTipoEnum = pgEnum("activity_tipo", ["email", "chamada", "reuniao", "nota", "proposta", "outro"]);
+export const activityStatusEnum = pgEnum("activity_status", ["pendente", "realizada"]);
 export const taskPrioridadeEnum = pgEnum("task_prioridade", ["baixa", "media", "alta", "critica"]);
 export const taskStatusEnum = pgEnum("task_status", ["pendente", "em_progresso", "concluida", "cancelada"]);
 export const proposalStatusEnum = pgEnum("proposal_status", ["rascunho", "enviada", "aceita", "rejeitada", "expirada"]);
@@ -268,6 +269,8 @@ export const activities = pgTable("activities", {
   descricao: text("descricao"),
   usuario_id: integer("usuario_id").notNull(),
   data_atividade: timestamp("data_atividade").notNull(),
+  status: activityStatusEnum("status").default("realizada").notNull(),
+  data_agendada: timestamp("data_agendada"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

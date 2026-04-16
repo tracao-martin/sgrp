@@ -13,6 +13,7 @@ DO $$ BEGIN CREATE TYPE lead_qualificacao AS ENUM ('frio', 'morno', 'quente', 'q
 DO $$ BEGIN CREATE TYPE lead_status AS ENUM ('novo', 'contatado', 'qualificado', 'desqualificado', 'convertido', 'aposentado'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE opportunity_status AS ENUM ('aberta', 'ganha', 'perdida', 'cancelada'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE activity_tipo AS ENUM ('email', 'chamada', 'reuniao', 'nota', 'proposta', 'outro'); EXCEPTION WHEN duplicate_object THEN null; END $$;
+DO $$ BEGIN CREATE TYPE activity_status AS ENUM ('pendente', 'realizada'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE task_prioridade AS ENUM ('baixa', 'media', 'alta', 'critica'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE task_status AS ENUM ('pendente', 'em_progresso', 'concluida', 'cancelada'); EXCEPTION WHEN duplicate_object THEN null; END $$;
 DO $$ BEGIN CREATE TYPE proposal_status AS ENUM ('rascunho', 'enviada', 'aceita', 'rejeitada', 'expirada'); EXCEPTION WHEN duplicate_object THEN null; END $$;
@@ -214,6 +215,8 @@ CREATE TABLE IF NOT EXISTS activities (
   descricao TEXT,
   usuario_id INTEGER NOT NULL REFERENCES users(id),
   data_atividade TIMESTAMP NOT NULL,
+  status activity_status NOT NULL DEFAULT 'realizada',
+  data_agendada TIMESTAMP,
   created_at TIMESTAMP NOT NULL DEFAULT NOW(),
   updated_at TIMESTAMP NOT NULL DEFAULT NOW()
 );
