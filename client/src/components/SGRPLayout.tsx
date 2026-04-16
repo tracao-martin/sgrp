@@ -277,11 +277,13 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
             <div className="text-right">
               <p className="text-sm font-medium">{user.name || "Usuário"}</p>
               <p className="text-xs text-muted-foreground capitalize">
-                {user.role === "gerente"
-                  ? "Gerente"
+                {user.role === "superadmin"
+                  ? "Super Admin"
                   : user.role === "admin"
                     ? "Administrador"
-                    : "Vendedor"}
+                    : user.role === "gerente"
+                      ? "Gerente"
+                      : "Vendedor"}
               </p>
             </div>
 
