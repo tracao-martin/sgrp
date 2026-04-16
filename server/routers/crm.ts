@@ -1051,7 +1051,7 @@ const usersRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       // Only org admins can change roles
-      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin") {
+      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem alterar papéis");
       }
       await db.update(users).set({ role: input.role }).where(
@@ -1065,7 +1065,7 @@ const usersRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin") {
+      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem ativar/desativar usuários");
       }
       const [user] = await db.select().from(users).where(
@@ -1084,7 +1084,7 @@ const usersRouter = router({
       tempPassword: z.string().min(6),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin") {
+      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem convidar usuários");
       }
 
