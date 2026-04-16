@@ -657,6 +657,36 @@ export const icpsRelations = relations(icps, ({ one }) => ({
 }));
 
 // ============================================================================
+// PRODUCTS - Catálogo de produtos e serviços da organização
+// ============================================================================
+
+export const productRecorrenciaEnum = pgEnum("product_recorrencia", ["mensal", "anual", "unico", "sob_demanda"]);
+
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  categoria: varchar("categoria", { length: 100 }),
+  precoBase: numeric("preco_base", { precision: 15, scale: 2 }).notNull().default("0"),
+  recorrencia: productRecorrenciaEnum("recorrencia").default("mensal").notNull(),
+  unidade: varchar("unidade", { length: 50 }),
+  ativo: boolean("ativo").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = typeof products.$inferInsert;
+
+export const productsRelations = relations(products, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [products.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+// ============================================================================
 // LEAD CADENCES - Sequências de follow-up persistidas
 // ============================================================================
 

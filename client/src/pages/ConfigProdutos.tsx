@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -7,53 +7,10 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
 import { toast } from "sonner";
-import {
-  Plus,
-  Package,
-  Pencil,
-  Trash2,
-  Search,
-  DollarSign,
-  Tag,
-  RefreshCw,
-  Archive,
-  MoreVertical,
-} from "lucide-react";
+import { trpc } from "@/lib/trpc";
+import { Plus, Package, Pencil, Trash2, Search, Loader } from "lucide-react";
 
-interface Produto {
-  id: string;
-  nome: string;
-  descricao: string;
-  categoria: string;
-  precoBase: number;
-  recorrencia: "mensal" | "anual" | "unico" | "sob_demanda";
-  ativo: boolean;
-  moeda: string;
-  unidade: string;
-  createdAt: string;
-}
-
-const CATEGORIAS = [
-  "Consultoria",
-  "Software",
-  "Implementação",
-  "Treinamento",
-  "Suporte",
-  "Licença",
-  "Serviço Recorrente",
-  "Projeto",
-];
-
-const CATEGORIA_CORES: Record<string, string> = {
-  Consultoria: "bg-purple-900/30 text-purple-300",
-  Software: "bg-primary/20 text-primary",
-  "Implementação": "bg-green-900/30 text-green-300",
-  Treinamento: "bg-yellow-900/30 text-yellow-300",
-  Suporte: "bg-orange-900/30 text-orange-300",
-  "Licença": "bg-cyan-900/30 text-cyan-300",
-  "Serviço Recorrente": "bg-pink-900/30 text-pink-300",
-  Projeto: "bg-indigo-900/30 text-indigo-300",
-};
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const RECORRENCIA_LABELS: Record<string, string> = {
   mensal: "Mensal",
@@ -62,154 +19,184 @@ const RECORRENCIA_LABELS: Record<string, string> = {
   sob_demanda: "Sob Demanda",
 };
 
-const INITIAL_PRODUTOS: Produto[] = [
-  {
-    id: "1", nome: "Consultoria Estratégica Comercial", descricao: "Diagnóstico e reestruturação do processo comercial com foco em previsibilidade de receita. Inclui análise do pipeline, definição de ICP, e desenho do playbook de vendas.",
-    categoria: "Consultoria", precoBase: 15000, recorrencia: "unico", ativo: true, moeda: "BRL", unidade: "projeto", createdAt: "2025-01-15",
-  },
-  {
-    id: "2", nome: "SOaaS - Sales Operations as a Service", descricao: "Operação contínua de Sales Ops com gestão de pipeline, forecast semanal, coaching de vendedores e rituais de governança comercial.",
-    categoria: "Serviço Recorrente", precoBase: 8500, recorrencia: "mensal", ativo: true, moeda: "BRL", unidade: "mês", createdAt: "2025-02-01",
-  },
-  {
-    id: "3", nome: "Licença SGRP - Plano Core", descricao: "Acesso ao sistema GRP com pipeline, atividades, playbooks e dashboards básicos. Até 5 usuários.",
-    categoria: "Licença", precoBase: 497, recorrencia: "mensal", ativo: true, moeda: "BRL", unidade: "mês", createdAt: "2025-03-01",
-  },
-  {
-    id: "4", nome: "Licença SGRP - Plano Growth", descricao: "Inclui forecast avançado, performance, expansão, rituais e integrações adicionais. Até 15 usuários.",
-    categoria: "Licença", precoBase: 1297, recorrencia: "mensal", ativo: true, moeda: "BRL", unidade: "mês", createdAt: "2025-03-01",
-  },
-  {
-    id: "5", nome: "Implementação e Onboarding", descricao: "Setup completo do sistema: configuração de funis, ICPs, cadências, importação de dados e treinamento da equipe.",
-    categoria: "Implementação", precoBase: 5000, recorrencia: "unico", ativo: true, moeda: "BRL", unidade: "projeto", createdAt: "2025-01-20",
-  },
-  {
-    id: "6", nome: "Treinamento SPIN Selling", descricao: "Workshop presencial ou remoto de 8h sobre metodologia SPIN aplicada a vendas consultivas B2B.",
-    categoria: "Treinamento", precoBase: 3500, recorrencia: "unico", ativo: true, moeda: "BRL", unidade: "turma", createdAt: "2025-04-01",
-  },
-  {
-    id: "7", nome: "Suporte Premium", descricao: "Suporte prioritário com SLA de 4h, canal dedicado no Slack e reunião mensal de acompanhamento.",
-    categoria: "Suporte", precoBase: 1500, recorrencia: "mensal", ativo: false, moeda: "BRL", unidade: "mês", createdAt: "2025-05-01",
-  },
+const CATEGORIAS = [
+  "Consultoria", "Software", "Implementação", "Treinamento",
+  "Suporte", "Licença", "Serviço Recorrente", "Projeto",
 ];
 
+// ─── Form Dialog ──────────────────────────────────────────────────────────────
+
+type FormState = {
+  nome: string;
+  descricao: string;
+  categoria: string;
+  precoBase: string;
+  recorrencia: "mensal" | "anual" | "unico" | "sob_demanda";
+  unidade: string;
+};
+
+const EMPTY_FORM: FormState = {
+  nome: "", descricao: "", categoria: "Consultoria",
+  precoBase: "", recorrencia: "mensal", unidade: "",
+};
+
+function ProdutoDialog({
+  open, onClose, initial, onSave, isSaving,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initial: FormState | null;
+  onSave: (f: FormState) => void;
+  isSaving: boolean;
+}) {
+  const [form, setForm] = useState<FormState>(EMPTY_FORM);
+
+  React.useEffect(() => {
+    setForm(initial ?? EMPTY_FORM);
+  }, [initial, open]);
+
+  const handle = () => {
+    if (!form.nome.trim()) { toast.error("Nome obrigatório"); return; }
+    if (!form.precoBase || parseFloat(form.precoBase) < 0) { toast.error("Preço inválido"); return; }
+    onSave(form);
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-card border-border max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{initial ? "Editar Produto" : "Novo Produto"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div>
+            <label className="text-sm font-medium text-foreground/80">Nome *</label>
+            <Input value={form.nome} onChange={(e) => setForm({ ...form, nome: e.target.value })}
+              placeholder="Ex: Consultoria Estratégica" className="mt-1 bg-[#333] border-border" />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground/80">Descrição</label>
+            <Textarea value={form.descricao} onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+              placeholder="Descreva o produto ou serviço..." className="mt-1 bg-[#333] border-border" rows={3} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-foreground/80">Categoria</label>
+              <select value={form.categoria} onChange={(e) => setForm({ ...form, categoria: e.target.value })}
+                className="mt-1 w-full h-10 px-3 rounded-md bg-[#333] border border-border text-sm text-white">
+                {CATEGORIAS.map((c) => <option key={c} value={c}>{c}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground/80">Recorrência</label>
+              <select value={form.recorrencia} onChange={(e) => setForm({ ...form, recorrencia: e.target.value as FormState["recorrencia"] })}
+                className="mt-1 w-full h-10 px-3 rounded-md bg-[#333] border border-border text-sm text-white">
+                {Object.entries(RECORRENCIA_LABELS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-foreground/80">Preço Base (R$) *</label>
+              <Input type="number" min={0} step={0.01} value={form.precoBase}
+                onChange={(e) => setForm({ ...form, precoBase: e.target.value })}
+                placeholder="0,00" className="mt-1 bg-[#333] border-border" />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground/80">Unidade</label>
+              <Input value={form.unidade} onChange={(e) => setForm({ ...form, unidade: e.target.value })}
+                placeholder="Ex: mês, projeto, hora" className="mt-1 bg-[#333] border-border" />
+            </div>
+          </div>
+          <div className="flex gap-3 justify-end pt-2 border-t border-border">
+            <Button variant="outline" onClick={onClose} className="border-border">Cancelar</Button>
+            <Button onClick={handle} disabled={isSaving} className="bg-primary hover:bg-primary/90">
+              {isSaving ? <Loader className="w-4 h-4 animate-spin mr-2" /> : null}
+              {initial ? "Salvar" : "Criar"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+
 export default function ConfigProdutos() {
-  const [produtos, setProdutos] = useState<Produto[]>(INITIAL_PRODUTOS);
+  const utils = trpc.useUtils();
+  const { data: produtos = [], isLoading } = trpc.crm.products.list.useQuery();
+
+  const createMutation = trpc.crm.products.create.useMutation({
+    onSuccess: () => { utils.crm.products.list.invalidate(); toast.success("Produto criado!"); setDialog({ open: false, editing: null }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const updateMutation = trpc.crm.products.update.useMutation({
+    onSuccess: () => { utils.crm.products.list.invalidate(); toast.success("Produto atualizado!"); setDialog({ open: false, editing: null }); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const deleteMutation = trpc.crm.products.delete.useMutation({
+    onSuccess: () => { utils.crm.products.list.invalidate(); toast.success("Produto excluído"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+
   const [search, setSearch] = useState("");
   const [filterCategoria, setFilterCategoria] = useState<string | null>(null);
   const [filterStatus, setFilterStatus] = useState<"todos" | "ativos" | "inativos">("todos");
-  const [showForm, setShowForm] = useState(false);
-  const [editingProduto, setEditingProduto] = useState<Produto | null>(null);
+  const [dialog, setDialog] = useState<{ open: boolean; editing: any | null }>({ open: false, editing: null });
 
-  const [form, setForm] = useState({
-    nome: "",
-    descricao: "",
-    categoria: "Consultoria",
-    precoBase: "",
-    recorrencia: "mensal" as Produto["recorrencia"],
-    unidade: "",
-  });
+  const categorias = Array.from(new Set(produtos.map((p: any) => p.categoria).filter(Boolean)));
 
-  const filteredProdutos = produtos.filter((p) => {
-    if (search && !p.nome.toLowerCase().includes(search.toLowerCase()) && !p.descricao.toLowerCase().includes(search.toLowerCase())) return false;
+  const filtered = produtos.filter((p: any) => {
+    if (search && !p.nome.toLowerCase().includes(search.toLowerCase())) return false;
     if (filterCategoria && p.categoria !== filterCategoria) return false;
     if (filterStatus === "ativos" && !p.ativo) return false;
     if (filterStatus === "inativos" && p.ativo) return false;
     return true;
   });
 
-  const totalAtivos = produtos.filter((p) => p.ativo).length;
-  const categorias = Array.from(new Set(produtos.map((p) => p.categoria)));
-  const receitaMensalPotencial = produtos
-    .filter((p) => p.ativo && p.recorrencia === "mensal")
-    .reduce((acc, p) => acc + p.precoBase, 0);
+  const totalAtivos = produtos.filter((p: any) => p.ativo).length;
+  const mrr = produtos
+    .filter((p: any) => p.ativo && p.recorrencia === "mensal")
+    .reduce((acc: number, p: any) => acc + parseFloat(p.precoBase || "0"), 0);
 
-  const openForm = (produto?: Produto) => {
-    if (produto) {
-      setForm({
-        nome: produto.nome,
-        descricao: produto.descricao,
-        categoria: produto.categoria,
-        precoBase: produto.precoBase.toString(),
-        recorrencia: produto.recorrencia,
-        unidade: produto.unidade,
-      });
-      setEditingProduto(produto);
+  const formatCurrency = (v: number) =>
+    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(v);
+
+  const openEdit = (p: any) =>
+    setDialog({
+      open: true,
+      editing: { nome: p.nome, descricao: p.descricao || "", categoria: p.categoria || "Consultoria", precoBase: p.precoBase?.toString() || "0", recorrencia: p.recorrencia, unidade: p.unidade || "", _id: p.id },
+    });
+
+  const handleSave = (f: FormState) => {
+    if (dialog.editing?._id) {
+      updateMutation.mutate({ id: dialog.editing._id, ...f });
     } else {
-      setForm({ nome: "", descricao: "", categoria: "Consultoria", precoBase: "", recorrencia: "mensal", unidade: "" });
-      setEditingProduto(null);
+      createMutation.mutate(f);
     }
-    setShowForm(true);
   };
 
-  const handleSave = () => {
-    if (!form.nome.trim()) {
-      toast.error("Nome do produto é obrigatório");
-      return;
-    }
-    if (!form.precoBase || parseFloat(form.precoBase) < 0) {
-      toast.error("Preço base é obrigatório");
-      return;
-    }
-
-    if (editingProduto) {
-      setProdutos(
-        produtos.map((p) =>
-          p.id === editingProduto.id
-            ? { ...p, nome: form.nome, descricao: form.descricao, categoria: form.categoria, precoBase: parseFloat(form.precoBase), recorrencia: form.recorrencia, unidade: form.unidade }
-            : p
-        )
-      );
-      toast.success("Produto atualizado!");
-    } else {
-      setProdutos([
-        ...produtos,
-        {
-          id: Date.now().toString(),
-          nome: form.nome,
-          descricao: form.descricao,
-          categoria: form.categoria,
-          precoBase: parseFloat(form.precoBase),
-          recorrencia: form.recorrencia,
-          ativo: true,
-          moeda: "BRL",
-          unidade: form.unidade || "unidade",
-          createdAt: new Date().toISOString().split("T")[0],
-        },
-      ]);
-      toast.success("Produto criado!");
-    }
-    setShowForm(false);
-  };
-
-  const handleToggle = (id: string) => {
-    setProdutos(produtos.map((p) => (p.id === id ? { ...p, ativo: !p.ativo } : p)));
-  };
-
-  const handleDelete = (id: string) => {
-    setProdutos(produtos.filter((p) => p.id !== id));
-    toast.success("Produto excluído");
-  };
-
-  const formatCurrency = (value: number) =>
-    new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(value);
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <Package className="w-7 h-7 text-orange-400" />
+        <div className="flex items-center gap-3">
+          <Package className="w-7 h-7 text-orange-400" />
+          <div>
             <h1 className="text-2xl font-bold">Produtos e Serviços</h1>
+            <p className="text-muted-foreground text-sm">Catálogo de produtos e serviços oferecidos</p>
           </div>
-          <p className="text-muted-foreground mt-1 ml-10">
-            Gerencie o catálogo de produtos e serviços oferecidos
-          </p>
         </div>
-        <Button onClick={() => openForm()} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
-          <Plus className="w-4 h-4 mr-2" />
-          Novo Produto
+        <Button onClick={() => setDialog({ open: true, editing: null })} className="bg-primary hover:bg-primary/90">
+          <Plus className="w-4 h-4 mr-2" /> Novo Produto
         </Button>
       </div>
 
@@ -218,7 +205,7 @@ export default function ConfigProdutos() {
         <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-primary">{produtos.length}</p>
-            <p className="text-xs text-muted-foreground">Total de produtos</p>
+            <p className="text-xs text-muted-foreground">Total</p>
           </CardContent>
         </Card>
         <Card className="bg-card/50 border-border">
@@ -235,211 +222,109 @@ export default function ConfigProdutos() {
         </Card>
         <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-yellow-400">{formatCurrency(receitaMensalPotencial)}</p>
+            <p className="text-2xl font-bold text-yellow-400 text-sm">{formatCurrency(mrr)}</p>
             <p className="text-xs text-muted-foreground">MRR potencial</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Filters */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 flex-wrap">
         <div className="relative flex-1 max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            placeholder="Buscar produto..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="pl-10 bg-card border-border"
-          />
+          <Input placeholder="Buscar produto..." value={search} onChange={(e) => setSearch(e.target.value)}
+            className="pl-10 bg-card border-border" />
         </div>
         <div className="flex gap-1">
           {(["todos", "ativos", "inativos"] as const).map((s) => (
-            <Button
-              key={s}
-              variant={filterStatus === s ? "default" : "outline"}
-              size="sm"
+            <Button key={s} variant={filterStatus === s ? "default" : "outline"} size="sm"
               onClick={() => setFilterStatus(s)}
-              className={filterStatus === s ? "bg-primary" : "border-border text-foreground/80"}
-            >
+              className={filterStatus === s ? "bg-primary" : "border-border text-foreground/80"}>
               {s.charAt(0).toUpperCase() + s.slice(1)}
             </Button>
           ))}
         </div>
-        <div className="flex gap-1 flex-wrap">
-          <Button
-            variant={filterCategoria === null ? "default" : "outline"}
-            size="sm"
-            onClick={() => setFilterCategoria(null)}
-            className={filterCategoria === null ? "bg-primary" : "border-border text-foreground/80"}
-          >
-            Todas
-          </Button>
-          {categorias.map((cat) => (
-            <Button
-              key={cat}
-              variant={filterCategoria === cat ? "default" : "outline"}
-              size="sm"
-              onClick={() => setFilterCategoria(cat)}
-              className={filterCategoria === cat ? "bg-primary" : "border-border text-foreground/80"}
-            >
-              {cat}
+        {categorias.length > 0 && (
+          <div className="flex gap-1 flex-wrap">
+            <Button variant={filterCategoria === null ? "default" : "outline"} size="sm"
+              onClick={() => setFilterCategoria(null)}
+              className={filterCategoria === null ? "bg-primary" : "border-border text-foreground/80"}>
+              Todas
             </Button>
-          ))}
-        </div>
+            {categorias.map((cat: any) => (
+              <Button key={cat} variant={filterCategoria === cat ? "default" : "outline"} size="sm"
+                onClick={() => setFilterCategoria(cat)}
+                className={filterCategoria === cat ? "bg-primary" : "border-border text-foreground/80"}>
+                {cat}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* Products Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        {filteredProdutos.map((produto) => (
-          <Card
-            key={produto.id}
-            className={`border-border transition-all ${
-              produto.ativo ? "bg-card" : "bg-card/50 opacity-70"
-            }`}
-          >
-            <CardContent className="p-4 space-y-3">
-              <div className="flex items-start justify-between">
-                <div className="flex-1">
-                  <h3 className="font-semibold text-sm leading-tight">{produto.nome}</h3>
-                  <Badge className={`mt-1 text-xs ${CATEGORIA_CORES[produto.categoria] || "bg-[#333333] text-foreground/80"}`}>
-                    {produto.categoria}
-                  </Badge>
+      {/* Grid */}
+      {filtered.length === 0 ? (
+        <Card className="bg-card/50 border-border">
+          <CardContent className="py-16 text-center">
+            <Package className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-30" />
+            <p className="text-muted-foreground">Nenhum produto encontrado</p>
+            {produtos.length === 0 && (
+              <p className="text-xs text-muted-foreground mt-1">Clique em "Novo Produto" para adicionar</p>
+            )}
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {filtered.map((p: any) => (
+            <Card key={p.id} className={`border-border transition-all ${p.ativo ? "bg-card" : "bg-card/50 opacity-70"}`}>
+              <CardContent className="p-4 space-y-3">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <h3 className="font-semibold text-sm leading-tight">{p.nome}</h3>
+                    {p.categoria && (
+                      <Badge className="mt-1 text-xs bg-primary/20 text-primary">{p.categoria}</Badge>
+                    )}
+                  </div>
+                  <Switch checked={p.ativo} onCheckedChange={() => updateMutation.mutate({ id: p.id, ativo: !p.ativo })} />
                 </div>
-                <Switch
-                  checked={produto.ativo}
-                  onCheckedChange={() => handleToggle(produto.id)}
-                />
-              </div>
 
-              <p className="text-xs text-muted-foreground line-clamp-2">{produto.descricao}</p>
+                {p.descricao && (
+                  <p className="text-xs text-muted-foreground line-clamp-2">{p.descricao}</p>
+                )}
 
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <div>
-                  <p className="text-lg font-bold text-yellow-400">{formatCurrency(produto.precoBase)}</p>
-                  <div className="flex items-center gap-1">
-                    <RefreshCw className="w-3 h-3 text-muted-foreground" />
-                    <span className="text-xs text-muted-foreground">
-                      {RECORRENCIA_LABELS[produto.recorrencia]} · {produto.unidade}
-                    </span>
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <div>
+                    <p className="text-lg font-bold text-yellow-400">
+                      {formatCurrency(parseFloat(p.precoBase || "0"))}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {RECORRENCIA_LABELS[p.recorrencia]}{p.unidade ? ` · ${p.unidade}` : ""}
+                    </p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="sm" onClick={() => openEdit(p)}
+                      className="text-primary hover:text-primary h-8 w-8 p-0">
+                      <Pencil className="w-3.5 h-3.5" />
+                    </Button>
+                    <Button variant="ghost" size="sm" onClick={() => deleteMutation.mutate({ id: p.id })}
+                      className="text-red-400 hover:text-red-300 h-8 w-8 p-0">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </Button>
                   </div>
                 </div>
-                <div className="flex gap-1">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openForm(produto)}
-                    className="text-primary hover:text-primary h-8 w-8 p-0"
-                  >
-                    <Pencil className="w-3.5 h-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(produto.id)}
-                    className="text-red-400 hover:text-red-300 h-8 w-8 p-0"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredProdutos.length === 0 && (
-        <div className="text-center py-12 text-muted-foreground">
-          <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
-          <p>Nenhum produto encontrado</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
 
-      {/* Form Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="bg-card border-border max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingProduto ? "Editar Produto" : "Novo Produto"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Nome *</label>
-              <Input
-                value={form.nome}
-                onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                placeholder="Ex: Consultoria Estratégica Comercial"
-                className="mt-1 bg-[#333333] border-border"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Descrição</label>
-              <Textarea
-                value={form.descricao}
-                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                placeholder="Descreva o produto ou serviço..."
-                className="mt-1 bg-[#333333] border-border"
-                rows={3}
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-foreground/80">Categoria</label>
-                <select
-                  value={form.categoria}
-                  onChange={(e) => setForm({ ...form, categoria: e.target.value })}
-                  className="mt-1 w-full h-10 px-3 rounded-md bg-[#333333] border border-border text-sm text-white"
-                >
-                  {CATEGORIAS.map((cat) => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground/80">Recorrência</label>
-                <select
-                  value={form.recorrencia}
-                  onChange={(e) => setForm({ ...form, recorrencia: e.target.value as Produto["recorrencia"] })}
-                  className="mt-1 w-full h-10 px-3 rounded-md bg-[#333333] border border-border text-sm text-white"
-                >
-                  {Object.entries(RECORRENCIA_LABELS).map(([k, v]) => (
-                    <option key={k} value={k}>{v}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-foreground/80">Preço Base (R$) *</label>
-                <Input
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={form.precoBase}
-                  onChange={(e) => setForm({ ...form, precoBase: e.target.value })}
-                  placeholder="0,00"
-                  className="mt-1 bg-[#333333] border-border"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground/80">Unidade</label>
-                <Input
-                  value={form.unidade}
-                  onChange={(e) => setForm({ ...form, unidade: e.target.value })}
-                  placeholder="Ex: mês, projeto, turma, hora"
-                  className="mt-1 bg-[#333333] border-border"
-                />
-              </div>
-            </div>
-            <div className="flex gap-3 justify-end pt-2 border-t border-border">
-              <Button variant="outline" onClick={() => setShowForm(false)} className="border-border">
-                Cancelar
-              </Button>
-              <Button onClick={handleSave} className="bg-yellow-500 hover:bg-yellow-600 text-black">
-                {editingProduto ? "Salvar Alterações" : "Criar Produto"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <ProdutoDialog
+        open={dialog.open}
+        initial={dialog.editing}
+        onClose={() => setDialog({ open: false, editing: null })}
+        onSave={handleSave}
+        isSaving={createMutation.isPending || updateMutation.isPending}
+      />
     </div>
   );
 }

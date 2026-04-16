@@ -16,6 +16,7 @@ import {
 } from "../../drizzle/schema";
 import { icpsRouter } from "./icps";
 import { leadCadencesRouter, disqualifyReasonsRouter } from "./cadences";
+import { productsRouter } from "./products";
 import { accountContactsRouter } from "./accountContacts";
 import { eq, desc, and, asc, lte, inArray, gt, or, isNull } from "drizzle-orm";
 import { TRPCError } from "@trpc/server";
@@ -1139,5 +1140,6 @@ export const crmRouter = router({
   icps: icpsRouter,
   cadences: leadCadencesRouter,
   disqualifyReasons: disqualifyReasonsRouter,
+  products: productsRouter,
   accountContacts: accountContactsRouter,
 });
