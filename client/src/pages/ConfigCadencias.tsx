@@ -1,32 +1,19 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 import {
-  Plus,
-  Zap,
-  Pencil,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-  Mail,
-  Phone,
-  MessageSquare,
-  CheckSquare,
-  Clock,
-  ArrowDown,
-  Copy,
-  Play,
-  Pause,
-  GripVertical,
-  Calendar,
+  Plus, Zap, Pencil, Trash2, ChevronDown, ChevronRight,
+  Mail, Phone, MessageSquare, CheckSquare, Loader,
 } from "lucide-react";
+
+// ─── Types ───────────────────────────────────────────────────────────────────
 
 interface CadenciaStep {
   id: string;
@@ -36,240 +23,242 @@ interface CadenciaStep {
   descricao: string;
 }
 
-interface Cadencia {
-  id: string;
-  nome: string;
-  descricao: string;
-  gatilho: string;
-  ativa: boolean;
-  steps: CadenciaStep[];
-  totalContatos: number;
-  taxaResposta: number;
-}
-
-const TIPO_STEP_CONFIG: Record<string, { label: string; icon: React.ReactNode; cor: string }> = {
-  email: { label: "Email", icon: <Mail className="w-4 h-4" />, cor: "bg-primary/20 text-primary border-primary/30" },
-  ligacao: { label: "Ligação", icon: <Phone className="w-4 h-4" />, cor: "bg-green-900/30 text-green-300 border-green-800" },
-  whatsapp: { label: "WhatsApp", icon: <MessageSquare className="w-4 h-4" />, cor: "bg-emerald-900/30 text-emerald-300 border-emerald-800" },
-  tarefa: { label: "Tarefa", icon: <CheckSquare className="w-4 h-4" />, cor: "bg-yellow-900/30 text-yellow-300 border-yellow-800" },
-  linkedin: { label: "LinkedIn", icon: <MessageSquare className="w-4 h-4" />, cor: "bg-indigo-900/30 text-indigo-300 border-indigo-800" },
+const TIPO_CONFIG: Record<string, { label: string; icon: React.ReactNode; cor: string }> = {
+  email:    { label: "Email",     icon: <Mail className="w-4 h-4" />,        cor: "bg-primary/20 text-primary border-primary/30" },
+  ligacao:  { label: "Ligação",   icon: <Phone className="w-4 h-4" />,       cor: "bg-green-900/30 text-green-300 border-green-800" },
+  whatsapp: { label: "WhatsApp",  icon: <MessageSquare className="w-4 h-4" />, cor: "bg-emerald-900/30 text-emerald-300 border-emerald-800" },
+  tarefa:   { label: "Tarefa",    icon: <CheckSquare className="w-4 h-4" />, cor: "bg-yellow-900/30 text-yellow-300 border-yellow-800" },
+  linkedin: { label: "LinkedIn",  icon: <MessageSquare className="w-4 h-4" />, cor: "bg-indigo-900/30 text-indigo-300 border-indigo-800" },
 };
 
-const GATILHOS = [
-  "Novo lead qualificado",
-  "Deal parado há 7+ dias",
-  "Pós-proposta sem resposta",
-  "Pós-diagnóstico",
-  "Reengajamento de lead frio",
-  "Onboarding de novo cliente",
-  "Renovação próxima (30 dias)",
-  "Upsell/Cross-sell identificado",
-];
+// ─── Step Form Dialog ─────────────────────────────────────────────────────────
 
-const INITIAL_CADENCIAS: Cadencia[] = [
-  {
-    id: "1",
-    nome: "Prospecção Outbound - ICP Tier 1",
-    descricao: "Cadência de 14 dias para prospecção ativa de leads que se encaixam no ICP principal. Foco em gerar agendamento de diagnóstico.",
-    gatilho: "Novo lead qualificado",
-    ativa: true,
-    totalContatos: 45,
-    taxaResposta: 23,
-    steps: [
-      { id: "1a", dia: 1, tipo: "email", titulo: "Email de abertura personalizado", descricao: "Email curto mencionando dor específica do segmento. Usar template 'Abertura ICP Tier 1'." },
-      { id: "1b", dia: 1, tipo: "linkedin", titulo: "Conexão no LinkedIn", descricao: "Enviar convite de conexão com nota personalizada mencionando o email." },
-      { id: "1c", dia: 3, tipo: "ligacao", titulo: "Primeira ligação", descricao: "Ligação de 2min. Objetivo: confirmar recebimento do email e gerar interesse." },
-      { id: "1d", dia: 4, tipo: "whatsapp", titulo: "WhatsApp de follow-up", descricao: "Mensagem curta: 'Vi que não conseguimos falar. Posso te ligar amanhã às X?'" },
-      { id: "1e", dia: 7, tipo: "email", titulo: "Email de valor (case study)", descricao: "Enviar case de sucesso relevante para o segmento do lead." },
-      { id: "1f", dia: 9, tipo: "ligacao", titulo: "Segunda ligação", descricao: "Tentar contato novamente. Se não atender, deixar voicemail." },
-      { id: "1g", dia: 11, tipo: "email", titulo: "Email de breakup", descricao: "Email final: 'Entendo que o timing pode não ser ideal. Fico à disposição quando fizer sentido.'" },
-      { id: "1h", dia: 14, tipo: "tarefa", titulo: "Avaliar resultado da cadência", descricao: "Revisar se houve engajamento. Se sim, mover para próxima etapa. Se não, marcar para reengajamento em 60 dias." },
-    ],
-  },
-  {
-    id: "2",
-    nome: "Follow-up Pós-Proposta",
-    descricao: "Cadência de 10 dias para acompanhar propostas enviadas que ainda não tiveram resposta do decisor.",
-    gatilho: "Pós-proposta sem resposta",
-    ativa: true,
-    totalContatos: 12,
-    taxaResposta: 58,
-    steps: [
-      { id: "2a", dia: 1, tipo: "email", titulo: "Email de acompanhamento", descricao: "Perguntar se a proposta foi recebida e se há dúvidas." },
-      { id: "2b", dia: 3, tipo: "ligacao", titulo: "Ligação de follow-up", descricao: "Ligar para o decisor. Objetivo: entender objeções e timeline." },
-      { id: "2c", dia: 5, tipo: "whatsapp", titulo: "WhatsApp com resumo", descricao: "Enviar resumo dos principais benefícios da proposta." },
-      { id: "2d", dia: 7, tipo: "email", titulo: "Email com novo argumento", descricao: "Enviar ROI calculado ou depoimento de cliente similar." },
-      { id: "2e", dia: 10, tipo: "tarefa", titulo: "Decisão sobre o deal", descricao: "Avaliar: avançar para negociação, renegociar, ou marcar como perdido." },
-    ],
-  },
-  {
-    id: "3",
-    nome: "Reengajamento de Leads Frios",
-    descricao: "Cadência de 21 dias para reativar leads que não responderam há mais de 60 dias.",
-    gatilho: "Reengajamento de lead frio",
-    ativa: false,
-    totalContatos: 78,
-    taxaResposta: 8,
-    steps: [
-      { id: "3a", dia: 1, tipo: "email", titulo: "Email de reconexão", descricao: "Email mencionando novidade relevante (produto novo, case, evento)." },
-      { id: "3b", dia: 7, tipo: "linkedin", titulo: "Interação no LinkedIn", descricao: "Curtir/comentar post recente do lead. Enviar mensagem se conectado." },
-      { id: "3c", dia: 14, tipo: "email", titulo: "Email com conteúdo de valor", descricao: "Enviar artigo, webinar ou material educativo relevante." },
-      { id: "3d", dia: 21, tipo: "tarefa", titulo: "Avaliar engajamento", descricao: "Se abriu emails ou respondeu: requalificar. Se não: arquivar." },
-    ],
-  },
-];
+function StepDialog({
+  open, onClose, initial, onSave,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initial: CadenciaStep | null;
+  onSave: (s: CadenciaStep) => void;
+}) {
+  const [form, setForm] = useState<CadenciaStep>(
+    initial ?? { id: "", dia: 1, tipo: "email", titulo: "", descricao: "" }
+  );
+
+  React.useEffect(() => {
+    setForm(initial ?? { id: "", dia: 1, tipo: "email", titulo: "", descricao: "" });
+  }, [initial, open]);
+
+  const handle = () => {
+    if (!form.titulo.trim()) { toast.error("Título obrigatório"); return; }
+    onSave({ ...form, id: form.id || Date.now().toString() });
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-card border-border max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{initial ? "Editar Step" : "Novo Step"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="text-sm font-medium text-foreground/80">Dia</label>
+              <Input
+                type="number" min={1}
+                value={form.dia}
+                onChange={(e) => setForm({ ...form, dia: parseInt(e.target.value) || 1 })}
+                className="mt-1 bg-[#333] border-border"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium text-foreground/80">Tipo</label>
+              <select
+                value={form.tipo}
+                onChange={(e) => setForm({ ...form, tipo: e.target.value as CadenciaStep["tipo"] })}
+                className="mt-1 w-full h-10 px-3 rounded-md bg-[#333] border border-border text-sm text-white"
+              >
+                {Object.entries(TIPO_CONFIG).map(([k, v]) => (
+                  <option key={k} value={k}>{v.label}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground/80">Título *</label>
+            <Input
+              value={form.titulo}
+              onChange={(e) => setForm({ ...form, titulo: e.target.value })}
+              placeholder="Ex: Email de abertura"
+              className="mt-1 bg-[#333] border-border"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground/80">Instruções</label>
+            <Textarea
+              value={form.descricao}
+              onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+              placeholder="O que o vendedor deve fazer neste step..."
+              className="mt-1 bg-[#333] border-border"
+              rows={3}
+            />
+          </div>
+          <div className="flex gap-3 justify-end pt-2 border-t border-border">
+            <Button variant="outline" onClick={onClose} className="border-border">Cancelar</Button>
+            <Button onClick={handle} className="bg-primary hover:bg-primary/90">
+              {initial ? "Salvar" : "Adicionar"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Cadência Form Dialog ─────────────────────────────────────────────────────
+
+function CadenciaDialog({
+  open, onClose, initial, onSave,
+}: {
+  open: boolean;
+  onClose: () => void;
+  initial: { nome: string; descricao: string } | null;
+  onSave: (f: { nome: string; descricao: string }) => void;
+}) {
+  const [form, setForm] = useState({ nome: "", descricao: "" });
+
+  React.useEffect(() => {
+    setForm(initial ?? { nome: "", descricao: "" });
+  }, [initial, open]);
+
+  const handle = () => {
+    if (!form.nome.trim()) { toast.error("Nome obrigatório"); return; }
+    onSave(form);
+    onClose();
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent className="bg-card border-border max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{initial ? "Editar Cadência" : "Nova Cadência"}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4 pt-2">
+          <div>
+            <label className="text-sm font-medium text-foreground/80">Nome *</label>
+            <Input
+              value={form.nome}
+              onChange={(e) => setForm({ ...form, nome: e.target.value })}
+              placeholder="Ex: Prospecção Outbound"
+              className="mt-1 bg-[#333] border-border"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium text-foreground/80">Descrição</label>
+            <Textarea
+              value={form.descricao}
+              onChange={(e) => setForm({ ...form, descricao: e.target.value })}
+              placeholder="Objetivo e contexto desta cadência..."
+              className="mt-1 bg-[#333] border-border"
+              rows={3}
+            />
+          </div>
+          <div className="flex gap-3 justify-end pt-2 border-t border-border">
+            <Button variant="outline" onClick={onClose} className="border-border">Cancelar</Button>
+            <Button onClick={handle} className="bg-primary hover:bg-primary/90">
+              {initial ? "Salvar" : "Criar"}
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
 
 export default function ConfigCadencias() {
-  const [cadencias, setCadencias] = useState<Cadencia[]>(INITIAL_CADENCIAS);
-  const [expandedCadencia, setExpandedCadencia] = useState<string | null>("1");
-  const [showForm, setShowForm] = useState(false);
-  const [editingCadencia, setEditingCadencia] = useState<Cadencia | null>(null);
-  const [showStepForm, setShowStepForm] = useState<string | null>(null);
-  const [editingStep, setEditingStep] = useState<{ cadenciaId: string; step: CadenciaStep } | null>(null);
+  const utils = trpc.useUtils();
+  const { data: cadencias = [], isLoading } = trpc.crm.cadences.list.useQuery();
 
-  const [form, setForm] = useState({
-    nome: "",
-    descricao: "",
-    gatilho: GATILHOS[0],
+  const createMutation = trpc.crm.cadences.create.useMutation({
+    onSuccess: () => { utils.crm.cadences.list.invalidate(); toast.success("Cadência criada!"); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const updateMutation = trpc.crm.cadences.update.useMutation({
+    onSuccess: () => { utils.crm.cadences.list.invalidate(); },
+    onError: (e: any) => toast.error(e.message),
+  });
+  const deleteMutation = trpc.crm.cadences.delete.useMutation({
+    onSuccess: () => { utils.crm.cadences.list.invalidate(); toast.success("Cadência excluída"); },
+    onError: (e: any) => toast.error(e.message),
   });
 
-  const [stepForm, setStepForm] = useState({
-    dia: 1,
-    tipo: "email" as CadenciaStep["tipo"],
-    titulo: "",
-    descricao: "",
-  });
+  const [expanded, setExpanded] = useState<number | null>(null);
+  const [cadenciaDialog, setCadenciaDialog] = useState<{ open: boolean; id?: number; initial: { nome: string; descricao: string } | null }>({ open: false, initial: null });
+  const [stepDialog, setStepDialog] = useState<{ open: boolean; cadenciaId: number | null; initial: CadenciaStep | null }>({ open: false, cadenciaId: null, initial: null });
 
-  const totalAtivas = cadencias.filter((c) => c.ativa).length;
-  const totalSteps = cadencias.reduce((acc, c) => acc + c.steps.length, 0);
+  const parseSteps = (raw: string | null | undefined): CadenciaStep[] => {
+    try { return JSON.parse(raw || "[]"); } catch { return []; }
+  };
 
-  const openForm = (cadencia?: Cadencia) => {
-    if (cadencia) {
-      setForm({ nome: cadencia.nome, descricao: cadencia.descricao, gatilho: cadencia.gatilho });
-      setEditingCadencia(cadencia);
+  const saveSteps = (cadenciaId: number, steps: CadenciaStep[]) => {
+    updateMutation.mutate({ id: cadenciaId, steps: JSON.stringify(steps) });
+  };
+
+  const handleSaveCadencia = (f: { nome: string; descricao: string }) => {
+    if (cadenciaDialog.id !== undefined) {
+      updateMutation.mutate({ id: cadenciaDialog.id, nome: f.nome, descricao: f.descricao },
+        { onSuccess: () => toast.success("Cadência atualizada!") }
+      );
     } else {
-      setForm({ nome: "", descricao: "", gatilho: GATILHOS[0] });
-      setEditingCadencia(null);
-    }
-    setShowForm(true);
-  };
-
-  const handleSaveCadencia = () => {
-    if (!form.nome.trim()) {
-      toast.error("Nome da cadência é obrigatório");
-      return;
-    }
-    if (editingCadencia) {
-      setCadencias(cadencias.map((c) =>
-        c.id === editingCadencia.id ? { ...c, nome: form.nome, descricao: form.descricao, gatilho: form.gatilho } : c
-      ));
-      toast.success("Cadência atualizada!");
-    } else {
-      const newCad: Cadencia = {
-        id: Date.now().toString(),
-        nome: form.nome,
-        descricao: form.descricao,
-        gatilho: form.gatilho,
-        ativa: true,
-        steps: [],
-        totalContatos: 0,
-        taxaResposta: 0,
-      };
-      setCadencias([...cadencias, newCad]);
-      setExpandedCadencia(newCad.id);
-      toast.success("Cadência criada!");
-    }
-    setShowForm(false);
-  };
-
-  const handleDeleteCadencia = (id: string) => {
-    setCadencias(cadencias.filter((c) => c.id !== id));
-    toast.success("Cadência excluída");
-  };
-
-  const handleToggleCadencia = (id: string) => {
-    setCadencias(cadencias.map((c) => c.id === id ? { ...c, ativa: !c.ativa } : c));
-  };
-
-  const handleDuplicateCadencia = (id: string) => {
-    const source = cadencias.find((c) => c.id === id);
-    if (!source) return;
-    const newCad: Cadencia = {
-      ...source,
-      id: Date.now().toString(),
-      nome: `${source.nome} (Cópia)`,
-      totalContatos: 0,
-      taxaResposta: 0,
-      steps: source.steps.map((s) => ({ ...s, id: `${s.id}-copy-${Date.now()}` })),
-    };
-    setCadencias([...cadencias, newCad]);
-    toast.success("Cadência duplicada!");
-  };
-
-  const openStepForm = (cadenciaId: string, step?: CadenciaStep) => {
-    if (step) {
-      setStepForm({ dia: step.dia, tipo: step.tipo, titulo: step.titulo, descricao: step.descricao });
-      setEditingStep({ cadenciaId, step });
-    } else {
-      const cad = cadencias.find((c) => c.id === cadenciaId);
-      const maxDia = cad ? Math.max(0, ...cad.steps.map((s) => s.dia)) : 0;
-      setStepForm({ dia: maxDia + 2, tipo: "email", titulo: "", descricao: "" });
-      setShowStepForm(cadenciaId);
+      createMutation.mutate({ nome: f.nome, descricao: f.descricao });
     }
   };
 
-  const handleSaveStep = () => {
-    if (!stepForm.titulo.trim()) {
-      toast.error("Título do step é obrigatório");
-      return;
-    }
-    const targetId = editingStep?.cadenciaId || showStepForm;
-    setCadencias(cadencias.map((c) => {
-      if (c.id !== targetId) return c;
-      if (editingStep) {
-        return {
-          ...c,
-          steps: c.steps.map((s) =>
-            s.id === editingStep.step.id ? { ...s, dia: stepForm.dia, tipo: stepForm.tipo, titulo: stepForm.titulo, descricao: stepForm.descricao } : s
-          ).sort((a, b) => a.dia - b.dia),
-        };
-      } else {
-        return {
-          ...c,
-          steps: [...c.steps, { id: Date.now().toString(), dia: stepForm.dia, tipo: stepForm.tipo, titulo: stepForm.titulo, descricao: stepForm.descricao }]
-            .sort((a, b) => a.dia - b.dia),
-        };
-      }
-    }));
-    setEditingStep(null);
-    setShowStepForm(null);
-    toast.success(editingStep ? "Step atualizado!" : "Step adicionado!");
+  const handleToggle = (id: number, current: boolean) => {
+    updateMutation.mutate({ id, ativa: !current });
   };
 
-  const handleDeleteStep = (cadenciaId: string, stepId: string) => {
-    setCadencias(cadencias.map((c) => {
-      if (c.id !== cadenciaId) return c;
-      return { ...c, steps: c.steps.filter((s) => s.id !== stepId) };
-    }));
+  const handleSaveStep = (cadenciaId: number, currentSteps: CadenciaStep[], step: CadenciaStep) => {
+    const exists = currentSteps.find((s) => s.id === step.id);
+    const updated = exists
+      ? currentSteps.map((s) => s.id === step.id ? step : s)
+      : [...currentSteps, step];
+    saveSteps(cadenciaId, updated.sort((a, b) => a.dia - b.dia));
+    toast.success(exists ? "Step atualizado!" : "Step adicionado!");
+  };
+
+  const handleDeleteStep = (cadenciaId: number, steps: CadenciaStep[], stepId: string) => {
+    saveSteps(cadenciaId, steps.filter((s) => s.id !== stepId));
     toast.success("Step removido");
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <Loader className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <Zap className="w-7 h-7 text-purple-400" />
+        <div className="flex items-center gap-3">
+          <Zap className="w-7 h-7 text-purple-400" />
+          <div>
             <h1 className="text-2xl font-bold">Cadências de Vendas</h1>
+            <p className="text-muted-foreground text-sm">Sequências de follow-up para o processo comercial</p>
           </div>
-          <p className="text-muted-foreground mt-1 ml-10">
-            Configure sequências de follow-up automatizadas para cada etapa do processo comercial
-          </p>
         </div>
-        <Button onClick={() => openForm()} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Cadência
+        <Button
+          onClick={() => setCadenciaDialog({ open: true, initial: null })}
+          className="bg-primary hover:bg-primary/90"
+        >
+          <Plus className="w-4 h-4 mr-2" /> Nova Cadência
         </Button>
       </div>
 
@@ -278,254 +267,182 @@ export default function ConfigCadencias() {
         <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
             <p className="text-2xl font-bold text-purple-400">{cadencias.length}</p>
-            <p className="text-xs text-muted-foreground">Cadências criadas</p>
+            <p className="text-xs text-muted-foreground">Cadências</p>
           </CardContent>
         </Card>
         <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-green-400">{totalAtivas}</p>
+            <p className="text-2xl font-bold text-green-400">{cadencias.filter((c: any) => c.ativa).length}</p>
             <p className="text-xs text-muted-foreground">Ativas</p>
           </CardContent>
         </Card>
         <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-primary">{totalSteps}</p>
+            <p className="text-2xl font-bold text-primary">
+              {cadencias.reduce((acc: number, c: any) => acc + parseSteps(c.steps).length, 0)}
+            </p>
             <p className="text-xs text-muted-foreground">Steps totais</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Cadências List */}
-      <div className="space-y-4">
-        {cadencias.map((cadencia) => {
-          const isExpanded = expandedCadencia === cadencia.id;
-          const duracao = cadencia.steps.length > 0 ? Math.max(...cadencia.steps.map((s) => s.dia)) : 0;
+      {/* List */}
+      {cadencias.length === 0 ? (
+        <Card className="bg-card/50 border-border">
+          <CardContent className="py-16 text-center">
+            <Zap className="w-12 h-12 mx-auto mb-4 text-muted-foreground opacity-30" />
+            <p className="text-muted-foreground">Nenhuma cadência criada</p>
+            <p className="text-xs text-muted-foreground mt-1">Clique em "Nova Cadência" para começar</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {cadencias.map((cad: any) => {
+            const steps = parseSteps(cad.steps);
+            const duracao = steps.length > 0 ? Math.max(...steps.map((s) => s.dia)) : 0;
+            const isExpanded = expanded === cad.id;
 
-          return (
-            <Card key={cadencia.id} className={`border-border overflow-hidden ${cadencia.ativa ? "bg-card" : "bg-card/50"}`}>
-              {/* Header */}
-              <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#2f2f2f]"
-                onClick={() => setExpandedCadencia(isExpanded ? null : cadencia.id)}
-              >
-                <div className="flex items-center gap-3">
-                  {isExpanded ? <ChevronDown className="w-5 h-5 text-muted-foreground" /> : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{cadencia.nome}</h3>
-                      {cadencia.ativa ? (
-                        <Badge className="bg-green-900/30 text-green-300 text-xs">Ativa</Badge>
-                      ) : (
-                        <Badge className="bg-[#444444]/50 text-muted-foreground text-xs">Inativa</Badge>
-                      )}
-                    </div>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-muted-foreground">Gatilho: {cadencia.gatilho}</span>
-                      <span className="text-xs text-muted-foreground">·</span>
-                      <span className="text-xs text-muted-foreground">{cadencia.steps.length} steps</span>
-                      <span className="text-xs text-muted-foreground">·</span>
-                      <span className="text-xs text-muted-foreground">{duracao} dias</span>
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                  <div className="text-right text-xs text-muted-foreground">
-                    <p>{cadencia.totalContatos} contatos</p>
-                    <p className="text-green-400">{cadencia.taxaResposta}% resposta</p>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => handleDuplicateCadencia(cadencia.id)} className="text-muted-foreground hover:text-white" title="Duplicar">
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                  <Switch checked={cadencia.ativa} onCheckedChange={() => handleToggleCadencia(cadencia.id)} />
-                  <Button variant="ghost" size="sm" onClick={() => openForm(cadencia)} className="text-primary hover:text-primary">
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeleteCadencia(cadencia.id)} className="text-red-400 hover:text-red-300">
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
-                </div>
-              </div>
-
-              {/* Expanded: Timeline */}
-              {isExpanded && (
-                <div className="border-t border-border p-4">
-                  <p className="text-sm text-foreground/80 mb-4">{cadencia.descricao}</p>
-
-                  {/* Timeline */}
-                  <div className="space-y-0">
-                    {cadencia.steps.map((step, idx) => {
-                      const config = TIPO_STEP_CONFIG[step.tipo];
-                      return (
-                        <div key={step.id} className="flex gap-4">
-                          {/* Timeline Line */}
-                          <div className="flex flex-col items-center w-16 flex-shrink-0">
-                            <div className="text-xs font-bold text-foreground/80 bg-[#333333] px-2 py-1 rounded mb-1">
-                              Dia {step.dia}
-                            </div>
-                            {idx < cadencia.steps.length - 1 && (
-                              <div className="flex-1 w-px bg-[#444444] min-h-[20px]" />
-                            )}
-                          </div>
-
-                          {/* Step Card */}
-                          <div className={`flex-1 mb-3 p-3 rounded-lg border ${config.cor} bg-opacity-20`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                {config.icon}
-                                <Badge className={`text-xs ${config.cor}`}>{config.label}</Badge>
-                                <span className="font-medium text-sm">{step.titulo}</span>
-                              </div>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="sm" onClick={() => openStepForm(cadencia.id, step)} className="text-primary hover:text-primary h-6 w-6 p-0">
-                                  <Pencil className="w-3 h-3" />
-                                </Button>
-                                <Button variant="ghost" size="sm" onClick={() => handleDeleteStep(cadencia.id, step.id)} className="text-red-400 hover:text-red-300 h-6 w-6 p-0">
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">{step.descricao}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* Add Step */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openStepForm(cadencia.id)}
-                    className="mt-2 border-border border-dashed w-full"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Step
-                  </Button>
-
-                  {cadencia.steps.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Zap className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                      <p>Nenhum step configurado</p>
-                      <p className="text-xs mt-1">Adicione o primeiro step para definir a sequência</p>
-                    </div>
-                  )}
-                </div>
-              )}
-            </Card>
-          );
-        })}
-      </div>
-
-      {/* Cadência Form Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
-        <DialogContent className="bg-card border-border max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingCadencia ? "Editar Cadência" : "Nova Cadência"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Nome *</label>
-              <Input
-                value={form.nome}
-                onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                placeholder="Ex: Prospecção Outbound - ICP Tier 1"
-                className="mt-1 bg-[#333333] border-border"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Descrição</label>
-              <Textarea
-                value={form.descricao}
-                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                placeholder="Descreva o objetivo e contexto desta cadência..."
-                className="mt-1 bg-[#333333] border-border"
-                rows={3}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Gatilho</label>
-              <select
-                value={form.gatilho}
-                onChange={(e) => setForm({ ...form, gatilho: e.target.value })}
-                className="mt-1 w-full h-10 px-3 rounded-md bg-[#333333] border border-border text-sm text-white"
-              >
-                {GATILHOS.map((g) => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-3 justify-end pt-2 border-t border-border">
-              <Button variant="outline" onClick={() => setShowForm(false)} className="border-border">Cancelar</Button>
-              <Button onClick={handleSaveCadencia} className="bg-yellow-500 hover:bg-yellow-600 text-black">
-                {editingCadencia ? "Salvar Alterações" : "Criar Cadência"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Step Form Dialog */}
-      <Dialog
-        open={!!showStepForm || !!editingStep}
-        onOpenChange={() => { setShowStepForm(null); setEditingStep(null); }}
-      >
-        <DialogContent className="bg-card border-border max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingStep ? "Editar Step" : "Novo Step"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-foreground/80">Dia</label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={stepForm.dia}
-                  onChange={(e) => setStepForm({ ...stepForm, dia: parseInt(e.target.value) || 1 })}
-                  className="mt-1 bg-[#333333] border-border"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground/80">Tipo de Ação</label>
-                <select
-                  value={stepForm.tipo}
-                  onChange={(e) => setStepForm({ ...stepForm, tipo: e.target.value as CadenciaStep["tipo"] })}
-                  className="mt-1 w-full h-10 px-3 rounded-md bg-[#333333] border border-border text-sm text-white"
+            return (
+              <Card key={cad.id} className={`border-border overflow-hidden ${cad.ativa ? "bg-card" : "bg-card/50"}`}>
+                {/* Header row */}
+                <div
+                  className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#2f2f2f]"
+                  onClick={() => setExpanded(isExpanded ? null : cad.id)}
                 >
-                  {Object.entries(TIPO_STEP_CONFIG).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Título *</label>
-              <Input
-                value={stepForm.titulo}
-                onChange={(e) => setStepForm({ ...stepForm, titulo: e.target.value })}
-                placeholder="Ex: Email de abertura personalizado"
-                className="mt-1 bg-[#333333] border-border"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Descrição / Instruções</label>
-              <Textarea
-                value={stepForm.descricao}
-                onChange={(e) => setStepForm({ ...stepForm, descricao: e.target.value })}
-                placeholder="Descreva o que o vendedor deve fazer neste step..."
-                className="mt-1 bg-[#333333] border-border"
-                rows={3}
-              />
-            </div>
-            <div className="flex gap-3 justify-end pt-2 border-t border-border">
-              <Button variant="outline" onClick={() => { setShowStepForm(null); setEditingStep(null); }} className="border-border">Cancelar</Button>
-              <Button onClick={handleSaveStep} className="bg-yellow-500 hover:bg-yellow-600 text-black">
-                {editingStep ? "Salvar" : "Adicionar Step"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+                  <div className="flex items-center gap-3">
+                    {isExpanded
+                      ? <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                      : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-semibold">{cad.nome}</span>
+                        <Badge className={cad.ativa ? "bg-green-900/30 text-green-300 text-xs" : "bg-[#444]/50 text-muted-foreground text-xs"}>
+                          {cad.ativa ? "Ativa" : "Inativa"}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground mt-0.5">
+                        {steps.length} steps{duracao > 0 ? ` · ${duracao} dias` : ""}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                    <Switch
+                      checked={cad.ativa}
+                      onCheckedChange={() => handleToggle(cad.id, cad.ativa)}
+                    />
+                    <Button
+                      variant="ghost" size="sm"
+                      onClick={() => setCadenciaDialog({ open: true, id: cad.id, initial: { nome: cad.nome, descricao: cad.descricao || "" } })}
+                      className="text-primary hover:text-primary"
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost" size="sm"
+                      onClick={() => deleteMutation.mutate({ id: cad.id })}
+                      className="text-red-400 hover:text-red-300"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Expanded: description + steps */}
+                {isExpanded && (
+                  <div className="border-t border-border p-4">
+                    {cad.descricao && (
+                      <p className="text-sm text-foreground/70 mb-4">{cad.descricao}</p>
+                    )}
+
+                    {/* Timeline */}
+                    <div className="space-y-0">
+                      {steps.map((step, idx) => {
+                        const cfg = TIPO_CONFIG[step.tipo] || TIPO_CONFIG.tarefa;
+                        return (
+                          <div key={step.id} className="flex gap-4">
+                            <div className="flex flex-col items-center w-14 flex-shrink-0">
+                              <div className="text-xs font-bold text-foreground/80 bg-[#333] px-2 py-1 rounded mb-1">
+                                Dia {step.dia}
+                              </div>
+                              {idx < steps.length - 1 && (
+                                <div className="flex-1 w-px bg-[#444] min-h-[20px]" />
+                              )}
+                            </div>
+                            <div className={`flex-1 mb-3 p-3 rounded-lg border ${cfg.cor}`}>
+                              <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2">
+                                  {cfg.icon}
+                                  <Badge className={`text-xs ${cfg.cor}`}>{cfg.label}</Badge>
+                                  <span className="font-medium text-sm">{step.titulo}</span>
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    variant="ghost" size="sm"
+                                    className="text-primary hover:text-primary h-6 w-6 p-0"
+                                    onClick={() => setStepDialog({ open: true, cadenciaId: cad.id, initial: step })}
+                                  >
+                                    <Pencil className="w-3 h-3" />
+                                  </Button>
+                                  <Button
+                                    variant="ghost" size="sm"
+                                    className="text-red-400 hover:text-red-300 h-6 w-6 p-0"
+                                    onClick={() => handleDeleteStep(cad.id, steps, step.id)}
+                                  >
+                                    <Trash2 className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              </div>
+                              {step.descricao && (
+                                <p className="text-xs text-muted-foreground mt-1">{step.descricao}</p>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <Button
+                      variant="outline" size="sm"
+                      onClick={() => setStepDialog({ open: true, cadenciaId: cad.id, initial: null })}
+                      className="mt-2 border-dashed border-border w-full"
+                    >
+                      <Plus className="w-4 h-4 mr-2" /> Adicionar Step
+                    </Button>
+
+                    {steps.length === 0 && (
+                      <p className="text-center text-xs text-muted-foreground mt-4">
+                        Nenhum step — clique em "Adicionar Step" para começar
+                      </p>
+                    )}
+                  </div>
+                )}
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Cadência Dialog */}
+      <CadenciaDialog
+        open={cadenciaDialog.open}
+        initial={cadenciaDialog.initial}
+        onClose={() => setCadenciaDialog({ open: false, initial: null })}
+        onSave={handleSaveCadencia}
+      />
+
+      {/* Step Dialog */}
+      <StepDialog
+        open={stepDialog.open}
+        initial={stepDialog.initial}
+        onClose={() => setStepDialog({ open: false, cadenciaId: null, initial: null })}
+        onSave={(step) => {
+          if (stepDialog.cadenciaId === null) return;
+          const cad = cadencias.find((c: any) => c.id === stepDialog.cadenciaId);
+          if (!cad) return;
+          handleSaveStep(stepDialog.cadenciaId, parseSteps(cad.steps), step);
+        }}
+      />
     </div>
   );
 }
