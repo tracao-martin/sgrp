@@ -23,6 +23,7 @@ import {
   Settings,
   Menu,
   X,
+  Shield,
 } from "lucide-react";
 
 interface MenuItemProps {
@@ -106,7 +107,7 @@ function Submenu({
 }
 
 export function SGRPLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout, isAdmin, isManagerOrAdmin } = useSGRPAuth();
+  const { user, logout, isAdmin, isManagerOrAdmin, isSuperAdmin } = useSGRPAuth();
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [configOpen, setConfigOpen] = useState(
@@ -238,6 +239,18 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
                 label="Usuários"
                 href="/admin/usuarios"
                 isActive={location === "/admin/usuarios"}
+              />
+            </>
+          )}
+
+          {/* Superadmin Menu */}
+          {isSuperAdmin() && sidebarOpen && (
+            <>
+              <MenuItem
+                icon={<Shield className="w-5 h-5" />}
+                label="Super Admin"
+                href="/admin"
+                isActive={location === "/admin"}
               />
             </>
           )}

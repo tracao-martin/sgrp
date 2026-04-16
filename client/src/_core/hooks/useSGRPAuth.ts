@@ -2,7 +2,7 @@ import { useAuth } from "./useAuth";
 import { useLocation } from "wouter";
 import { useEffect } from "react";
 
-export type UserRole = "admin" | "gerente" | "vendedor";
+export type UserRole = "superadmin" | "admin" | "gerente" | "vendedor";
 
 export interface SGRPUser {
   id: number;
@@ -34,6 +34,11 @@ export function useSGRPAuth() {
     if (!user) return false;
 
     const permissions: Record<UserRole, string[]> = {
+      superadmin: [
+        "manage_users", "manage_companies", "manage_contacts", "manage_leads",
+        "manage_opportunities", "manage_tasks", "manage_proposals",
+        "view_dashboard", "view_analytics", "send_emails", "manage_pipeline_stages",
+      ],
       admin: [
         "manage_users",
         "manage_companies",
@@ -76,7 +81,11 @@ export function useSGRPAuth() {
    * Verificar se usuário é admin
    */
   const isAdmin = (): boolean => {
-    return user?.role === "admin";
+    return user?.role === "admin" || user?.role === "superadmin";
+  };
+
+  const isSuperAdmin = (): boolean => {
+    return user?.role === "superadmin";
   };
 
   /**
@@ -101,6 +110,7 @@ export function useSGRPAuth() {
     logout,
     hasPermission,
     isAdmin,
+    isSuperAdmin,
     isManagerOrAdmin,
     isSalesperson,
   };
