@@ -17,7 +17,8 @@ import {
 import { icpsRouter } from "./icps";
 import { leadCadencesRouter, disqualifyReasonsRouter } from "./cadences";
 import { accountContactsRouter } from "./accountContacts";
-import { eq, desc, and, asc, lte, inArray } from "drizzle-orm";
+import { eq, desc, and, asc, lte, inArray, gt, or, isNull } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 
 // Helper to get orgId from context user
 function orgId(ctx: { user: { organizationId: number } }) {
@@ -623,6 +624,8 @@ export const activitiesRouter = router({
         tipo: z.enum(["email", "chamada", "reuniao", "nota", "proposta", "whatsapp", "visita", "outro"]),
         titulo: z.string().min(1),
         descricao: z.string().optional(),
+        status: z.enum(["pendente", "realizada"]).default("realizada"),
+        data_agendada: z.string().optional(),
         opportunity_id: z.number().optional(),
         contact_id: z.number().optional(),
         company_id: z.number().optional(),
@@ -632,11 +635,13 @@ export const activitiesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+      const { data_agendada, ...rest } = input;
       await db.insert(activities).values({
-        ...input,
+        ...rest,
         organizationId: orgId(ctx),
         usuario_id: ctx.user.id,
         data_atividade: new Date(),
+        data_agendada: data_agendada ? new Date(data_agendada) : null,
       } as any);
       return { success: true };
     }),
@@ -656,13 +661,19 @@ export const activitiesRouter = router({
         tipo: z.enum(["email", "chamada", "reuniao", "nota", "proposta", "whatsapp", "visita", "outro"]).optional(),
         titulo: z.string().optional(),
         descricao: z.string().optional(),
+        status: z.enum(["pendente", "realizada"]).optional(),
+        data_agendada: z.string().nullable().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      const { id, ...data } = input;
-      await db.update(activities).set(data as any).where(and(eq(activities.id, id), eq(activities.organizationId, orgId(ctx))));
+      const { id, data_agendada, ...rest } = input;
+      const updateData: any = { ...rest };
+      if (data_agendada !== undefined) {
+        updateData.data_agendada = data_agendada ? new Date(data_agendada) : null;
+      }
+      await db.update(activities).set(updateData).where(and(eq(activities.id, id), eq(activities.organizationId, orgId(ctx))));
       return { success: true };
     }),
 
@@ -709,7 +720,30 @@ export const opportunitiesRouter = router({
       if (input?.stage_id) conditions.push(eq(opportunities.stage_id, input.stage_id));
       if (input?.status) conditions.push(eq(opportunities.status, input.status as any));
 
-      return db.select().from(opportunities).where(and(...conditions)).orderBy(desc(opportunities.createdAt));
+      const deals = await db.select().from(opportunities).where(and(...conditions)).orderBy(desc(opportunities.createdAt));
+
+      // Compute em_risco: open deals with no pending future activity
+      const openIds = deals.filter((d) => d.status === "aberta").map((d) => d.id);
+      let dealsWithNextStep = new Set<number>();
+      if (openIds.length > 0) {
+        const now = new Date();
+        const pending = await db
+          .select({ opportunityId: activities.opportunity_id })
+          .from(activities)
+          .where(
+            and(
+              eq(activities.organizationId, orgId(ctx)),
+              eq(activities.status as any, "pendente"),
+              inArray(activities.opportunity_id as any, openIds)
+            )
+          );
+        pending.forEach((r) => { if (r.opportunityId) dealsWithNextStep.add(r.opportunityId); });
+      }
+
+      return deals.map((deal) => ({
+        ...deal,
+        em_risco: deal.status === "aberta" && !dealsWithNextStep.has(deal.id),
+      }));
     }),
 
   getById: protectedProcedure
@@ -727,7 +761,7 @@ export const opportunitiesRouter = router({
     .input(
       z.object({
         company_id: z.number(),
-        contact_id: z.number().optional(),
+        contact_id: z.number(),
         lead_id: z.number().optional(),
         titulo: z.string().min(1),
         descricao: z.string().optional(),
@@ -787,6 +821,14 @@ export const opportunitiesRouter = router({
         qualTemProximoPasso: z.boolean().optional(),
         qualTemCriterioDecisao: z.boolean().optional(),
       })
+      .refine(
+        (data) => data.status !== "ganha" || (!!data.motivo_ganho && data.motivo_ganho.trim().length > 0),
+        { message: "Motivo de ganho é obrigatório ao fechar como Ganho", path: ["motivo_ganho"] }
+      )
+      .refine(
+        (data) => data.status !== "perdida" || (!!data.motivo_perda && data.motivo_perda.trim().length > 0),
+        { message: "Motivo de perda é obrigatório ao fechar como Perdido", path: ["motivo_perda"] }
+      )
     )
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
@@ -833,6 +875,46 @@ export const opportunitiesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
+
+      // REGRA DE FERRO 2: Avanço condicionado
+      // 1. Deal deve ter ao menos uma atividade registrada
+      const dealActivities = await db
+        .select({ id: activities.id })
+        .from(activities)
+        .where(
+          and(
+            eq(activities.organizationId, orgId(ctx)),
+            eq(activities.opportunity_id as any, input.id)
+          )
+        )
+        .limit(1);
+
+      if (dealActivities.length === 0) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Não é possível avançar: registre pelo menos uma atividade antes de mudar de etapa.",
+        });
+      }
+
+      // 2. Deal deve ter ao menos um próximo passo agendado (atividade pendente)
+      const nextStep = await db
+        .select({ id: activities.id })
+        .from(activities)
+        .where(
+          and(
+            eq(activities.organizationId, orgId(ctx)),
+            eq(activities.opportunity_id as any, input.id),
+            eq(activities.status as any, "pendente")
+          )
+        )
+        .limit(1);
+
+      if (nextStep.length === 0) {
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "Não é possível avançar: agende o próximo passo antes de mudar de etapa.",
+        });
+      }
 
       // Get stage probability for auto-update
       const stage = await db.select().from(pipelineStages).where(

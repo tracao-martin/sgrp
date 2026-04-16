@@ -6,7 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
   Phone, Mail, Calendar, MessageSquare, FileText, Plus, Loader, Trash2, Clock,
-  Pencil, MapPin, Send, MoreHorizontal,
+  Pencil, MapPin, Send, MoreHorizontal, CalendarClock, CheckCircle2,
 } from "lucide-react";
 
 // ============================================================================
@@ -42,18 +42,24 @@ function ActivityFormDialog({
 }: {
   open: boolean;
   onClose: () => void;
-  onSubmit: (data: { tipo: string; descricao: string }) => void;
+  onSubmit: (data: { tipo: string; descricao: string; status: string; data_agendada?: string }) => void;
   isPending: boolean;
-  initialData?: { tipo: string; descricao: string };
+  initialData?: { tipo: string; descricao: string; status?: string; data_agendada?: string };
   title: string;
 }) {
   const [tipo, setTipo] = useState(initialData?.tipo || "nota");
   const [descricao, setDescricao] = useState(initialData?.descricao || "");
+  const [status, setStatus] = useState<"realizada" | "pendente">(
+    (initialData?.status as "realizada" | "pendente") || "realizada"
+  );
+  const [dataAgendada, setDataAgendada] = useState(initialData?.data_agendada || "");
 
   React.useEffect(() => {
     if (open) {
       setTipo(initialData?.tipo || "nota");
       setDescricao(initialData?.descricao || "");
+      setStatus((initialData?.status as "realizada" | "pendente") || "realizada");
+      setDataAgendada(initialData?.data_agendada || "");
     }
   }, [open, initialData]);
 
@@ -90,6 +96,50 @@ function ActivityFormDialog({
             </div>
           </div>
 
+          {/* Status toggle: Realizada vs Pendente */}
+          <div>
+            <label className="text-sm font-medium text-foreground/80 mb-2 block">Tipo de registro</label>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                onClick={() => setStatus("realizada")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-sm transition-all ${
+                  status === "realizada"
+                    ? "border-green-500 bg-green-500/10 text-green-400"
+                    : "border-border bg-[#333333]/50 text-muted-foreground hover:border-green-500/50"
+                }`}
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Registrar (realizada)
+              </button>
+              <button
+                type="button"
+                onClick={() => setStatus("pendente")}
+                className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg border text-sm transition-all ${
+                  status === "pendente"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-[#333333]/50 text-muted-foreground hover:border-primary/50"
+                }`}
+              >
+                <CalendarClock className="w-4 h-4" />
+                Agendar (próximo passo)
+              </button>
+            </div>
+          </div>
+
+          {/* Scheduled date — only when pendente */}
+          {status === "pendente" && (
+            <div>
+              <label className="text-sm font-medium text-foreground/80">Data e hora agendada *</label>
+              <input
+                type="datetime-local"
+                value={dataAgendada}
+                onChange={(e) => setDataAgendada(e.target.value)}
+                className="w-full mt-1 bg-[#333333] border border-border rounded-md px-3 py-2 text-sm focus:ring-1 focus:ring-primary focus:border-primary"
+              />
+            </div>
+          )}
+
           {/* Description */}
           <div>
             <label className="text-sm font-medium text-foreground/80">Descrição</label>
@@ -106,9 +156,9 @@ function ActivityFormDialog({
             Cancelar
           </Button>
           <Button
-            onClick={() => onSubmit({ tipo, descricao })}
+            onClick={() => onSubmit({ tipo, descricao, status, data_agendada: dataAgendada || undefined })}
             className="bg-primary hover:bg-primary/90"
-            disabled={isPending || !descricao.trim()}
+            disabled={isPending || !descricao.trim() || (status === "pendente" && !dataAgendada)}
           >
             {isPending ? (
               <Loader className="w-4 h-4 animate-spin mr-2" />
@@ -188,24 +238,28 @@ export function ActivityTimeline({ opportunityId, contactId, leadId }: ActivityT
     onError: (err: any) => toast.error(`Erro: ${err.message}`),
   });
 
-  const handleCreate = (data: { tipo: string; descricao: string }) => {
+  const handleCreate = (data: { tipo: string; descricao: string; status: string; data_agendada?: string }) => {
     createMutation.mutate({
       tipo: data.tipo as any,
       titulo: data.descricao.slice(0, 50) || "Atividade",
       descricao: data.descricao,
+      status: data.status as any,
+      data_agendada: data.data_agendada,
       opportunity_id: opportunityId || undefined,
       contact_id: contactId || undefined,
       lead_id: leadId || undefined,
     });
   };
 
-  const handleUpdate = (data: { tipo: string; descricao: string }) => {
+  const handleUpdate = (data: { tipo: string; descricao: string; status: string; data_agendada?: string }) => {
     if (!editingActivity) return;
     updateMutation.mutate({
       id: editingActivity.id,
       tipo: data.tipo as any,
       titulo: data.descricao.slice(0, 50) || "Atividade",
       descricao: data.descricao,
+      status: data.status as any,
+      data_agendada: data.data_agendada || null,
     });
   };
 
@@ -247,28 +301,48 @@ export function ActivityTimeline({ opportunityId, contactId, leadId }: ActivityT
               {activities.map((activity: any) => {
                 const meta = getActivityMeta(activity.tipo);
                 const Icon = meta.icon;
+                const isPendente = activity.status === "pendente";
                 const createdAt = activity.createdAt || activity.data_atividade || activity.created_at;
+                const displayDate = isPendente && activity.data_agendada ? activity.data_agendada : createdAt;
 
                 return (
                   <div key={activity.id} className="flex gap-4 relative">
                     {/* Icon */}
                     <div
-                      className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 ${meta.color}`}
+                      className={`w-8 h-8 rounded-full flex items-center justify-center z-10 shrink-0 border-2 ${
+                        isPendente
+                          ? "border-primary bg-background"
+                          : `${meta.color} border-transparent`
+                      }`}
                     >
-                      <Icon className="w-4 h-4 text-white" />
+                      {isPendente
+                        ? <CalendarClock className="w-4 h-4 text-primary" />
+                        : <Icon className="w-4 h-4 text-white" />
+                      }
                     </div>
 
                     {/* Content */}
-                    <div className="flex-1 bg-[#333333]/50 rounded-lg p-3 group">
+                    <div className={`flex-1 rounded-lg p-3 group border ${
+                      isPendente
+                        ? "bg-primary/5 border-primary/30"
+                        : "bg-[#333333]/50 border-transparent"
+                    }`}>
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-semibold text-primary uppercase tracking-wider">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className={`text-xs font-semibold uppercase tracking-wider ${
+                              isPendente ? "text-primary" : "text-primary"
+                            }`}>
                               {meta.label}
                             </span>
+                            {isPendente && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
+                                Agendado
+                              </span>
+                            )}
                             <span className="text-xs text-muted-foreground">
-                              {createdAt
-                                ? new Date(createdAt).toLocaleDateString("pt-BR", {
+                              {displayDate
+                                ? new Date(displayDate).toLocaleDateString("pt-BR", {
                                     day: "2-digit",
                                     month: "short",
                                     year: "numeric",
@@ -323,7 +397,14 @@ export function ActivityTimeline({ opportunityId, contactId, leadId }: ActivityT
         onClose={() => setEditingActivity(null)}
         onSubmit={handleUpdate}
         isPending={updateMutation.isPending}
-        initialData={editingActivity ? { tipo: editingActivity.tipo, descricao: editingActivity.descricao || "" } : undefined}
+        initialData={editingActivity ? {
+          tipo: editingActivity.tipo,
+          descricao: editingActivity.descricao || "",
+          status: editingActivity.status || "realizada",
+          data_agendada: editingActivity.data_agendada
+            ? new Date(editingActivity.data_agendada).toISOString().slice(0, 16)
+            : undefined,
+        } : undefined}
         title="Editar Atividade"
       />
     </Card>
