@@ -13,6 +13,7 @@ import {
   tasks,
   icps,
   accountContacts,
+  leadCadences,
 } from "../../drizzle/schema";
 import { icpsRouter } from "./icps";
 import { leadCadencesRouter, disqualifyReasonsRouter } from "./cadences";
@@ -364,6 +365,7 @@ export const leadsRouter = router({
         porte: z.string().optional(),
         icp_id: z.number().optional(),
         cadencia: z.string().optional(),
+        cadencia_id: z.number().optional(),
         fase_cadencia: z.string().optional(),
         notas: z.string().optional(),
       })
@@ -372,11 +374,33 @@ export const leadsRouter = router({
       requirePermission(ctx.user, "manage_leads");
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      const result = await db.insert(leads).values({
+
+      const insertValues: any = {
         ...input,
         organizationId: orgId(ctx),
         responsavel_id: ctx.user.id,
-      } as any).returning();
+      };
+
+      if (input.cadencia_id) {
+        const cadence = await db
+          .select()
+          .from(leadCadences)
+          .where(and(eq(leadCadences.id, input.cadencia_id), eq(leadCadences.organizationId, orgId(ctx))))
+          .limit(1);
+        if (cadence[0]?.stages) {
+          try {
+            const stages = (JSON.parse(cadence[0].stages) as { id: string; name: string; order: number }[])
+              .sort((a, b) => a.order - b.order);
+            if (stages.length > 0) {
+              insertValues.cadenceStageId = stages[0].id;
+              insertValues.cadenceStageEnteredAt = new Date();
+              insertValues.cadenceEnteredAt = new Date();
+            }
+          } catch {}
+        }
+      }
+
+      const result = await db.insert(leads).values(insertValues).returning();
       return result[0] || { success: true };
     }),
 
@@ -451,6 +475,39 @@ export const leadsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
       const { id, ...updateData } = input;
+
+      if (input.cadencia_id !== undefined) {
+        const current = await db
+          .select({ cadencia_id: leads.cadencia_id })
+          .from(leads)
+          .where(and(eq(leads.id, id), eq(leads.organizationId, orgId(ctx))))
+          .limit(1);
+        const currentCadenciaId = current[0]?.cadencia_id;
+
+        if (input.cadencia_id !== null && input.cadencia_id !== currentCadenciaId) {
+          const cadence = await db
+            .select()
+            .from(leadCadences)
+            .where(and(eq(leadCadences.id, input.cadencia_id), eq(leadCadences.organizationId, orgId(ctx))))
+            .limit(1);
+          if (cadence[0]?.stages) {
+            try {
+              const stages = (JSON.parse(cadence[0].stages) as { id: string; name: string; order: number }[])
+                .sort((a, b) => a.order - b.order);
+              if (stages.length > 0) {
+                (updateData as any).cadenceStageId = stages[0].id;
+                (updateData as any).cadenceStageEnteredAt = new Date();
+                (updateData as any).cadenceEnteredAt = new Date();
+              }
+            } catch {}
+          }
+        } else if (input.cadencia_id === null && currentCadenciaId !== null) {
+          (updateData as any).cadenceStageId = null;
+          (updateData as any).cadenceStageEnteredAt = null;
+          (updateData as any).cadenceEnteredAt = null;
+        }
+      }
+
       await db.update(leads).set({ ...updateData, updatedAt: new Date() } as any).where(and(eq(leads.id, id), eq(leads.organizationId, orgId(ctx))));
       return { success: true };
     }),
@@ -539,6 +596,7 @@ export const leadsRouter = router({
         leadId: z.number(),
         faseAnterior: z.string(),
         faseNova: z.string(),
+        stageId: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -546,10 +604,16 @@ export const leadsRouter = router({
       const db = await getDb();
       if (!db) throw new Error("Database not available");
 
+      const updateFields: any = { fase_cadencia: input.faseNova, updatedAt: new Date() };
+      if (input.stageId) {
+        updateFields.cadenceStageId = input.stageId;
+        updateFields.cadenceStageEnteredAt = new Date();
+      }
+
       // Update lead's cadence phase
       await db
         .update(leads)
-        .set({ fase_cadencia: input.faseNova, updatedAt: new Date() } as any)
+        .set(updateFields)
         .where(and(eq(leads.id, input.leadId), eq(leads.organizationId, orgId(ctx))));
 
       // Log the activity in the activities table

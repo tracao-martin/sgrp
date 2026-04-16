@@ -187,6 +187,9 @@ export const leads = pgTable("leads", {
   notas: text("notas"),
   motivo_desqualificacao: varchar("motivo_desqualificacao", { length: 255 }),
   cadencia_id: integer("cadencia_id"),
+  cadenceStageId: varchar("cadence_stage_id", { length: 255 }),
+  cadenceStageEnteredAt: timestamp("cadence_stage_entered_at"),
+  cadenceEnteredAt: timestamp("cadence_entered_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

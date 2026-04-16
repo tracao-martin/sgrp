@@ -46,6 +46,9 @@ interface LeadRow {
   visivelPara: string;
   cadencia: string;
   faseCadencia: string;
+  cadenciaId: number | null;
+  cadenceStageId: string;
+  cadenceEnteredAt: string | null;
   linkedin: string;
   site: string;
   cpfCnpj: string;
@@ -71,9 +74,27 @@ interface LeadFormData {
   linkedin: string;
   site: string;
   cpfCnpj: string;
-  cadencia: string;
+  cadenciaId: string;
   visivelPara: string;
   notas: string;
+}
+
+interface Stage {
+  id: string;
+  name: string;
+  order: number;
+}
+
+interface CadenceWithStages {
+  id: number;
+  nome: string;
+  stages: Stage[];
+}
+
+interface KanbanPhase {
+  id: string;
+  nome: string;
+  cor: string;
 }
 
 const LEAD_SOURCES = ["Instagram", "WhatsApp", "Indicação", "Site", "LinkedIn", "Outros"];
@@ -110,16 +131,12 @@ const ALL_COLUMNS = [
   { key: "valor_estimado", label: "Valor Estimado", defaultVisible: false },
 ];
 
-// Cadence phases for Kanban
-const CADENCE_PHASES = [
-  { id: "sem_cadencia", nome: "Sem Cadência", cor: "#555555" },
-  { id: "novo", nome: "Novo", cor: "#ffbf19" },
-  { id: "primeiro_contato", nome: "Primeiro Contato", cor: "#8b5cf6" },
-  { id: "followup_1", nome: "Follow-up 1", cor: "#f59e0b" },
-  { id: "followup_2", nome: "Follow-up 2", cor: "#f97316" },
-  { id: "qualificacao", nome: "Qualificação", cor: "#22c55e" },
-  { id: "apresentacao", nome: "Apresentação", cor: "#3b82f6" },
+const STAGE_COLORS = [
+  "#ffbf19", "#8b5cf6", "#f59e0b", "#f97316",
+  "#22c55e", "#3b82f6", "#ec4899", "#06b6d4", "#84cc16", "#ef4444",
 ];
+
+const SEM_CADENCIA_PHASE: KanbanPhase = { id: "sem_cadencia", nome: "Sem Cadência", cor: "#555555" };
 
 // ============================================================================
 // HELPER: map backend lead to LeadRow
@@ -144,6 +161,9 @@ function mapLeadToRow(lead: any): LeadRow {
     visivelPara: "Todos",
     cadencia: lead.cadencia || "",
     faseCadencia: lead.fase_cadencia || lead.faseCadencia || "",
+    cadenciaId: lead.cadencia_id || null,
+    cadenceStageId: lead.cadenceStageId || "",
+    cadenceEnteredAt: lead.cadenceEnteredAt ? new Date(lead.cadenceEnteredAt).toISOString() : null,
     linkedin: lead.linkedin || "",
     site: lead.site || "",
     cpfCnpj: lead.cpf_cnpj || lead.cpfCnpj || "",
@@ -449,7 +469,7 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving, icps, 
   const [form, setForm] = useState<LeadFormData>({
     nome: "", cargo: "", telefone: "", email: "", empresa: "", origem: "",
     temperatura: "frio", icp: "", setor: "", porte: "", regiao: "",
-    valor_estimado: "", linkedin: "", site: "", cpfCnpj: "", cadencia: "",
+    valor_estimado: "", linkedin: "", site: "", cpfCnpj: "", cadenciaId: "",
     visivelPara: "Todos", notas: "",
   });
   const [errors, setErrors] = useState<Record<string, boolean>>({});
@@ -463,13 +483,14 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving, icps, 
         porte: editLead.porte, regiao: editLead.regiao,
         valor_estimado: editLead.valor_estimado?.toString() || "",
         linkedin: editLead.linkedin, site: editLead.site, cpfCnpj: editLead.cpfCnpj,
-        cadencia: editLead.cadencia, visivelPara: editLead.visivelPara, notas: editLead.notas,
+        cadenciaId: editLead.cadenciaId?.toString() || "",
+        visivelPara: editLead.visivelPara, notas: editLead.notas,
       });
     } else {
       setForm({
         nome: "", cargo: "", telefone: "", email: "", empresa: "", origem: "",
         temperatura: "frio", icp: "", setor: "", porte: "", regiao: "",
-        valor_estimado: "", linkedin: "", site: "", cpfCnpj: "", cadencia: "",
+        valor_estimado: "", linkedin: "", site: "", cpfCnpj: "", cadenciaId: "",
         visivelPara: "Todos", notas: "",
       });
     }
@@ -593,9 +614,9 @@ function LeadFormDialog({ open, onOpenChange, editLead, onSave, isSaving, icps, 
           </div>
           <div>
             <label className="text-xs font-medium text-muted-foreground">Cadência</label>
-            <select className={inputClass("cadencia")} value={form.cadencia} onChange={e => update("cadencia", e.target.value)}>
+            <select className={inputClass("cadenciaId")} value={form.cadenciaId} onChange={e => update("cadenciaId", e.target.value)}>
               <option value="">Sem cadência</option>
-              {cadences.map(c => <option key={c.id} value={c.nome}>{c.nome}</option>)}
+              {cadences.map(c => <option key={c.id} value={c.id.toString()}>{c.nome}</option>)}
             </select>
           </div>
           <div>
@@ -902,6 +923,10 @@ function KanbanCard({ lead, onClick, onDragStart }: {
   onClick: () => void;
   onDragStart: (e: React.DragEvent) => void;
 }) {
+  const daysInCadence = lead.cadenceEnteredAt
+    ? Math.floor((Date.now() - new Date(lead.cadenceEnteredAt).getTime()) / (1000 * 60 * 60 * 24))
+    : null;
+
   return (
     <div
       draggable
@@ -909,21 +934,25 @@ function KanbanCard({ lead, onClick, onDragStart }: {
       onClick={onClick}
       className="bg-card border border-border rounded-lg p-3 cursor-grab active:cursor-grabbing hover:border-primary/40 transition-colors group"
     >
-      <div className="flex items-start justify-between mb-2">
+      <div className="flex items-start justify-between mb-1.5">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <GripVertical className="w-3 h-3 text-muted-foreground/40 group-hover:text-muted-foreground/70 flex-shrink-0" />
             <p className="text-sm font-medium truncate">{lead.nome}</p>
           </div>
-          <p className="text-xs text-muted-foreground truncate ml-4.5">{lead.cargo} • {lead.empresa}</p>
+          <p className="text-xs text-muted-foreground truncate pl-4">{lead.empresa}</p>
         </div>
         <TemperatureBadge value={lead.temperatura} />
       </div>
-      <div className="flex items-center gap-2 mt-2">
+      {daysInCadence !== null && (
+        <p className="text-[10px] text-primary/70 pl-4 mb-1.5">
+          {daysInCadence === 0 ? "Entrou hoje na cadência" : `${daysInCadence} dia${daysInCadence === 1 ? "" : "s"} na cadência`}
+        </p>
+      )}
+      <div className="flex items-center gap-2 mt-1">
         {lead.origem && (
           <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#333] text-muted-foreground">{lead.origem}</span>
         )}
-        <StatusBadge value={lead.status} />
         <div className="flex-1" />
         <WhatsAppButton phone={lead.telefone} size="xs" />
       </div>
@@ -935,7 +964,7 @@ function KanbanCard({ lead, onClick, onDragStart }: {
 // KANBAN COLUMN (droppable)
 // ============================================================================
 function KanbanColumn({ phase, leads, isOver, onDragOver, onDrop, onDragLeave, onClickLead, onDragStartLead }: {
-  phase: typeof CADENCE_PHASES[0];
+  phase: KanbanPhase;
   leads: LeadRow[];
   isOver: boolean;
   onDragOver: (e: React.DragEvent) => void;
@@ -984,57 +1013,70 @@ function KanbanColumn({ phase, leads, isOver, onDragOver, onDrop, onDragLeave, o
 }
 
 // ============================================================================
-// KANBAN VIEW (with drag-and-drop + activity logging)
+// KANBAN VIEW (with cadence selector + dynamic stages)
 // ============================================================================
-function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (lead: LeadRow) => void }) {
+function LeadKanban({
+  leads,
+  cadencesWithStages,
+  onClickLead,
+}: {
+  leads: LeadRow[];
+  cadencesWithStages: CadenceWithStages[];
+  onClickLead: (lead: LeadRow) => void;
+}) {
+  const [selectedCadenceId, setSelectedCadenceId] = useState<number | null>(
+    cadencesWithStages[0]?.id ?? null
+  );
   const [draggedLeadId, setDraggedLeadId] = useState<number | null>(null);
   const [overPhaseId, setOverPhaseId] = useState<string | null>(null);
-  const [activityLog, setActivityLog] = useState<{ id: string; leadNome: string; usuario: string; data: string; faseAnterior: string; faseNova: string }[]>([]);
-  const [showLog, setShowLog] = useState(false);
+  const [leadPhaseOverrides, setLeadPhaseOverrides] = useState<Record<number, string>>({});
+
+  // Sync default selection when cadences load
+  useEffect(() => {
+    if (selectedCadenceId === null && cadencesWithStages.length > 0) {
+      setSelectedCadenceId(cadencesWithStages[0].id);
+    }
+  }, [cadencesWithStages]);
 
   const utils = trpc.useUtils();
   const movePhaseMutation = trpc.crm.leads.moveCadencePhase.useMutation({
-    onSuccess: () => {
-      utils.crm.leads.invalidate();
-      utils.crm.activities.invalidate();
+    onSuccess: () => { utils.crm.leads.list.invalidate(); },
+    onError: (err: any) => {
+      toast.error(`Erro ao mover: ${err.message}`);
+      utils.crm.leads.list.invalidate();
     },
-    onError: (err: any) => toast.error(`Erro ao salvar movimentação: ${err.message}`),
   });
 
-  const mapFaseToPhaseId = useCallback((faseCadencia: string): string => {
-    if (!faseCadencia) return "sem_cadencia";
-    const lower = faseCadencia.toLowerCase().trim();
-    const exact = CADENCE_PHASES.find(p => p.nome.toLowerCase() === lower);
-    if (exact) return exact.id;
-    const byId = CADENCE_PHASES.find(p => p.id === lower);
-    if (byId) return byId.id;
-    const partial = CADENCE_PHASES.find(p =>
-      p.nome.toLowerCase().includes(lower) || lower.includes(p.nome.toLowerCase())
-    );
-    if (partial) return partial.id;
-    return "sem_cadencia";
-  }, []);
+  const selectedCadence = cadencesWithStages.find(c => c.id === selectedCadenceId) ?? null;
+  const stages = selectedCadence?.stages ?? [];
 
-  const [leadPhases, setLeadPhases] = useState<Record<number, string>>({});
-
-  useEffect(() => {
-    const newPhases: Record<number, string> = {};
-    leads.forEach(lead => {
-      newPhases[lead.id] = lead.faseCadencia ? mapFaseToPhaseId(lead.faseCadencia) : "sem_cadencia";
-    });
-    setLeadPhases(newPhases);
-  }, [leads, mapFaseToPhaseId]);
+  const phases: KanbanPhase[] = useMemo(() => [
+    SEM_CADENCIA_PHASE,
+    ...stages.map((s, i) => ({ id: s.id, nome: s.name, cor: STAGE_COLORS[i % STAGE_COLORS.length] })),
+  ], [stages]);
 
   const leadsByPhase = useMemo(() => {
     const grouped: Record<string, LeadRow[]> = {};
-    CADENCE_PHASES.forEach(p => { grouped[p.id] = []; });
-    leads.forEach(lead => {
-      const phaseId = leadPhases[lead.id] || "sem_cadencia";
-      if (grouped[phaseId]) grouped[phaseId].push(lead);
-      else grouped["sem_cadencia"].push(lead);
+    phases.forEach(p => { grouped[p.id] = []; });
+
+    const leadsInCadence = leads.filter(l => l.cadenciaId === selectedCadenceId);
+    const leadsWithoutCadence = leads.filter(l => !l.cadenciaId);
+
+    leadsWithoutCadence.forEach(lead => {
+      grouped["sem_cadencia"].push(lead);
     });
+
+    leadsInCadence.forEach(lead => {
+      const stageId = leadPhaseOverrides[lead.id] || lead.cadenceStageId;
+      if (stageId && grouped[stageId]) {
+        grouped[stageId].push(lead);
+      } else if (stages[0]) {
+        grouped[stages[0].id].push(lead);
+      }
+    });
+
     return grouped;
-  }, [leads, leadPhases]);
+  }, [leads, phases, selectedCadenceId, stages, leadPhaseOverrides]);
 
   const handleDragStart = (e: React.DragEvent, leadId: number) => {
     setDraggedLeadId(leadId);
@@ -1056,89 +1098,87 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
     e.preventDefault();
     setOverPhaseId(null);
     if (draggedLeadId === null) return;
-    const currentPhaseId = leadPhases[draggedLeadId] || "sem_cadencia";
-    if (currentPhaseId === targetPhaseId) { setDraggedLeadId(null); return; }
     const lead = leads.find(l => l.id === draggedLeadId);
     if (!lead) { setDraggedLeadId(null); return; }
-    const fromPhase = CADENCE_PHASES.find(p => p.id === currentPhaseId);
-    const toPhase = CADENCE_PHASES.find(p => p.id === targetPhaseId);
 
-    setLeadPhases(prev => ({ ...prev, [draggedLeadId!]: targetPhaseId }));
+    const currentPhaseId = leadPhaseOverrides[draggedLeadId] || lead.cadenceStageId || "sem_cadencia";
+    if (currentPhaseId === targetPhaseId) { setDraggedLeadId(null); return; }
+
+    if (targetPhaseId === "sem_cadencia" || currentPhaseId === "sem_cadencia") {
+      toast.error("Use o formulário de edição para alterar a cadência do lead.");
+      setDraggedLeadId(null);
+      return;
+    }
+
+    const fromPhase = phases.find(p => p.id === currentPhaseId);
+    const toPhase = phases.find(p => p.id === targetPhaseId);
+
+    setLeadPhaseOverrides(prev => ({ ...prev, [draggedLeadId]: targetPhaseId }));
     movePhaseMutation.mutate({
       leadId: lead.id,
-      faseAnterior: fromPhase?.nome || "Sem Cadência",
+      faseAnterior: fromPhase?.nome || currentPhaseId,
       faseNova: toPhase?.nome || targetPhaseId,
+      stageId: targetPhaseId,
     });
 
-    const newEntry = {
-      id: `log-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-      leadNome: lead.nome,
-      usuario: "Administrador",
-      data: new Date().toISOString(),
-      faseAnterior: fromPhase?.nome || "Desconhecida",
-      faseNova: toPhase?.nome || "Desconhecida",
-    };
-    setActivityLog(prev => [newEntry, ...prev]);
     toast.success(
       <div className="flex items-center gap-2">
         <ArrowRight className="w-4 h-4 text-primary" />
-        <span><strong>{lead.nome}</strong> movido para <strong>{toPhase?.nome}</strong></span>
+        <span><strong>{lead.nome}</strong> → <strong>{toPhase?.nome}</strong></span>
       </div>
     );
     setDraggedLeadId(null);
   };
 
-  const formatDate = (iso: string) => {
-    const d = new Date(iso);
-    return d.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit", year: "numeric" }) +
-      " " + d.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
-  };
+  if (cadencesWithStages.length === 0) {
+    return (
+      <div className="bg-card border border-border rounded-lg py-16 text-center">
+        <LayoutGrid className="w-10 h-10 mx-auto mb-3 text-muted-foreground opacity-30" />
+        <p className="text-muted-foreground text-sm">Nenhuma cadência configurada</p>
+        <p className="text-xs text-muted-foreground mt-1">Configure cadências em Configurações → Cadências</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
-        <p className="text-sm text-muted-foreground">
-          Arraste os cards entre as fases para movimentar os leads na cadência
+      {/* Cadence selector */}
+      <div className="flex items-center gap-3">
+        <p className="text-sm text-muted-foreground flex-shrink-0">Visualizando cadência:</p>
+        <div className="flex gap-1.5 flex-wrap">
+          {cadencesWithStages.map(c => (
+            <button
+              key={c.id}
+              onClick={() => setSelectedCadenceId(c.id)}
+              className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                selectedCadenceId === c.id
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "border-border text-foreground/70 hover:border-foreground/30"
+              }`}
+            >
+              {c.nome}
+            </button>
+          ))}
+        </div>
+        <div className="flex-1" />
+        <p className="text-xs text-muted-foreground">
+          {(leadsByPhase[selectedCadence ? stages[0]?.id || "sem_cadencia" : "sem_cadencia"] || []).length > 0
+            ? ""
+            : ""
+          }
+          Arraste os cards para mover entre fases
         </p>
-        <Button variant="outline" size="sm" className="border-border gap-1.5" onClick={() => setShowLog(!showLog)}>
-          <RotateCcw className="w-3.5 h-3.5" />
-          Histórico ({activityLog.length})
-        </Button>
       </div>
 
-      {showLog && activityLog.length > 0 && (
-        <div className="bg-card border border-border rounded-lg p-4 max-h-60 overflow-y-auto">
-          <h4 className="text-sm font-medium mb-3">Timeline de Movimentações</h4>
-          <div className="space-y-3">
-            {activityLog.map(entry => (
-              <div key={entry.id} className="flex items-start gap-3 text-sm">
-                <div className="w-2 h-2 rounded-full bg-primary mt-1.5 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <p>
-                    <span className="font-medium">{entry.usuario}</span>
-                    {" moveu "}
-                    <span className="font-medium text-primary">{entry.leadNome}</span>
-                    {" de "}
-                    <span className="text-muted-foreground">{entry.faseAnterior}</span>
-                    {" → "}
-                    <span className="font-medium">{entry.faseNova}</span>
-                  </p>
-                  <p className="text-xs text-muted-foreground mt-0.5">{formatDate(entry.data)}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-
-      {showLog && activityLog.length === 0 && (
-        <div className="bg-card border border-border rounded-lg p-6 text-center text-sm text-muted-foreground">
-          Nenhuma movimentação registrada nesta sessão. Arraste um card para iniciar.
+      {selectedCadence && stages.length === 0 && (
+        <div className="bg-card border border-border rounded-lg py-10 text-center">
+          <p className="text-muted-foreground text-sm">Esta cadência não tem fases configuradas.</p>
+          <p className="text-xs text-muted-foreground mt-1">Configure fases em Configurações → Cadências</p>
         </div>
       )}
 
       <div className="flex gap-4 overflow-x-auto pb-4 -mx-2 px-2">
-        {CADENCE_PHASES.map(phase => (
+        {phases.map(phase => (
           <KanbanColumn
             key={phase.id}
             phase={phase}
@@ -1161,7 +1201,7 @@ function LeadKanban({ leads, onClickLead }: { leads: LeadRow[]; onClickLead: (le
 // ============================================================================
 export default function Leads() {
   const [, navigate] = useLocation();
-  const [activeTab, setActiveTab] = useState("lista");
+  const [activeTab, setActiveTab] = useState("cadencia");
   const [searchTerm, setSearchTerm] = useState("");
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
   const [page, setPage] = useState(1);
@@ -1212,6 +1252,20 @@ export default function Leads() {
       id: c.id,
       nome: c.nome,
     }));
+  }, [cadencesQuery.data]);
+
+  const cadencesWithStages = useMemo((): CadenceWithStages[] => {
+    return (cadencesQuery.data || [])
+      .filter((c: any) => c.ativa !== false)
+      .map((c: any) => ({
+        id: c.id as number,
+        nome: c.nome as string,
+        stages: (() => {
+          try {
+            return (JSON.parse(c.stages || "[]") as Stage[]).sort((a, b) => a.order - b.order);
+          } catch { return [] as Stage[]; }
+        })(),
+      }));
   }, [cadencesQuery.data]);
 
   // ========== MUTATIONS ==========
@@ -1293,14 +1347,22 @@ export default function Leads() {
     });
   }, [searchedLeads, filters]);
 
-  // Pagination
-  const totalPages = Math.max(1, Math.ceil(filteredLeads.length / pageSize));
+  // Per-tab filtered lead sets
+  const activeLeads = useMemo(
+    () => filteredLeads.filter(l => l.status !== "aposentado" && l.status !== "desqualificado" && l.status !== "convertido"),
+    [filteredLeads]
+  );
+  const aposentadoLeads = useMemo(() => filteredLeads.filter(l => l.status === "aposentado"), [filteredLeads]);
+  const desqualificadoLeads = useMemo(() => filteredLeads.filter(l => l.status === "desqualificado"), [filteredLeads]);
+
+  // Pagination (applies to active leads list tab)
+  const totalPages = Math.max(1, Math.ceil(activeLeads.length / pageSize));
   const paginatedLeads = useMemo(() => {
     const start = (page - 1) * pageSize;
-    return filteredLeads.slice(start, start + pageSize);
-  }, [filteredLeads, page, pageSize]);
+    return activeLeads.slice(start, start + pageSize);
+  }, [activeLeads, page, pageSize]);
 
-  useEffect(() => { setPage(1); }, [searchTerm, filters, pageSize]);
+  useEffect(() => { setPage(1); }, [searchTerm, filters, pageSize, activeTab]);
 
   // Selection
   const allOnPageSelected = paginatedLeads.length > 0 && paginatedLeads.every(l => selected.has(l.id));
@@ -1340,7 +1402,7 @@ export default function Leads() {
       setor: data.setor || undefined,
       regiao: data.regiao || undefined,
       porte: data.porte || undefined,
-      cadencia: data.cadencia || undefined,
+      cadencia_id: data.cadenciaId ? parseInt(data.cadenciaId) : undefined,
       notas: data.notas || undefined,
       icp: data.icp || undefined,
     } as any);
@@ -1365,7 +1427,7 @@ export default function Leads() {
       setor: data.setor || undefined,
       regiao: data.regiao || undefined,
       porte: data.porte || undefined,
-      cadencia: data.cadencia || undefined,
+      cadencia_id: data.cadenciaId ? parseInt(data.cadenciaId) : null,
       notas: data.notas || undefined,
     });
   };
@@ -1482,7 +1544,7 @@ export default function Leads() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold">Leads</h1>
-          <p className="text-sm text-muted-foreground">{filteredLeads.length} leads</p>
+          <p className="text-sm text-muted-foreground">{allLeads.length} leads · {activeLeads.length} ativos</p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" className="border-border gap-2" onClick={handleExportExcel}>
@@ -1504,17 +1566,32 @@ export default function Leads() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <div className="flex items-center justify-between">
           <TabsList>
-            <TabsTrigger value="lista" className="gap-1.5">
-              <List className="w-4 h-4" />
-              Leads Ativos
-            </TabsTrigger>
             <TabsTrigger value="cadencia" className="gap-1.5">
               <LayoutGrid className="w-4 h-4" />
               Cadência
             </TabsTrigger>
+            <TabsTrigger value="ativos" className="gap-1.5">
+              <List className="w-4 h-4" />
+              Leads Ativos
+              {activeLeads.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-[10px] h-4 px-1">{activeLeads.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="aposentados" className="gap-1.5">
+              Aposentados
+              {aposentadoLeads.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-[10px] h-4 px-1">{aposentadoLeads.length}</Badge>
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="desqualificados" className="gap-1.5">
+              Desqualificados
+              {desqualificadoLeads.length > 0 && (
+                <Badge variant="secondary" className="ml-1 text-[10px] h-4 px-1">{desqualificadoLeads.length}</Badge>
+              )}
+            </TabsTrigger>
           </TabsList>
 
-          {activeTab === "lista" && (
+          {activeTab === "ativos" && (
             <div className="flex items-center gap-2">
               <ContactFilters
                 filters={filters}
@@ -1547,8 +1624,8 @@ export default function Leads() {
           )}
         </div>
 
-        {/* LIST TAB */}
-        <TabsContent value="lista" className="mt-4">
+        {/* ACTIVE LEADS TABLE */}
+        <TabsContent value="ativos" className="mt-4">
           <div className="bg-card border border-border rounded-lg overflow-hidden">
             <Table>
               <TableHeader>
@@ -1626,7 +1703,7 @@ export default function Leads() {
               </div>
               <div className="flex items-center gap-3">
                 <span className="text-xs text-muted-foreground">
-                  Exibindo {filteredLeads.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, filteredLeads.length)} de {filteredLeads.length} leads
+                  Exibindo {activeLeads.length === 0 ? 0 : (page - 1) * pageSize + 1}–{Math.min(page * pageSize, activeLeads.length)} de {activeLeads.length} leads
                 </span>
                 <div className="flex items-center gap-1">
                   <Button
@@ -1654,7 +1731,81 @@ export default function Leads() {
 
         {/* KANBAN TAB */}
         <TabsContent value="cadencia" className="mt-4">
-          <LeadKanban leads={filteredLeads} onClickLead={(lead) => navigate(`/leads/${lead.id}`)} />
+          <LeadKanban
+            leads={activeLeads}
+            cadencesWithStages={cadencesWithStages}
+            onClickLead={(lead) => navigate(`/leads/${lead.id}`)}
+          />
+        </TabsContent>
+
+        {/* APOSENTADOS TAB */}
+        <TabsContent value="aposentados" className="mt-4">
+          <div className="bg-card border border-border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs font-medium text-muted-foreground">Nome</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Empresa</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Temperatura</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Cadência</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {aposentadoLeads.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground">Nenhum lead aposentado</TableCell></TableRow>
+                ) : aposentadoLeads.map(lead => (
+                  <TableRow key={lead.id}>
+                    <TableCell className="font-medium">{lead.nome}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{lead.empresa || "—"}</TableCell>
+                    <TableCell><TemperatureBadge value={lead.temperatura} /></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{lead.cadencia || "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-0.5">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setEditingLead(lead)} title="Editar"><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-red-400" onClick={() => handleDeleteLead(lead.id)} title="Excluir"><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        </TabsContent>
+
+        {/* DESQUALIFICADOS TAB */}
+        <TabsContent value="desqualificados" className="mt-4">
+          <div className="bg-card border border-border rounded-lg overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow className="hover:bg-transparent">
+                  <TableHead className="text-xs font-medium text-muted-foreground">Nome</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Empresa</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Temperatura</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground">Motivo</TableHead>
+                  <TableHead className="text-xs font-medium text-muted-foreground text-right">Ações</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {desqualificadoLeads.length === 0 ? (
+                  <TableRow><TableCell colSpan={5} className="text-center py-12 text-muted-foreground">Nenhum lead desqualificado</TableCell></TableRow>
+                ) : desqualificadoLeads.map(lead => (
+                  <TableRow key={lead.id}>
+                    <TableCell className="font-medium">{lead.nome}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{lead.empresa || "—"}</TableCell>
+                    <TableCell><TemperatureBadge value={lead.temperatura} /></TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{lead.motivoDesqualificacao || "—"}</TableCell>
+                    <TableCell>
+                      <div className="flex justify-end gap-0.5">
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0" onClick={() => setEditingLead(lead)} title="Editar"><Pencil className="w-4 h-4" /></Button>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-muted-foreground hover:text-red-400" onClick={() => handleDeleteLead(lead.id)} title="Excluir"><Trash2 className="w-4 h-4" /></Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         </TabsContent>
       </Tabs>
 
