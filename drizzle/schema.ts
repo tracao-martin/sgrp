@@ -17,7 +17,7 @@ import { relations } from "drizzle-orm";
 // ============================================================================
 
 export const orgPlanoEnum = pgEnum("org_plano", ["trial", "basico", "profissional", "enterprise"]);
-export const userRoleEnum = pgEnum("user_role", ["admin", "gerente", "vendedor"]);
+export const userRoleEnum = pgEnum("user_role", ["superadmin", "admin", "gerente", "vendedor"]);
 export const companyTamanhoEnum = pgEnum("company_tamanho", ["micro", "pequena", "media", "grande", "multinacional"]);
 export const companyStatusEnum = pgEnum("company_status", ["ativa", "inativa", "prospect"]);
 export const leadQualificacaoEnum = pgEnum("lead_qualificacao", ["frio", "morno", "quente", "qualificado"]);
