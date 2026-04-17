@@ -1233,11 +1233,17 @@ export default function Leads() {
 
   // ========== BACKEND QUERIES ==========
   const utils = trpc.useUtils();
-  const leadsQuery = trpc.crm.leads.list.useQuery({ limit: 500 });
+  const leadsQuery = trpc.crm.leads.list.useQuery(
+    { limit: 200 },
+    { staleTime: 30_000, refetchOnWindowFocus: false }
+  );
   const rawLeads = leadsQuery.data || [];
 
   // Real ICPs from backend
-  const icpsQuery = trpc.crm.icps.list.useQuery();
+  const icpsQuery = trpc.crm.icps.list.useQuery(
+    undefined,
+    { staleTime: 60_000, refetchOnWindowFocus: false }
+  );
   const icps = useMemo(() => {
     return (icpsQuery.data || []).filter((i: any) => i.ativa !== false).map((i: any) => ({
       id: i.id,
@@ -1246,7 +1252,10 @@ export default function Leads() {
   }, [icpsQuery.data]);
 
   // Real Cadences from backend
-  const cadencesQuery = trpc.crm.cadences.list.useQuery();
+  const cadencesQuery = trpc.crm.cadences.list.useQuery(
+    undefined,
+    { staleTime: 60_000, refetchOnWindowFocus: false }
+  );
   const cadences = useMemo(() => {
     return (cadencesQuery.data || []).filter((c: any) => c.ativa !== false).map((c: any) => ({
       id: c.id,
