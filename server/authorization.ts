@@ -21,6 +21,19 @@ export type Permission =
  * Role-based permissions matrix
  */
 const rolePermissions: Record<string, Permission[]> = {
+  superadmin: [
+    "manage_users",
+    "manage_companies",
+    "manage_contacts",
+    "manage_leads",
+    "manage_opportunities",
+    "manage_tasks",
+    "manage_proposals",
+    "view_dashboard",
+    "view_analytics",
+    "send_emails",
+    "manage_pipeline_stages",
+  ],
   admin: [
     "manage_users",
     "manage_companies",
@@ -94,10 +107,19 @@ export function requirePermission(user: User, permission: Permission): void {
  * Throw error if user is not admin
  */
 export function requireAdmin(user: User): void {
-  if (user.role !== "admin") {
+  if (user.role !== "admin" && user.role !== "superadmin") {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Apenas administradores podem acessar este recurso",
+    });
+  }
+}
+
+export function requireSuperAdmin(user: User): void {
+  if (user.role !== "superadmin") {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: "Apenas superadmins podem acessar este recurso",
     });
   }
 }
@@ -106,7 +128,7 @@ export function requireAdmin(user: User): void {
  * Throw error if user is not admin or gerente
  */
 export function requireManagerOrAdmin(user: User): void {
-  if (user.role !== "admin" && user.role !== "gerente") {
+  if (user.role !== "admin" && user.role !== "gerente" && user.role !== "superadmin") {
     throw new TRPCError({
       code: "FORBIDDEN",
       message: "Apenas gerentes e administradores podem acessar este recurso",
@@ -120,7 +142,7 @@ export function requireManagerOrAdmin(user: User): void {
  * Vendedores can only access their own resources
  */
 export function canAccessResource(user: User, resourceOwnerId: number): boolean {
-  if (user.role === "admin" || user.role === "gerente") {
+  if (user.role === "admin" || user.role === "gerente" || user.role === "superadmin") {
     return true;
   }
   return user.id === resourceOwnerId;

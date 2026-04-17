@@ -41,9 +41,7 @@ export const leadCadencesRouter = router({
       z.object({
         nome: z.string().min(1),
         descricao: z.string().optional(),
-        gatilho: z.string().optional(),
-        ativa: z.boolean().optional(),
-        steps: z.string().optional(), // JSON string
+        stages: z.string().optional(), // JSON: [{ id, name, order }]
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -55,9 +53,7 @@ export const leadCadencesRouter = router({
           organizationId: orgId(ctx),
           nome: input.nome,
           descricao: input.descricao || null,
-          gatilho: input.gatilho || null,
-          ativa: input.ativa ?? true,
-          steps: input.steps || "[]",
+          stages: input.stages || "[]",
         })
         .returning();
       return result[0];
@@ -69,9 +65,8 @@ export const leadCadencesRouter = router({
         id: z.number(),
         nome: z.string().optional(),
         descricao: z.string().optional(),
-        gatilho: z.string().optional(),
         ativa: z.boolean().optional(),
-        steps: z.string().optional(), // JSON string
+        stages: z.string().optional(), // JSON: [{ id, name, order }]
       })
     )
     .mutation(async ({ ctx, input }) => {
@@ -81,9 +76,8 @@ export const leadCadencesRouter = router({
       const updateData: Record<string, any> = { updatedAt: new Date() };
       if (data.nome !== undefined) updateData.nome = data.nome;
       if (data.descricao !== undefined) updateData.descricao = data.descricao;
-      if (data.gatilho !== undefined) updateData.gatilho = data.gatilho;
       if (data.ativa !== undefined) updateData.ativa = data.ativa;
-      if (data.steps !== undefined) updateData.steps = data.steps;
+      if (data.stages !== undefined) updateData.stages = data.stages;
 
       const result = await db
         .update(leadCadences)

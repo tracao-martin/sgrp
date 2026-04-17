@@ -23,6 +23,7 @@ import {
   Settings,
   Menu,
   X,
+  Shield,
 } from "lucide-react";
 
 interface MenuItemProps {
@@ -106,7 +107,7 @@ function Submenu({
 }
 
 export function SGRPLayout({ children }: { children: React.ReactNode }) {
-  const { user, logout, isAdmin, isManagerOrAdmin } = useSGRPAuth();
+  const { user, logout, isAdmin, isManagerOrAdmin, isSuperAdmin } = useSGRPAuth();
   const [location] = useLocation();
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [configOpen, setConfigOpen] = useState(
@@ -241,6 +242,18 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
               />
             </>
           )}
+
+          {/* Superadmin Menu */}
+          {isSuperAdmin() && sidebarOpen && (
+            <>
+              <MenuItem
+                icon={<Shield className="w-5 h-5" />}
+                label="Super Admin"
+                href="/admin"
+                isActive={location === "/admin"}
+              />
+            </>
+          )}
         </nav>
       </aside>
 
@@ -264,11 +277,13 @@ export function SGRPLayout({ children }: { children: React.ReactNode }) {
             <div className="text-right">
               <p className="text-sm font-medium">{user.name || "Usuário"}</p>
               <p className="text-xs text-muted-foreground capitalize">
-                {user.role === "gerente"
-                  ? "Gerente"
+                {user.role === "superadmin"
+                  ? "Super Admin"
                   : user.role === "admin"
                     ? "Administrador"
-                    : "Vendedor"}
+                    : user.role === "gerente"
+                      ? "Gerente"
+                      : "Vendedor"}
               </p>
             </div>
 

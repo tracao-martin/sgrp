@@ -27,6 +27,7 @@ import ConfigMetas from "./pages/ConfigMetas";
 import ConfigCadencias from "./pages/ConfigCadencias";
 import ContaDetalhe from "./pages/ContaDetalhe";
 import ContatoDetalhe from "./pages/ContatoDetalhe";
+import AdminPanel from "./pages/AdminPanel";
 
 function Router() {
   return (
@@ -54,6 +55,7 @@ function Router() {
       <Route path={"/configuracoes/metas"} component={() => <SGRPLayout><ConfigMetas /></SGRPLayout>} />
       <Route path={"/configuracoes/cadencias"} component={() => <SGRPLayout><ConfigCadencias /></SGRPLayout>} />
       <Route path={"/admin/usuarios"} component={() => <SGRPLayout><Usuarios /></SGRPLayout>} />
+      <Route path={"/admin"} component={() => <SGRPLayout><AdminPanel /></SGRPLayout>} />
       <Route path={"/404"} component={NotFound} />
       <Route component={NotFound} />
     </Switch>

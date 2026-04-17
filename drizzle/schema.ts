@@ -17,7 +17,7 @@ import { relations } from "drizzle-orm";
 // ============================================================================
 
 export const orgPlanoEnum = pgEnum("org_plano", ["trial", "basico", "profissional", "enterprise"]);
-export const userRoleEnum = pgEnum("user_role", ["admin", "gerente", "vendedor"]);
+export const userRoleEnum = pgEnum("user_role", ["superadmin", "admin", "gerente", "vendedor"]);
 export const companyTamanhoEnum = pgEnum("company_tamanho", ["micro", "pequena", "media", "grande", "multinacional"]);
 export const companyStatusEnum = pgEnum("company_status", ["ativa", "inativa", "prospect"]);
 export const leadQualificacaoEnum = pgEnum("lead_qualificacao", ["frio", "morno", "quente", "qualificado"]);
@@ -660,6 +660,36 @@ export const icpsRelations = relations(icps, ({ one }) => ({
 }));
 
 // ============================================================================
+// PRODUCTS - Catálogo de produtos e serviços
+// ============================================================================
+
+export const productRecorrenciaEnum = pgEnum("product_recorrencia", ["mensal", "anual", "unico", "sob_demanda"]);
+
+export const products = pgTable("products", {
+  id: serial("id").primaryKey(),
+  organizationId: integer("organization_id").notNull(),
+  nome: varchar("nome", { length: 255 }).notNull(),
+  descricao: text("descricao"),
+  categoria: varchar("categoria", { length: 100 }),
+  precoBase: numeric("preco_base", { precision: 15, scale: 2 }).notNull().default("0"),
+  recorrencia: productRecorrenciaEnum("recorrencia").default("mensal").notNull(),
+  unidade: varchar("unidade", { length: 50 }),
+  ativo: boolean("ativo").default(true).notNull(),
+  createdAt: timestamp("created_at").defaultNow().notNull(),
+  updatedAt: timestamp("updated_at").defaultNow().notNull(),
+});
+
+export type Product = typeof products.$inferSelect;
+export type InsertProduct = typeof products.$inferInsert;
+
+export const productsRelations = relations(products, ({ one }) => ({
+  organization: one(organizations, {
+    fields: [products.organizationId],
+    references: [organizations.id],
+  }),
+}));
+
+// ============================================================================
 // LEAD CADENCES - Sequências de follow-up persistidas
 // ============================================================================
 
@@ -668,11 +698,8 @@ export const leadCadences = pgTable("lead_cadences", {
   organizationId: integer("organization_id").notNull(),
   nome: varchar("nome", { length: 255 }).notNull(),
   descricao: text("descricao"),
-  gatilho: varchar("gatilho", { length: 255 }),
   ativa: boolean("ativa").default(true).notNull(),
-  steps: text("steps"), // JSON array of { id, dia, tipo, titulo, descricao }
-  totalContatos: integer("total_contatos").default(0),
-  taxaResposta: integer("taxa_resposta").default(0),
+  stages: text("stages"), // JSON: [{ id, name, order }]
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
 });

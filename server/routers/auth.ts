@@ -46,7 +46,7 @@ export const authRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin") {
+      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem alterar papéis");
       }
       const db = await getDb();
@@ -64,7 +64,7 @@ export const authRouter = router({
   deactivateUser: protectedProcedure
     .input(z.object({ userId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin") {
+      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem desativar usuários");
       }
       const db = await getDb();
@@ -82,7 +82,7 @@ export const authRouter = router({
   activateUser: protectedProcedure
     .input(z.object({ userId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin") {
+      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem ativar usuários");
       }
       const db = await getDb();
@@ -136,7 +136,7 @@ export const authRouter = router({
       telefone: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin") {
+      if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem editar a organização");
       }
       const db = await getDb();
