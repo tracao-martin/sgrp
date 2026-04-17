@@ -47,16 +47,21 @@ export const leadCadencesRouter = router({
     .mutation(async ({ ctx, input }) => {
       const db = await getDb();
       if (!db) throw new Error("Database not available");
-      const result = await db
-        .insert(leadCadences)
-        .values({
-          organizationId: orgId(ctx),
-          nome: input.nome,
-          descricao: input.descricao || null,
-          stages: input.stages || "[]",
-        })
-        .returning();
-      return result[0];
+      try {
+        const result = await db
+          .insert(leadCadences)
+          .values({
+            organizationId: orgId(ctx),
+            nome: input.nome,
+            descricao: input.descricao || null,
+            stages: input.stages || "[]",
+          })
+          .returning();
+        return result[0];
+      } catch (err: any) {
+        console.error("[cadences.create] DB error:", err?.message, err?.detail, err?.code);
+        throw err;
+      }
     }),
 
   update: protectedProcedure
