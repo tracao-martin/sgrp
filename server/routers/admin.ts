@@ -1,16 +1,21 @@
 import { desc, eq, count, sql } from "drizzle-orm";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
-import { getDb } from "../db";
 import { organizations, users, companies, leads, opportunities } from "../../drizzle/schema";
 import { superadminProcedure, router } from "../_core/trpc";
+import type { TenantDb } from "../_core/tenantDb";
+
+function requireDb(ctx: { db?: TenantDb }): TenantDb {
+  if (!ctx.db) throw new Error("Database not available");
+  return ctx.db;
+}
 
 export const adminRouter = router({
   // ── Organizações ──────────────────────────────────────────────────────────
 
   organizations: router({
-    list: superadminProcedure.query(async () => {
-      const db = await getDb();
+    list: superadminProcedure.query(async ({ ctx }) => {
+      const db = requireDb(ctx);
       const orgs = await db
         .select({
           id: organizations.id,
@@ -27,7 +32,6 @@ export const adminRouter = router({
 
       const stats = await Promise.all(
         orgs.map(async (org) => {
-          const db = await getDb();
           const [userCount] = await db
             .select({ count: count() })
             .from(users)
@@ -46,7 +50,7 @@ export const adminRouter = router({
             totalEmpresas: companyCount.count,
             totalOportunidades: oppCount.count,
           };
-        })
+        }),
       );
 
       return stats;
@@ -58,9 +62,9 @@ export const adminRouter = router({
   users: router({
     list: superadminProcedure
       .input(z.object({ organizationId: z.number().optional() }).optional())
-      .query(async ({ input }) => {
-        const db = await getDb();
-        const rows = await db
+      .query(async ({ ctx, input }) => {
+        const db = requireDb(ctx);
+        return db
           .select({
             id: users.id,
             email: users.email,
@@ -79,20 +83,20 @@ export const adminRouter = router({
           .where(
             input?.organizationId
               ? eq(users.organizationId, input.organizationId)
-              : sql`1=1`
+              : sql`1=1`,
           )
           .orderBy(organizations.nome, users.name);
-
-        return rows;
       }),
 
     resetPassword: superadminProcedure
-      .input(z.object({
-        userId: z.number(),
-        newPassword: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
-      }))
-      .mutation(async ({ input }) => {
-        const db = await getDb();
+      .input(
+        z.object({
+          userId: z.number(),
+          newPassword: z.string().min(6, "Senha deve ter pelo menos 6 caracteres"),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const db = requireDb(ctx);
         const hash = await bcrypt.hash(input.newPassword, 12);
         await db
           .update(users)
@@ -102,12 +106,14 @@ export const adminRouter = router({
       }),
 
     updateRole: superadminProcedure
-      .input(z.object({
-        userId: z.number(),
-        role: z.enum(["superadmin", "admin", "gerente", "vendedor"]),
-      }))
-      .mutation(async ({ input }) => {
-        const db = await getDb();
+      .input(
+        z.object({
+          userId: z.number(),
+          role: z.enum(["superadmin", "admin", "gerente", "vendedor"]),
+        }),
+      )
+      .mutation(async ({ ctx, input }) => {
+        const db = requireDb(ctx);
         await db
           .update(users)
           .set({ role: input.role, updatedAt: new Date() })
@@ -117,8 +123,8 @@ export const adminRouter = router({
 
     toggleAtivo: superadminProcedure
       .input(z.object({ userId: z.number(), ativo: z.boolean() }))
-      .mutation(async ({ input }) => {
-        const db = await getDb();
+      .mutation(async ({ ctx, input }) => {
+        const db = requireDb(ctx);
         await db
           .update(users)
           .set({ ativo: input.ativo, updatedAt: new Date() })
@@ -130,8 +136,8 @@ export const adminRouter = router({
   // ── Stats globais ─────────────────────────────────────────────────────────
 
   stats: router({
-    overview: superadminProcedure.query(async () => {
-      const db = await getDb();
+    overview: superadminProcedure.query(async ({ ctx }) => {
+      const db = requireDb(ctx);
       const [[orgTotal], [userTotal], [companyTotal], [leadTotal], [oppTotal]] =
         await Promise.all([
           db.select({ count: count() }).from(organizations),

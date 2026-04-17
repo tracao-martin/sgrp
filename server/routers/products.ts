@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { getDb } from "../db";
 import { products } from "../../drizzle/schema";
 import { eq, and, desc } from "drizzle-orm";
 
@@ -10,7 +9,7 @@ function orgId(ctx: { user: { organizationId: number } }) {
 
 export const productsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
+    const db = ctx.db;
     if (!db) return [];
     return db
       .select()
@@ -29,7 +28,7 @@ export const productsRouter = router({
       unidade: z.string().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const result = await db
         .insert(products)
@@ -58,7 +57,7 @@ export const productsRouter = router({
       ativo: z.boolean().optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const { id, ...data } = input;
       const update: Record<string, any> = { updatedAt: new Date() };
@@ -80,7 +79,7 @@ export const productsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db
         .delete(products)

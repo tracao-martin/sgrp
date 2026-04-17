@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import { invokeLLM } from "../_core/llm";
-import { getDb } from "../db";
 import { opportunities, leads, companies, activities, tasks, pipelineStages } from "../../drizzle/schema";
 import { count, sum, eq, and, sql } from "drizzle-orm";
 
@@ -15,7 +14,7 @@ export const expertRouter = router({
       })).optional(),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
 
       // Gather pipeline context
@@ -96,7 +95,7 @@ REGRAS:
     }),
 
   getInsights: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
+    const db = ctx.db;
     if (!db) return [];
 
     // Get deals data for insights

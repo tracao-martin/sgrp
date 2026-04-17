@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import { requirePermission, requireResourceAccess, requireManagerOrAdmin } from "../authorization";
-import { getDb } from "../db";
 import {
   companies,
   contacts,
@@ -40,7 +39,7 @@ export const companiesRouter = router({
     )
     .query(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_companies");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
 
       const conditions: any[] = [eq(companies.organizationId, orgId(ctx))];
@@ -59,7 +58,7 @@ export const companiesRouter = router({
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_companies");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return null;
 
       const result = await db
@@ -105,7 +104,7 @@ export const companiesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_companies");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
 
       await db.insert(companies).values({
@@ -144,7 +143,7 @@ export const companiesRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_companies");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
 
       const company = await db
@@ -166,7 +165,7 @@ export const companiesRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_companies");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db.delete(companies).where(and(eq(companies.id, input.id), eq(companies.organizationId, orgId(ctx))));
       return { success: true };
@@ -182,7 +181,7 @@ export const contactsRouter = router({
     .input(z.object({ search: z.string().optional() }).optional())
     .query(async ({ ctx }) => {
       requirePermission(ctx.user, "manage_contacts");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
       const rows = await db.select().from(contacts).where(eq(contacts.organizationId, orgId(ctx))).orderBy(desc(contacts.createdAt));
       // Enrich with company name
@@ -202,7 +201,7 @@ export const contactsRouter = router({
     .input(z.object({ companyId: z.number() }))
     .query(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_contacts");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
       return db.select().from(contacts).where(
         and(eq(contacts.company_id, input.companyId), eq(contacts.organizationId, orgId(ctx)))
@@ -213,7 +212,7 @@ export const contactsRouter = router({
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_contacts");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return null;
       const result = await db
         .select()
@@ -247,7 +246,7 @@ export const contactsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_contacts");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db.insert(contacts).values({
         ...input,
@@ -274,7 +273,7 @@ export const contactsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_contacts");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const { id, ...updateData } = input;
       await db.update(contacts).set(updateData).where(and(eq(contacts.id, id), eq(contacts.organizationId, orgId(ctx))));
@@ -285,7 +284,7 @@ export const contactsRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_contacts");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db.delete(contacts).where(and(eq(contacts.id, input.id), eq(contacts.organizationId, orgId(ctx))));
       return { success: true };
@@ -307,7 +306,7 @@ export const leadsRouter = router({
     )
     .query(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_leads");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
 
       const conditions: any[] = [eq(leads.organizationId, orgId(ctx))];
@@ -329,7 +328,7 @@ export const leadsRouter = router({
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_leads");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return null;
       const result = await db
         .select()
@@ -371,7 +370,7 @@ export const leadsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_leads");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const result = await db.insert(leads).values({
         ...input,
@@ -390,7 +389,7 @@ export const leadsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_leads");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db
         .update(leads)
@@ -410,7 +409,7 @@ export const leadsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_leads");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db
         .update(leads)
@@ -449,7 +448,7 @@ export const leadsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_leads");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const { id, ...updateData } = input;
       await db.update(leads).set({ ...updateData, updatedAt: new Date() } as any).where(and(eq(leads.id, id), eq(leads.organizationId, orgId(ctx))));
@@ -474,7 +473,7 @@ export const leadsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_leads");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const { ids, ...updateData } = input;
       const cleanData: Record<string, any> = { updatedAt: new Date() };
@@ -514,7 +513,7 @@ export const leadsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_leads");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       let created = 0;
       const errors: { row: number; error: string }[] = [];
@@ -544,7 +543,7 @@ export const leadsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_leads");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
 
       // Update lead's cadence phase
@@ -571,7 +570,7 @@ export const leadsRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_leads");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db.delete(leads).where(and(eq(leads.id, input.id), eq(leads.organizationId, orgId(ctx))));
       return { success: true };
@@ -586,7 +585,7 @@ export const activitiesRouter = router({
   getByOpportunity: protectedProcedure
     .input(z.object({ opportunityId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
       return db
         .select()
@@ -598,7 +597,7 @@ export const activitiesRouter = router({
   getByContact: protectedProcedure
     .input(z.object({ contactId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
       return db
         .select()
@@ -610,7 +609,7 @@ export const activitiesRouter = router({
   getByLead: protectedProcedure
     .input(z.object({ leadId: z.number() }))
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
       return db
         .select()
@@ -634,7 +633,7 @@ export const activitiesRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const { data_agendada, ...rest } = input;
       await db.insert(activities).values({
@@ -650,7 +649,7 @@ export const activitiesRouter = router({
   list: protectedProcedure
     .input(z.object({}).optional())
     .query(async ({ ctx }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
       return db.select().from(activities).where(eq(activities.organizationId, orgId(ctx))).orderBy(desc(activities.data_atividade));
     }),
@@ -667,7 +666,7 @@ export const activitiesRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const { id, data_agendada, ...rest } = input;
       const updateData: any = { ...rest };
@@ -681,7 +680,7 @@ export const activitiesRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db.delete(activities).where(and(eq(activities.id, input.id), eq(activities.organizationId, orgId(ctx))));
       return { success: true };
@@ -694,7 +693,7 @@ export const activitiesRouter = router({
 
 export const pipelineStagesRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
+    const db = ctx.db;
     if (!db) return [];
     return db.select().from(pipelineStages).where(eq(pipelineStages.organizationId, orgId(ctx))).orderBy(asc(pipelineStages.ordem));
   }),
@@ -714,7 +713,7 @@ export const opportunitiesRouter = router({
       }).optional()
     )
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
 
       const conditions: any[] = [eq(opportunities.organizationId, orgId(ctx))];
@@ -750,7 +749,7 @@ export const opportunitiesRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return null;
       const result = await db.select().from(opportunities).where(
         and(eq(opportunities.id, input.id), eq(opportunities.organizationId, orgId(ctx)))
@@ -773,7 +772,7 @@ export const opportunitiesRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
 
       // Get stage probability for auto-probability
@@ -832,7 +831,7 @@ export const opportunitiesRouter = router({
       )
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const { id, data_fechamento_prevista, ...rest } = input;
       const updateData: any = { ...rest };
@@ -874,7 +873,7 @@ export const opportunitiesRouter = router({
   updateStage: protectedProcedure
     .input(z.object({ id: z.number(), stage_id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
 
       // REGRA DE FERRO 2: Avanço condicionado
@@ -947,7 +946,7 @@ export const opportunitiesRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db.delete(opportunities).where(
         and(eq(opportunities.id, input.id), eq(opportunities.organizationId, orgId(ctx)))
@@ -970,7 +969,7 @@ export const tasksRouter = router({
       }).optional()
     )
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
 
       const conditions: any[] = [eq(tasks.organizationId, orgId(ctx))];
@@ -992,7 +991,7 @@ export const tasksRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db.insert(tasks).values({
         ...input,
@@ -1016,7 +1015,7 @@ export const tasksRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const { id, ...updateData } = input;
       const data: any = { ...updateData };
@@ -1028,7 +1027,7 @@ export const tasksRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db.delete(tasks).where(and(eq(tasks.id, input.id), eq(tasks.organizationId, orgId(ctx))));
       return { success: true };
@@ -1041,7 +1040,7 @@ export const tasksRouter = router({
 
 const usersRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
+    const db = ctx.db;
     if (!db) throw new Error("Database not available");
     return db.select().from(users).where(eq(users.organizationId, orgId(ctx))).orderBy(users.name);
   }),
@@ -1049,7 +1048,7 @@ const usersRouter = router({
   updateRole: protectedProcedure
     .input(z.object({ userId: z.number(), role: z.enum(["admin", "gerente", "vendedor"]) }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       // Only org admins can change roles
       if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
@@ -1064,7 +1063,7 @@ const usersRouter = router({
   toggleActive: protectedProcedure
     .input(z.object({ userId: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem ativar/desativar usuários");
@@ -1089,7 +1088,7 @@ const usersRouter = router({
         throw new Error("Apenas administradores podem convidar usuários");
       }
 
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
 
       // Check user limit

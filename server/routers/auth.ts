@@ -2,22 +2,30 @@ import { z } from "zod";
 import { protectedProcedure, publicProcedure, router } from "../_core/trpc";
 import { COOKIE_NAME } from "@shared/const";
 import { getSessionCookieOptions } from "../_core/cookies";
-import { requireAdmin } from "../authorization";
-import { getDb } from "../db";
+import { DatabaseUnavailableError } from "../_core/dbPool";
+import { runWithBypass } from "../_core/tenantDb";
 import { users, organizations } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 
 export const authRouter = router({
-  me: publicProcedure.query(async (opts) => {
-    if (!opts.ctx.user) return null;
-    // Enrich with organization info
-    const db = await getDb();
-    if (!db) return opts.ctx.user;
-    const org = await db.select().from(organizations).where(eq(organizations.id, opts.ctx.user.organizationId)).limit(1);
-    return {
-      ...opts.ctx.user,
-      organization: org[0] || null,
-    };
+  me: publicProcedure.query(async ({ ctx }) => {
+    if (!ctx.user) return null;
+    const user = ctx.user;
+    try {
+      const org = await runWithBypass(async (db) =>
+        db
+          .select()
+          .from(organizations)
+          .where(eq(organizations.id, user.organizationId))
+          .limit(1),
+      );
+      return { ...user, organization: org[0] || null };
+    } catch (err) {
+      if (err instanceof DatabaseUnavailableError) {
+        return user;
+      }
+      throw err;
+    }
   }),
 
   logout: publicProcedure.mutation(({ ctx }) => {
@@ -30,7 +38,7 @@ export const authRouter = router({
    * Get all users in the same organization (admin/org-admin only)
    */
   getAllUsers: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
+    const db = ctx.db;
     if (!db) return [];
     return db.select().from(users).where(eq(users.organizationId, ctx.user.organizationId)).orderBy(users.name);
   }),
@@ -49,7 +57,7 @@ export const authRouter = router({
       if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem alterar papéis");
       }
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db
         .update(users)
@@ -67,7 +75,7 @@ export const authRouter = router({
       if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem desativar usuários");
       }
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db
         .update(users)
@@ -85,7 +93,7 @@ export const authRouter = router({
       if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem ativar usuários");
       }
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db
         .update(users)
@@ -98,7 +106,7 @@ export const authRouter = router({
    * Get organization info for the current user
    */
   getOrganization: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
+    const db = ctx.db;
     if (!db) return null;
     const result = await db.select().from(organizations).where(eq(organizations.id, ctx.user.organizationId)).limit(1);
     return result[0] || null;
@@ -116,7 +124,7 @@ export const authRouter = router({
       newPassword: z.string().min(6),
     }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const [user] = await db.select().from(users).where(eq(users.id, ctx.user.id)).limit(1);
       if (!user) throw new Error("Usu\u00e1rio n\u00e3o encontrado");
@@ -139,7 +147,7 @@ export const authRouter = router({
       if (!ctx.user.isOrgAdmin && ctx.user.role !== "admin" && ctx.user.role !== "superadmin") {
         throw new Error("Apenas administradores podem editar a organização");
       }
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db.update(organizations).set({ ...input, updatedAt: new Date() }).where(eq(organizations.id, ctx.user.organizationId));
       return { success: true };

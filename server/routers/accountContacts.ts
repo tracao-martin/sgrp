@@ -1,7 +1,6 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
 import { requirePermission } from "../authorization";
-import { getDb } from "../db";
 import { accountContacts, contacts, companies } from "../../drizzle/schema";
 import { eq, and } from "drizzle-orm";
 
@@ -14,7 +13,7 @@ export const accountContactsRouter = router({
     .input(z.object({ companyId: z.number() }))
     .query(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_companies");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
       
       const stakeholders = await db
@@ -48,7 +47,7 @@ export const accountContactsRouter = router({
     .input(z.object({ contactId: z.number() }))
     .query(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_companies");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
       
       const stakeholders = await db
@@ -87,7 +86,7 @@ export const accountContactsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_companies");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
 
       await db.insert(accountContacts).values({
@@ -107,7 +106,7 @@ export const accountContactsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_companies");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const { id, ...updateData } = input;
       await db.update(accountContacts).set(updateData as any).where(
@@ -120,7 +119,7 @@ export const accountContactsRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
       requirePermission(ctx.user, "manage_companies");
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db.delete(accountContacts).where(
         and(eq(accountContacts.id, input.id), eq(accountContacts.organizationId, orgId(ctx)))

@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { getDb } from "../db";
 import { icps } from "../../drizzle/schema";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -10,7 +9,7 @@ function orgId(ctx: { user: { organizationId: number } }) {
 
 export const icpsRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
+    const db = ctx.db;
     if (!db) return [];
     return db
       .select()
@@ -22,7 +21,7 @@ export const icpsRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return null;
       const result = await db
         .select()
@@ -49,7 +48,7 @@ export const icpsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
 
       const result = await db
@@ -95,7 +94,7 @@ export const icpsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
 
       const { id, ...data } = input;
@@ -130,7 +129,7 @@ export const icpsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
 
       await db

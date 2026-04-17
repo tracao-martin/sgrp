@@ -1,6 +1,5 @@
 import { z } from "zod";
 import { protectedProcedure, router } from "../_core/trpc";
-import { getDb } from "../db";
 import { leadCadences, disqualifyReasons } from "../../drizzle/schema";
 import { eq, desc, and } from "drizzle-orm";
 
@@ -14,7 +13,7 @@ function orgId(ctx: { user: { organizationId: number } }) {
 
 export const leadCadencesRouter = router({
   list: protectedProcedure.query(async ({ ctx }) => {
-    const db = await getDb();
+    const db = ctx.db;
     if (!db) return [];
     return db
       .select()
@@ -26,7 +25,7 @@ export const leadCadencesRouter = router({
   getById: protectedProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return null;
       const result = await db
         .select()
@@ -45,7 +44,7 @@ export const leadCadencesRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const result = await db
         .insert(leadCadences)
@@ -70,7 +69,7 @@ export const leadCadencesRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const { id, ...data } = input;
       const updateData: Record<string, any> = { updatedAt: new Date() };
@@ -90,7 +89,7 @@ export const leadCadencesRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db
         .delete(leadCadences)
@@ -107,7 +106,7 @@ export const disqualifyReasonsRouter = router({
   list: protectedProcedure
     .input(z.object({ tipo: z.string().optional() }).optional())
     .query(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) return [];
       const conditions: any[] = [eq(disqualifyReasons.organizationId, orgId(ctx))];
       if (input?.tipo) {
@@ -128,7 +127,7 @@ export const disqualifyReasonsRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       const result = await db
         .insert(disqualifyReasons)
@@ -144,7 +143,7 @@ export const disqualifyReasonsRouter = router({
   delete: protectedProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
-      const db = await getDb();
+      const db = ctx.db;
       if (!db) throw new Error("Database not available");
       await db
         .delete(disqualifyReasons)
