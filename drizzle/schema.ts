@@ -1,4 +1,5 @@
 import {
+  index,
   integer,
   pgEnum,
   pgTable,
@@ -10,7 +11,7 @@ import {
   serial,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 
 // ============================================================================
 // ENUMS
@@ -65,7 +66,9 @@ export type InsertOrganization = typeof organizations.$inferInsert;
  */
 export const users = pgTable("users", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
   email: varchar("email", { length: 320 }).notNull().unique(),
   passwordHash: varchar("password_hash", { length: 255 }).notNull(),
   name: text("name"),
@@ -76,7 +79,10 @@ export const users = pgTable("users", {
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
   lastSignedIn: timestamp("last_signed_in").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("users_org_idx").on(t.organizationId),
+  orgActiveIdx: index("users_org_active_idx").on(t.organizationId, t.ativo),
+}));
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
@@ -86,7 +92,9 @@ export type InsertUser = typeof users.$inferInsert;
  */
 export const companies = pgTable("companies", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
   nome: varchar("nome", { length: 255 }).notNull(),
   cnpj: varchar("cnpj", { length: 20 }),
   email: varchar("email", { length: 320 }),
@@ -99,7 +107,9 @@ export const companies = pgTable("companies", {
   segmento: varchar("segmento", { length: 100 }),
   tamanho: companyTamanhoEnum("tamanho"),
   receita_anual: numeric("receita_anual", { precision: 15, scale: 2 }),
-  responsavel_id: integer("responsavel_id"),
+  responsavel_id: integer("responsavel_id").references(() => users.id, {
+    onDelete: "set null",
+  }),
   status: companyStatusEnum("status").default("prospect").notNull(),
   icp_id: integer("icp_id"),
   lead_source: varchar("lead_source", { length: 100 }),
@@ -111,7 +121,12 @@ export const companies = pgTable("companies", {
   account_type: accountTypeEnum("account_type").default("prospect"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("companies_org_idx").on(t.organizationId),
+  orgStatusIdx: index("companies_org_status_idx").on(t.organizationId, t.status),
+  orgResponsavelIdx: index("companies_org_responsavel_idx").on(t.organizationId, t.responsavel_id),
+  orgUpdatedIdx: index("companies_org_updated_idx").on(t.organizationId, t.updatedAt),
+}));
 
 export type Company = typeof companies.$inferSelect;
 export type InsertCompany = typeof companies.$inferInsert;
@@ -121,8 +136,12 @@ export type InsertCompany = typeof companies.$inferInsert;
  */
 export const contacts = pgTable("contacts", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
-  company_id: integer("company_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
+  company_id: integer("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
   nome: varchar("nome", { length: 255 }).notNull(),
   email: varchar("email", { length: 320 }),
   telefone: varchar("telefone", { length: 20 }),
@@ -134,7 +153,10 @@ export const contacts = pgTable("contacts", {
   notas: text("notas"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("contacts_org_idx").on(t.organizationId),
+  orgCompanyIdx: index("contacts_org_company_idx").on(t.organizationId, t.company_id),
+}));
 
 export type Contact = typeof contacts.$inferSelect;
 export type InsertContact = typeof contacts.$inferInsert;
@@ -144,13 +166,23 @@ export type InsertContact = typeof contacts.$inferInsert;
  */
 export const accountContacts = pgTable("account_contacts", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
-  company_id: integer("company_id").notNull(),
-  contact_id: integer("contact_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
+  company_id: integer("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "cascade" }),
+  contact_id: integer("contact_id")
+    .notNull()
+    .references(() => contacts.id, { onDelete: "cascade" }),
   papel: contactPapelEnum("papel"),
   notas: text("notas"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("account_contacts_org_idx").on(t.organizationId),
+  orgCompanyIdx: index("account_contacts_org_company_idx").on(t.organizationId, t.company_id),
+  uniqueLink: uniqueIndex("account_contacts_company_contact_uq").on(t.company_id, t.contact_id),
+}));
 
 export type AccountContact = typeof accountContacts.$inferSelect;
 export type InsertAccountContact = typeof accountContacts.$inferInsert;
@@ -160,15 +192,17 @@ export type InsertAccountContact = typeof accountContacts.$inferInsert;
  */
 export const leads = pgTable("leads", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
-  company_id: integer("company_id"),
-  contact_id: integer("contact_id"),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
+  company_id: integer("company_id").references(() => companies.id, { onDelete: "set null" }),
+  contact_id: integer("contact_id").references(() => contacts.id, { onDelete: "set null" }),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   descricao: text("descricao"),
   origem: varchar("origem", { length: 100 }),
   qualificacao: leadQualificacaoEnum("qualificacao").default("frio"),
   valor_estimado: numeric("valor_estimado", { precision: 15, scale: 2 }),
-  responsavel_id: integer("responsavel_id"),
+  responsavel_id: integer("responsavel_id").references(() => users.id, { onDelete: "set null" }),
   status: leadStatusEnum("status").default("novo"),
   data_conversao: timestamp("data_conversao"),
   cadencia: varchar("cadencia", { length: 100 }),
@@ -191,7 +225,14 @@ export const leads = pgTable("leads", {
   cadenceStageEnteredAt: timestamp("cadence_stage_entered_at"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("leads_org_idx").on(t.organizationId),
+  orgStatusIdx: index("leads_org_status_idx").on(t.organizationId, t.status),
+  orgResponsavelIdx: index("leads_org_responsavel_idx").on(t.organizationId, t.responsavel_id),
+  orgCompanyIdx: index("leads_org_company_idx").on(t.organizationId, t.company_id),
+  orgUpdatedIdx: index("leads_org_updated_idx").on(t.organizationId, t.updatedAt),
+  orgCadenciaIdx: index("leads_org_cadencia_idx").on(t.organizationId, t.cadencia_id),
+}));
 
 export type Lead = typeof leads.$inferSelect;
 export type InsertLead = typeof leads.$inferInsert;
@@ -201,14 +242,19 @@ export type InsertLead = typeof leads.$inferInsert;
  */
 export const pipelineStages = pgTable("pipeline_stages", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
   nome: varchar("nome", { length: 100 }).notNull(),
   ordem: integer("ordem").notNull(),
   cor: varchar("cor", { length: 7 }).default("#3B82F6"),
   probabilidade_fechamento: integer("probabilidade_fechamento").default(0),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("pipeline_stages_org_idx").on(t.organizationId),
+  orgOrdemIdx: index("pipeline_stages_org_ordem_idx").on(t.organizationId, t.ordem),
+}));
 
 export type PipelineStage = typeof pipelineStages.$inferSelect;
 export type InsertPipelineStage = typeof pipelineStages.$inferInsert;
@@ -218,16 +264,24 @@ export type InsertPipelineStage = typeof pipelineStages.$inferInsert;
  */
 export const opportunities = pgTable("opportunities", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
-  company_id: integer("company_id").notNull(),
-  contact_id: integer("contact_id"),
-  lead_id: integer("lead_id"),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
+  company_id: integer("company_id")
+    .notNull()
+    .references(() => companies.id, { onDelete: "restrict" }),
+  contact_id: integer("contact_id").references(() => contacts.id, { onDelete: "set null" }),
+  lead_id: integer("lead_id").references(() => leads.id, { onDelete: "set null" }),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   descricao: text("descricao"),
   valor: numeric("valor", { precision: 15, scale: 2 }).notNull(),
   moeda: varchar("moeda", { length: 3 }).default("BRL"),
-  stage_id: integer("stage_id").notNull(),
-  responsavel_id: integer("responsavel_id").notNull(),
+  stage_id: integer("stage_id")
+    .notNull()
+    .references(() => pipelineStages.id, { onDelete: "restrict" }),
+  responsavel_id: integer("responsavel_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "restrict" }),
   data_fechamento_prevista: timestamp("data_fechamento_prevista"),
   probabilidade: integer("probabilidade").default(0),
   motivo_ganho: varchar("motivo_ganho", { length: 255 }),
@@ -251,7 +305,14 @@ export const opportunities = pgTable("opportunities", {
   probabilidadeManual: integer("probabilidade_manual"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("opportunities_org_idx").on(t.organizationId),
+  orgStatusIdx: index("opportunities_org_status_idx").on(t.organizationId, t.status),
+  orgStageIdx: index("opportunities_org_stage_idx").on(t.organizationId, t.stage_id),
+  orgResponsavelIdx: index("opportunities_org_responsavel_idx").on(t.organizationId, t.responsavel_id),
+  orgCompanyIdx: index("opportunities_org_company_idx").on(t.organizationId, t.company_id),
+  orgCreatedIdx: index("opportunities_org_created_idx").on(t.organizationId, t.createdAt),
+}));
 
 export type Opportunity = typeof opportunities.$inferSelect;
 export type InsertOpportunity = typeof opportunities.$inferInsert;
@@ -261,21 +322,33 @@ export type InsertOpportunity = typeof opportunities.$inferInsert;
  */
 export const activities = pgTable("activities", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
-  company_id: integer("company_id"),
-  contact_id: integer("contact_id"),
-  opportunity_id: integer("opportunity_id"),
-  lead_id: integer("lead_id"),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
+  company_id: integer("company_id").references(() => companies.id, { onDelete: "cascade" }),
+  contact_id: integer("contact_id").references(() => contacts.id, { onDelete: "cascade" }),
+  opportunity_id: integer("opportunity_id").references(() => opportunities.id, { onDelete: "cascade" }),
+  lead_id: integer("lead_id").references(() => leads.id, { onDelete: "cascade" }),
   tipo: activityTipoEnum("tipo").notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   descricao: text("descricao"),
-  usuario_id: integer("usuario_id").notNull(),
+  usuario_id: integer("usuario_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "restrict" }),
   data_atividade: timestamp("data_atividade").notNull(),
   status: activityStatusEnum("status").default("realizada").notNull(),
   data_agendada: timestamp("data_agendada"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("activities_org_idx").on(t.organizationId),
+  orgOpportunityIdx: index("activities_org_opportunity_idx").on(t.organizationId, t.opportunity_id),
+  orgLeadIdx: index("activities_org_lead_idx").on(t.organizationId, t.lead_id),
+  orgContactIdx: index("activities_org_contact_idx").on(t.organizationId, t.contact_id),
+  orgCompanyIdx: index("activities_org_company_idx").on(t.organizationId, t.company_id),
+  orgStatusIdx: index("activities_org_status_idx").on(t.organizationId, t.status),
+  orgDataIdx: index("activities_org_data_idx").on(t.organizationId, t.data_atividade),
+}));
 
 export type Activity = typeof activities.$inferSelect;
 export type InsertActivity = typeof activities.$inferInsert;
@@ -285,20 +358,30 @@ export type InsertActivity = typeof activities.$inferInsert;
  */
 export const tasks = pgTable("tasks", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   descricao: text("descricao"),
-  opportunity_id: integer("opportunity_id"),
-  contact_id: integer("contact_id"),
-  company_id: integer("company_id"),
-  responsavel_id: integer("responsavel_id").notNull(),
+  opportunity_id: integer("opportunity_id").references(() => opportunities.id, { onDelete: "cascade" }),
+  contact_id: integer("contact_id").references(() => contacts.id, { onDelete: "cascade" }),
+  company_id: integer("company_id").references(() => companies.id, { onDelete: "cascade" }),
+  responsavel_id: integer("responsavel_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "restrict" }),
   data_vencimento: timestamp("data_vencimento").notNull(),
   prioridade: taskPrioridadeEnum("prioridade").default("media"),
   status: taskStatusEnum("status").default("pendente"),
   notificacao_enviada: boolean("notificacao_enviada").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("tasks_org_idx").on(t.organizationId),
+  orgStatusIdx: index("tasks_org_status_idx").on(t.organizationId, t.status),
+  orgResponsavelIdx: index("tasks_org_responsavel_idx").on(t.organizationId, t.responsavel_id),
+  orgVencimentoIdx: index("tasks_org_vencimento_idx").on(t.organizationId, t.data_vencimento),
+  orgOpportunityIdx: index("tasks_org_opportunity_idx").on(t.organizationId, t.opportunity_id),
+}));
 
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = typeof tasks.$inferInsert;
@@ -308,8 +391,12 @@ export type InsertTask = typeof tasks.$inferInsert;
  */
 export const proposals = pgTable("proposals", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
-  opportunity_id: integer("opportunity_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
+  opportunity_id: integer("opportunity_id")
+    .notNull()
+    .references(() => opportunities.id, { onDelete: "cascade" }),
   numero: varchar("numero", { length: 50 }).notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   descricao: text("descricao"),
@@ -319,10 +406,16 @@ export const proposals = pgTable("proposals", {
   validade: timestamp("validade"),
   status: proposalStatusEnum("status").default("rascunho"),
   versao: integer("versao").default(1),
-  criado_por: integer("criado_por").notNull(),
+  criado_por: integer("criado_por")
+    .notNull()
+    .references(() => users.id, { onDelete: "restrict" }),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("proposals_org_idx").on(t.organizationId),
+  orgOpportunityIdx: index("proposals_org_opportunity_idx").on(t.organizationId, t.opportunity_id),
+  orgStatusIdx: index("proposals_org_status_idx").on(t.organizationId, t.status),
+}));
 
 export type Proposal = typeof proposals.$inferSelect;
 export type InsertProposal = typeof proposals.$inferInsert;
@@ -332,13 +425,17 @@ export type InsertProposal = typeof proposals.$inferInsert;
  */
 export const proposalItems = pgTable("proposal_items", {
   id: serial("id").primaryKey(),
-  proposal_id: integer("proposal_id").notNull(),
+  proposal_id: integer("proposal_id")
+    .notNull()
+    .references(() => proposals.id, { onDelete: "cascade" }),
   descricao: varchar("descricao", { length: 255 }).notNull(),
   quantidade: numeric("quantidade", { precision: 10, scale: 2 }).notNull(),
   valor_unitario: numeric("valor_unitario", { precision: 15, scale: 2 }).notNull(),
   subtotal: numeric("subtotal", { precision: 15, scale: 2 }).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  proposalIdx: index("proposal_items_proposal_idx").on(t.proposal_id),
+}));
 
 export type ProposalItem = typeof proposalItems.$inferSelect;
 export type InsertProposalItem = typeof proposalItems.$inferInsert;
@@ -348,8 +445,12 @@ export type InsertProposalItem = typeof proposalItems.$inferInsert;
  */
 export const notifications = pgTable("notifications", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
-  usuario_id: integer("usuario_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
+  usuario_id: integer("usuario_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   tipo: notificationTipoEnum("tipo").notNull(),
   titulo: varchar("titulo", { length: 255 }).notNull(),
   mensagem: text("mensagem"),
@@ -357,7 +458,10 @@ export const notifications = pgTable("notifications", {
   lida: boolean("lida").default(false),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("notifications_org_idx").on(t.organizationId),
+  orgUsuarioLidaIdx: index("notifications_org_usuario_lida_idx").on(t.organizationId, t.usuario_id, t.lida),
+}));
 
 export type Notification = typeof notifications.$inferSelect;
 export type InsertNotification = typeof notifications.$inferInsert;
@@ -367,8 +471,12 @@ export type InsertNotification = typeof notifications.$inferInsert;
  */
 export const emailLogs = pgTable("email_logs", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
-  usuario_id: integer("usuario_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
+  usuario_id: integer("usuario_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "restrict" }),
   tipo: varchar("tipo", { length: 100 }).notNull(),
   destinatario: varchar("destinatario", { length: 320 }).notNull(),
   assunto: varchar("assunto", { length: 255 }).notNull(),
@@ -378,7 +486,10 @@ export const emailLogs = pgTable("email_logs", {
   enviado: boolean("enviado").default(false),
   erro: text("erro"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("email_logs_org_idx").on(t.organizationId),
+  orgCreatedIdx: index("email_logs_org_created_idx").on(t.organizationId, t.createdAt),
+}));
 
 export type EmailLog = typeof emailLogs.$inferSelect;
 export type InsertEmailLog = typeof emailLogs.$inferInsert;
@@ -388,7 +499,9 @@ export type InsertEmailLog = typeof emailLogs.$inferInsert;
  */
 export const icps = pgTable("icps", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
   nome: varchar("nome", { length: 255 }).notNull(),
   descricao: text("descricao"),
   segmentos: text("segmentos"), // JSON array of strings
@@ -401,7 +514,10 @@ export const icps = pgTable("icps", {
   ativo: boolean("ativo").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("icps_org_idx").on(t.organizationId),
+  orgAtivoIdx: index("icps_org_ativo_idx").on(t.organizationId, t.ativo),
+}));
 
 export type ICP = typeof icps.$inferSelect;
 export type InsertICP = typeof icps.$inferInsert;
@@ -411,12 +527,16 @@ export type InsertICP = typeof icps.$inferInsert;
  */
 export const aiInsights = pgTable("ai_insights", {
   id: serial("id").primaryKey(),
-  opportunity_id: integer("opportunity_id").notNull(),
+  opportunity_id: integer("opportunity_id")
+    .notNull()
+    .references(() => opportunities.id, { onDelete: "cascade" }),
   tipo: aiInsightTipoEnum("tipo").notNull(),
   conteudo: text("conteudo").notNull(),
   gerado_em: timestamp("gerado_em").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  opportunityIdx: index("ai_insights_opportunity_idx").on(t.opportunity_id),
+}));
 
 export type AIInsight = typeof aiInsights.$inferSelect;
 export type InsertAIInsight = typeof aiInsights.$inferInsert;
@@ -666,7 +786,9 @@ export const productRecorrenciaEnum = pgEnum("product_recorrencia", ["mensal", "
 
 export const products = pgTable("products", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
   nome: varchar("nome", { length: 255 }).notNull(),
   descricao: text("descricao"),
   categoria: varchar("categoria", { length: 100 }),
@@ -676,7 +798,10 @@ export const products = pgTable("products", {
   ativo: boolean("ativo").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("products_org_idx").on(t.organizationId),
+  orgAtivoIdx: index("products_org_ativo_idx").on(t.organizationId, t.ativo),
+}));
 
 export type Product = typeof products.$inferSelect;
 export type InsertProduct = typeof products.$inferInsert;
@@ -694,14 +819,19 @@ export const productsRelations = relations(products, ({ one }) => ({
 
 export const leadCadences = pgTable("lead_cadences", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
   nome: varchar("nome", { length: 255 }).notNull(),
   descricao: text("descricao"),
   ativa: boolean("ativa").default(true).notNull(),
-  stages: text("stages"), // JSON array of { id: string, name: string, order: number }
+  stages: text("stages"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("lead_cadences_org_idx").on(t.organizationId),
+  orgAtivaIdx: index("lead_cadences_org_ativa_idx").on(t.organizationId, t.ativa),
+}));
 
 export type LeadCadence = typeof leadCadences.$inferSelect;
 export type InsertLeadCadence = typeof leadCadences.$inferInsert;
@@ -719,12 +849,17 @@ export const leadCadencesRelations = relations(leadCadences, ({ one }) => ({
 
 export const disqualifyReasons = pgTable("disqualify_reasons", {
   id: serial("id").primaryKey(),
-  organizationId: integer("organization_id").notNull(),
+  organizationId: integer("organization_id")
+    .notNull()
+    .references(() => organizations.id, { onDelete: "restrict" }),
   nome: varchar("nome", { length: 255 }).notNull(),
-  tipo: varchar("tipo", { length: 50 }).default("desqualificacao").notNull(), // desqualificacao | aposentamento
+  tipo: varchar("tipo", { length: 50 }).default("desqualificacao").notNull(),
   ativo: boolean("ativo").default(true).notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-});
+}, (t) => ({
+  orgIdx: index("disqualify_reasons_org_idx").on(t.organizationId),
+  orgTipoIdx: index("disqualify_reasons_org_tipo_idx").on(t.organizationId, t.tipo),
+}));
 
 export type DisqualifyReason = typeof disqualifyReasons.$inferSelect;
 export type InsertDisqualifyReason = typeof disqualifyReasons.$inferInsert;
