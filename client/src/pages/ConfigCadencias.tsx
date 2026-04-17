@@ -1,25 +1,10 @@
 import React, { useState } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Switch } from "@/components/ui/switch";
-import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
-import {
-  Plus,
-  Zap,
-  Pencil,
-  Trash2,
-  ChevronDown,
-  ChevronRight,
-  GripVertical,
-  XCircle,
-  Layers,
-} from "lucide-react";
+import { ChevronDown, ChevronUp, Pencil, Trash2, Plus, GripVertical } from "lucide-react";
 
 interface Stage {
   id: string;
@@ -38,93 +23,60 @@ export default function ConfigCadencias() {
     staleTime: 30_000,
     refetchOnWindowFocus: false,
   });
-  const disqQuery = trpc.crm.disqualifyReasons.list.useQuery(
-    { tipo: "desqualificacao" },
-    { staleTime: 30_000, refetchOnWindowFocus: false }
-  );
-  const apoQuery = trpc.crm.disqualifyReasons.list.useQuery(
-    { tipo: "aposentamento" },
-    { staleTime: 30_000, refetchOnWindowFocus: false }
-  );
+  const reasonsQuery = trpc.crm.disqualifyReasons.list.useQuery(undefined, {
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
+  });
 
   const createCadence = trpc.crm.cadences.create.useMutation({
-    onSuccess: () => {
-      utils.crm.cadences.list.invalidate();
-      toast.success("Cadência criada!");
-      setShowCadenceForm(false);
-    },
+    onSuccess: () => { utils.crm.cadences.list.invalidate(); toast.success("Cadência criada!"); setNewCadenceName(""); },
     onError: () => toast.error("Erro ao criar cadência"),
   });
   const updateCadence = trpc.crm.cadences.update.useMutation({
-    onSuccess: () => {
-      utils.crm.cadences.list.invalidate();
-    },
-    onError: () => toast.error("Erro ao atualizar cadência"),
+    onSuccess: () => utils.crm.cadences.list.invalidate(),
+    onError: () => toast.error("Erro ao atualizar"),
   });
   const deleteCadence = trpc.crm.cadences.delete.useMutation({
-    onSuccess: () => {
-      utils.crm.cadences.list.invalidate();
-      toast.success("Cadência excluída");
-    },
+    onSuccess: () => { utils.crm.cadences.list.invalidate(); toast.success("Cadência excluída"); },
     onError: () => toast.error("Erro ao excluir cadência"),
   });
 
   const createReason = trpc.crm.disqualifyReasons.create.useMutation({
-    onSuccess: () => {
-      utils.crm.disqualifyReasons.list.invalidate();
-      toast.success("Motivo adicionado!");
-      setNewReasonText("");
-      setAddingReasonTipo(null);
-    },
+    onSuccess: () => { utils.crm.disqualifyReasons.list.invalidate(); toast.success("Motivo adicionado!"); setNewReasonName(""); },
     onError: () => toast.error("Erro ao adicionar motivo"),
   });
-  const deleteReason = trpc.crm.disqualifyReasons.delete.useMutation({
-    onSuccess: () => {
-      utils.crm.disqualifyReasons.list.invalidate();
-      toast.success("Motivo removido");
-    },
+  const updateReason = trpc.crm.disqualifyReasons.delete.useMutation({
+    onSuccess: () => { utils.crm.disqualifyReasons.list.invalidate(); toast.success("Motivo removido"); },
     onError: () => toast.error("Erro ao remover motivo"),
   });
 
+  // Quick create cadence
+  const [newCadenceName, setNewCadenceName] = useState("");
+
+  // Per-cadence stage management
   const [expandedId, setExpandedId] = useState<number | null>(null);
   const [localStages, setLocalStages] = useState<Stage[]>([]);
   const [stageInput, setStageInput] = useState("");
   const [editingStage, setEditingStage] = useState<Stage | null>(null);
 
-  const [showCadenceForm, setShowCadenceForm] = useState(false);
-  const [editingCadence, setEditingCadence] = useState<any | null>(null);
-  const [cadenceForm, setCadenceForm] = useState({ nome: "", descricao: "" });
+  // Edit cadence name dialog
+  const [editDialog, setEditDialog] = useState<{ id: number; nome: string } | null>(null);
 
-  const [newReasonText, setNewReasonText] = useState("");
-  const [addingReasonTipo, setAddingReasonTipo] = useState<"desqualificacao" | "aposentamento" | null>(null);
+  // Reasons
+  const [newReasonName, setNewReasonName] = useState("");
+  const [editReasonDialog, setEditReasonDialog] = useState<{ id: number; nome: string } | null>(null);
 
-  const openCadenceForm = (cadence?: any) => {
-    if (cadence) {
-      setCadenceForm({ nome: cadence.nome, descricao: cadence.descricao || "" });
-      setEditingCadence(cadence);
-    } else {
-      setCadenceForm({ nome: "", descricao: "" });
-      setEditingCadence(null);
-    }
-    setShowCadenceForm(true);
-  };
-
-  const handleSaveCadence = () => {
-    if (!cadenceForm.nome.trim()) { toast.error("Nome é obrigatório"); return; }
-    if (editingCadence) {
-      updateCadence.mutate(
-        { id: editingCadence.id, nome: cadenceForm.nome, descricao: cadenceForm.descricao },
-        { onSuccess: () => { toast.success("Cadência atualizada!"); setShowCadenceForm(false); } }
-      );
-    } else {
-      createCadence.mutate({ nome: cadenceForm.nome, descricao: cadenceForm.descricao, stages: "[]" });
-    }
+  const handleCreateCadence = () => {
+    if (!newCadenceName.trim()) { toast.error("Digite um nome"); return; }
+    createCadence.mutate({ nome: newCadenceName.trim(), stages: "[]" });
   };
 
   const handleExpand = (cadence: any) => {
     if (expandedId === cadence.id) {
       setExpandedId(null);
       setLocalStages([]);
+      setStageInput("");
+      setEditingStage(null);
     } else {
       setExpandedId(cadence.id);
       setLocalStages(parseStages(cadence.stages));
@@ -147,198 +99,159 @@ export default function ConfigCadencias() {
     setLocalStages(newStages);
     setStageInput("");
     persistStages(cadenceId, newStages);
-    toast.success("Etapa adicionada");
   };
 
   const handleDeleteStage = (cadenceId: number, stageId: string) => {
     const newStages = localStages.filter((s) => s.id !== stageId);
     setLocalStages(newStages);
     persistStages(cadenceId, newStages);
-    toast.success("Etapa removida");
   };
 
-  const handleRenameStage = (cadenceId: number) => {
-    if (!editingStage || !editingStage.name.trim()) return;
+  const handleSaveStageRename = (cadenceId: number) => {
+    if (!editingStage?.name.trim()) return;
     const newStages = localStages.map((s) =>
       s.id === editingStage.id ? { ...s, name: editingStage.name.trim() } : s
     );
     setLocalStages(newStages);
     setEditingStage(null);
     persistStages(cadenceId, newStages);
-    toast.success("Etapa renomeada");
-  };
-
-  const handleAddReason = (tipo: "desqualificacao" | "aposentamento") => {
-    if (!newReasonText.trim()) return;
-    createReason.mutate({ nome: newReasonText.trim(), tipo });
   };
 
   const cadences = cadencesQuery.data || [];
-  const disqReasons = disqQuery.data || [];
-  const apoReasons = apoQuery.data || [];
-  const totalAtivas = cadences.filter((c) => c.ativa).length;
+  const reasons = reasonsQuery.data || [];
 
   return (
-    <div className="space-y-6">
+    <div className="max-w-3xl mx-auto space-y-8 py-2">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <div className="flex items-center gap-3">
-            <Zap className="w-7 h-7 text-purple-400" />
-            <h1 className="text-2xl font-bold">Cadências de Vendas</h1>
-          </div>
-          <p className="text-muted-foreground mt-1 ml-10">
-            Configure cadências e etapas para organizar o acompanhamento de leads
-          </p>
-        </div>
-        <Button onClick={() => openCadenceForm()} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
-          <Plus className="w-4 h-4 mr-2" />
-          Nova Cadência
-        </Button>
+      <div>
+        <h1 className="text-2xl font-bold">Cadências</h1>
+        <p className="text-sm text-muted-foreground mt-1">
+          Configure cadências de prospecção com fases sequenciais
+        </p>
       </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-3 gap-4">
-        <Card className="bg-card/50 border-border">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-purple-400">{cadences.length}</p>
-            <p className="text-xs text-muted-foreground">Cadências criadas</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 border-border">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-green-400">{totalAtivas}</p>
-            <p className="text-xs text-muted-foreground">Ativas</p>
-          </CardContent>
-        </Card>
-        <Card className="bg-card/50 border-border">
-          <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-primary">{disqReasons.length + apoReasons.length}</p>
-            <p className="text-xs text-muted-foreground">Motivos cadastrados</p>
-          </CardContent>
-        </Card>
+      {/* Quick Create */}
+      <div className="bg-card border border-border rounded-xl p-5">
+        <p className="text-sm font-medium mb-3">Nova Cadência</p>
+        <div className="flex gap-3">
+          <Input
+            value={newCadenceName}
+            onChange={(e) => setNewCadenceName(e.target.value)}
+            placeholder="Nome da cadência (ex: Cadência Inbound)..."
+            className="bg-background border-border"
+            onKeyDown={(e) => { if (e.key === "Enter") handleCreateCadence(); }}
+          />
+          <Button
+            onClick={handleCreateCadence}
+            disabled={createCadence.isPending}
+            className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold shrink-0"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Criar
+          </Button>
+        </div>
       </div>
 
       {/* Cadences List */}
       <div className="space-y-3">
         {cadencesQuery.isLoading && (
-          <div className="text-center py-8 text-muted-foreground text-sm">Carregando cadências...</div>
+          <p className="text-sm text-muted-foreground text-center py-6">Carregando...</p>
         )}
         {!cadencesQuery.isLoading && cadences.length === 0 && (
-          <Card className="bg-card/50 border-border">
-            <CardContent className="py-12 text-center">
-              <Zap className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-30" />
-              <p className="text-muted-foreground">Nenhuma cadência criada</p>
-              <p className="text-xs text-muted-foreground mt-1">
-                Crie a primeira cadência para organizar o Kanban de leads
-              </p>
-            </CardContent>
-          </Card>
+          <p className="text-sm text-muted-foreground text-center py-6">
+            Nenhuma cadência criada ainda.
+          </p>
         )}
         {cadences.map((cadence) => {
           const stages = expandedId === cadence.id ? localStages : parseStages(cadence.stages);
           const isExpanded = expandedId === cadence.id;
 
           return (
-            <Card
-              key={cadence.id}
-              className={`border-border overflow-hidden ${cadence.ativa ? "bg-card" : "bg-card/50"}`}
-            >
-              <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5"
-                onClick={() => handleExpand(cadence)}
-              >
-                <div className="flex items-center gap-3">
-                  {isExpanded
-                    ? <ChevronDown className="w-5 h-5 text-muted-foreground" />
-                    : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{cadence.nome}</h3>
-                      <Badge
-                        className={
-                          cadence.ativa
-                            ? "bg-green-900/30 text-green-300 text-xs"
-                            : "bg-zinc-800 text-muted-foreground text-xs"
-                        }
-                      >
-                        {cadence.ativa ? "Ativa" : "Inativa"}
-                      </Badge>
-                    </div>
+            <div key={cadence.id} className="bg-card border border-border rounded-xl overflow-hidden">
+              {/* Cadence header */}
+              <div className="p-5">
+                <div className="flex items-start justify-between gap-4">
+                  <div className="flex-1 min-w-0">
+                    <p className="font-semibold">{cadence.nome}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      {stages.length} etapa{stages.length !== 1 ? "s" : ""}
-                      {cadence.descricao ? ` · ${cadence.descricao}` : ""}
+                      {stages.length} fase{stages.length !== 1 ? "s" : ""}
                     </p>
+                    {stages.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-3">
+                        {stages.map((stage, idx) => (
+                          <span
+                            key={stage.id}
+                            className="inline-flex items-center gap-1 bg-yellow-500/10 border border-yellow-500/30 text-yellow-400 text-xs rounded-full px-2.5 py-0.5"
+                          >
+                            <span className="font-bold">{idx + 1}</span>
+                            {stage.name}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                  <Switch
-                    checked={!!cadence.ativa}
-                    onCheckedChange={() =>
-                      updateCadence.mutate(
-                        { id: cadence.id, ativa: !cadence.ativa },
-                        { onSuccess: () => utils.crm.cadences.list.invalidate() }
-                      )
-                    }
-                  />
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openCadenceForm(cadence)}
-                    className="text-primary hover:text-primary"
-                  >
-                    <Pencil className="w-4 h-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => deleteCadence.mutate({ id: cadence.id })}
-                    className="text-red-400 hover:text-red-300"
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  <div className="flex items-center gap-1 shrink-0">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-white"
+                      onClick={() => setEditDialog({ id: cadence.id, nome: cadence.nome })}
+                    >
+                      <Pencil className="w-4 h-4" />
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-muted-foreground hover:text-white border border-border rounded-lg px-3 gap-1"
+                      onClick={() => handleExpand(cadence)}
+                    >
+                      {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                      Gerenciar Fases
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-400 hover:text-red-300"
+                      onClick={() => deleteCadence.mutate({ id: cadence.id })}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  </div>
                 </div>
               </div>
 
+              {/* Stages panel */}
               {isExpanded && (
-                <div className="border-t border-border p-4 space-y-3">
-                  <p className="text-sm font-medium text-foreground/70">
-                    Etapas do Kanban
-                    <span className="ml-2 text-xs text-muted-foreground font-normal">
-                      (estas colunas aparecerão no board de leads)
-                    </span>
-                  </p>
-
+                <div className="border-t border-border bg-background/40 p-5 space-y-3">
                   {localStages.length === 0 && (
-                    <p className="text-xs text-muted-foreground text-center py-3">
-                      Nenhuma etapa. Adicione abaixo para criar as colunas do Kanban.
+                    <p className="text-xs text-muted-foreground text-center py-2">
+                      Nenhuma fase cadastrada. Adicione abaixo.
                     </p>
                   )}
-
                   <div className="space-y-1.5">
                     {localStages.map((stage, idx) => (
                       <div
                         key={stage.id}
-                        className="flex items-center gap-2 bg-[#2a2a2a] rounded px-3 py-2"
+                        className="flex items-center gap-2 bg-card border border-border rounded-lg px-3 py-2"
                       >
-                        <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                        <span className="text-xs text-muted-foreground w-5">{idx + 1}.</span>
+                        <GripVertical className="w-4 h-4 text-muted-foreground shrink-0" />
+                        <span className="text-xs font-bold text-yellow-500 w-5 shrink-0">{idx + 1}</span>
                         {editingStage?.id === stage.id ? (
                           <>
                             <Input
                               value={editingStage.name}
                               onChange={(e) => setEditingStage({ ...editingStage, name: e.target.value })}
-                              className="h-7 text-sm bg-[#1a1a1a] border-border flex-1"
+                              className="h-7 text-sm bg-background border-border flex-1"
                               autoFocus
                               onKeyDown={(e) => {
-                                if (e.key === "Enter") handleRenameStage(cadence.id);
+                                if (e.key === "Enter") handleSaveStageRename(cadence.id);
                                 if (e.key === "Escape") setEditingStage(null);
                               }}
                             />
                             <Button
                               size="sm"
                               className="h-7 text-xs bg-yellow-500 hover:bg-yellow-600 text-black shrink-0"
-                              onClick={() => handleRenameStage(cadence.id)}
+                              onClick={() => handleSaveStageRename(cadence.id)}
                             >
                               Salvar
                             </Button>
@@ -357,7 +270,7 @@ export default function ConfigCadencias() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 w-6 p-0 text-primary"
+                              className="h-6 w-6 p-0 text-muted-foreground hover:text-white"
                               onClick={() => setEditingStage(stage)}
                             >
                               <Pencil className="w-3 h-3" />
@@ -365,7 +278,7 @@ export default function ConfigCadencias() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="h-6 w-6 p-0 text-red-400"
+                              className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
                               onClick={() => handleDeleteStage(cadence.id, stage.id)}
                             >
                               <Trash2 className="w-3 h-3" />
@@ -375,13 +288,12 @@ export default function ConfigCadencias() {
                       </div>
                     ))}
                   </div>
-
                   <div className="flex gap-2 pt-1">
                     <Input
                       value={stageInput}
                       onChange={(e) => setStageInput(e.target.value)}
-                      placeholder="Nome da nova etapa (ex: Primeiro Contato)..."
-                      className="bg-[#2a2a2a] border-border text-sm"
+                      placeholder="Nome da fase (ex: Primeiro Contato)..."
+                      className="bg-card border-border text-sm"
                       onKeyDown={(e) => { if (e.key === "Enter") handleAddStage(cadence.id); }}
                     />
                     <Button
@@ -389,213 +301,161 @@ export default function ConfigCadencias() {
                       className="bg-yellow-500 hover:bg-yellow-600 text-black shrink-0"
                     >
                       <Plus className="w-4 h-4 mr-1" />
-                      Adicionar
+                      Adicionar Fase
                     </Button>
                   </div>
                 </div>
               )}
-            </Card>
+            </div>
           );
         })}
       </div>
 
-      {/* Motivos */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        {/* Desqualificação */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <XCircle className="w-5 h-5 text-red-400" />
-              Motivos de Desqualificação
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {disqQuery.isLoading && (
-              <p className="text-xs text-muted-foreground">Carregando...</p>
-            )}
-            {disqReasons.map((r) => (
-              <div
-                key={r.id}
-                className="flex items-center justify-between bg-[#2a2a2a] rounded px-3 py-2"
-              >
-                <span className="text-sm">{r.nome}</span>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
-                  onClick={() => deleteReason.mutate({ id: r.id })}
-                >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </div>
-            ))}
-            {!disqQuery.isLoading && disqReasons.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-2">Nenhum motivo cadastrado</p>
-            )}
-            <Separator className="my-2" />
-            {addingReasonTipo === "desqualificacao" ? (
-              <div className="flex gap-2">
-                <Input
-                  value={newReasonText}
-                  onChange={(e) => setNewReasonText(e.target.value)}
-                  placeholder="Ex: Sem orçamento no momento..."
-                  className="bg-[#2a2a2a] border-border text-sm h-8"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAddReason("desqualificacao");
-                    if (e.key === "Escape") { setAddingReasonTipo(null); setNewReasonText(""); }
-                  }}
-                />
-                <Button
-                  size="sm"
-                  className="h-8 bg-yellow-500 hover:bg-yellow-600 text-black shrink-0"
-                  onClick={() => handleAddReason("desqualificacao")}
-                  disabled={createReason.isPending}
-                >
-                  Adicionar
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 shrink-0"
-                  onClick={() => { setAddingReasonTipo(null); setNewReasonText(""); }}
-                >
-                  Cancelar
-                </Button>
-              </div>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full border-dashed border-border text-xs"
-                onClick={() => setAddingReasonTipo("desqualificacao")}
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Novo Motivo
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+      {/* Motivos de Desqualificação / Aposentadoria */}
+      <div className="space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Motivos de Desqualificação / Aposentadoria</h2>
+          <p className="text-sm text-muted-foreground mt-0.5">
+            Estes motivos aparecem ao desqualificar ou aposentar um lead
+          </p>
+        </div>
 
-        {/* Aposentamento */}
-        <Card className="bg-card border-border">
-          <CardHeader className="pb-3">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Layers className="w-5 h-5 text-blue-400" />
-              Motivos de Aposentadoria
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            {apoQuery.isLoading && (
-              <p className="text-xs text-muted-foreground">Carregando...</p>
-            )}
-            {apoReasons.map((r) => (
-              <div
-                key={r.id}
-                className="flex items-center justify-between bg-[#2a2a2a] rounded px-3 py-2"
-              >
-                <span className="text-sm">{r.nome}</span>
+        <div className="flex gap-3">
+          <Input
+            value={newReasonName}
+            onChange={(e) => setNewReasonName(e.target.value)}
+            placeholder="Ex: Sem budget, Não tem perfil, Concorrente..."
+            className="bg-card border-border"
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && newReasonName.trim())
+                createReason.mutate({ nome: newReasonName.trim(), tipo: "desqualificacao" });
+            }}
+          />
+          <Button
+            onClick={() => {
+              if (!newReasonName.trim()) { toast.error("Digite um motivo"); return; }
+              createReason.mutate({ nome: newReasonName.trim(), tipo: "desqualificacao" });
+            }}
+            disabled={createReason.isPending}
+            className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold shrink-0"
+          >
+            <Plus className="w-4 h-4 mr-1" />
+            Adicionar Motivo
+          </Button>
+        </div>
+
+        <div className="space-y-2">
+          {reasonsQuery.isLoading && (
+            <p className="text-sm text-muted-foreground">Carregando...</p>
+          )}
+          {!reasonsQuery.isLoading && reasons.length === 0 && (
+            <p className="text-sm text-muted-foreground text-center py-4">
+              Nenhum motivo cadastrado.
+            </p>
+          )}
+          {reasons.map((reason) => (
+            <div
+              key={reason.id}
+              className="flex items-center justify-between bg-card border border-border rounded-xl px-4 py-3"
+            >
+              <span className="text-sm">{reason.nome}</span>
+              <div className="flex gap-1">
                 <Button
                   variant="ghost"
                   size="sm"
-                  className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
-                  onClick={() => deleteReason.mutate({ id: r.id })}
+                  className="h-7 w-7 p-0 text-muted-foreground hover:text-white"
+                  onClick={() => setEditReasonDialog({ id: reason.id, nome: reason.nome })}
                 >
-                  <Trash2 className="w-3 h-3" />
-                </Button>
-              </div>
-            ))}
-            {!apoQuery.isLoading && apoReasons.length === 0 && (
-              <p className="text-xs text-muted-foreground text-center py-2">Nenhum motivo cadastrado</p>
-            )}
-            <Separator className="my-2" />
-            {addingReasonTipo === "aposentamento" ? (
-              <div className="flex gap-2">
-                <Input
-                  value={newReasonText}
-                  onChange={(e) => setNewReasonText(e.target.value)}
-                  placeholder="Ex: Cliente comprou concorrente..."
-                  className="bg-[#2a2a2a] border-border text-sm h-8"
-                  autoFocus
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter") handleAddReason("aposentamento");
-                    if (e.key === "Escape") { setAddingReasonTipo(null); setNewReasonText(""); }
-                  }}
-                />
-                <Button
-                  size="sm"
-                  className="h-8 bg-yellow-500 hover:bg-yellow-600 text-black shrink-0"
-                  onClick={() => handleAddReason("aposentamento")}
-                  disabled={createReason.isPending}
-                >
-                  Adicionar
+                  <Pencil className="w-3.5 h-3.5" />
                 </Button>
                 <Button
-                  size="sm"
                   variant="ghost"
-                  className="h-8 shrink-0"
-                  onClick={() => { setAddingReasonTipo(null); setNewReasonText(""); }}
+                  size="sm"
+                  className="h-7 w-7 p-0 text-red-400 hover:text-red-300"
+                  onClick={() => updateReason.mutate({ id: reason.id })}
                 >
-                  Cancelar
+                  <Trash2 className="w-3.5 h-3.5" />
                 </Button>
               </div>
-            ) : (
-              <Button
-                size="sm"
-                variant="outline"
-                className="w-full border-dashed border-border text-xs"
-                onClick={() => setAddingReasonTipo("aposentamento")}
-              >
-                <Plus className="w-3 h-3 mr-1" />
-                Novo Motivo
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+            </div>
+          ))}
+        </div>
       </div>
 
-      {/* Cadence Form Dialog */}
-      <Dialog open={showCadenceForm} onOpenChange={setShowCadenceForm}>
-        <DialogContent className="bg-card border-border max-w-lg">
+      {/* Edit Cadence Name Dialog */}
+      <Dialog open={!!editDialog} onOpenChange={() => setEditDialog(null)}>
+        <DialogContent className="bg-card border-border max-w-sm">
           <DialogHeader>
-            <DialogTitle>{editingCadence ? "Editar Cadência" : "Nova Cadência"}</DialogTitle>
+            <DialogTitle>Editar Cadência</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Nome *</label>
-              <Input
-                value={cadenceForm.nome}
-                onChange={(e) => setCadenceForm({ ...cadenceForm, nome: e.target.value })}
-                placeholder="Ex: Cadência para Clientes de Indicação"
-                className="mt-1 bg-[#333333] border-border"
-                autoFocus
-                onKeyDown={(e) => { if (e.key === "Enter") handleSaveCadence(); }}
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Descrição</label>
-              <Textarea
-                value={cadenceForm.descricao}
-                onChange={(e) => setCadenceForm({ ...cadenceForm, descricao: e.target.value })}
-                placeholder="Descreva o objetivo desta cadência..."
-                className="mt-1 bg-[#333333] border-border"
-                rows={3}
-              />
-            </div>
-            <div className="flex gap-3 justify-end pt-2 border-t border-border">
-              <Button
-                variant="outline"
-                onClick={() => setShowCadenceForm(false)}
-                className="border-border"
-              >
+            <Input
+              value={editDialog?.nome ?? ""}
+              onChange={(e) => setEditDialog(editDialog ? { ...editDialog, nome: e.target.value } : null)}
+              className="bg-background border-border"
+              autoFocus
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && editDialog) {
+                  updateCadence.mutate(
+                    { id: editDialog.id, nome: editDialog.nome },
+                    { onSuccess: () => { toast.success("Nome atualizado"); setEditDialog(null); } }
+                  );
+                }
+              }}
+            />
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" className="border-border" onClick={() => setEditDialog(null)}>
                 Cancelar
               </Button>
               <Button
-                onClick={handleSaveCadence}
                 className="bg-yellow-500 hover:bg-yellow-600 text-black"
-                disabled={createCadence.isPending || updateCadence.isPending}
+                onClick={() => {
+                  if (!editDialog?.nome.trim()) return;
+                  updateCadence.mutate(
+                    { id: editDialog.id, nome: editDialog.nome },
+                    { onSuccess: () => { toast.success("Nome atualizado"); setEditDialog(null); } }
+                  );
+                }}
               >
-                {editingCadence ? "Salvar Alterações" : "Criar Cadência"}
+                Salvar
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Reason Dialog */}
+      <Dialog open={!!editReasonDialog} onOpenChange={() => setEditReasonDialog(null)}>
+        <DialogContent className="bg-card border-border max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Editar Motivo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <Input
+              value={editReasonDialog?.nome ?? ""}
+              onChange={(e) =>
+                setEditReasonDialog(editReasonDialog ? { ...editReasonDialog, nome: e.target.value } : null)
+              }
+              className="bg-background border-border"
+              autoFocus
+            />
+            <p className="text-xs text-muted-foreground">
+              Para editar o nome, exclua este motivo e crie um novo.
+            </p>
+            <div className="flex gap-2 justify-end">
+              <Button variant="outline" className="border-border" onClick={() => setEditReasonDialog(null)}>
+                Fechar
+              </Button>
+              <Button
+                variant="destructive"
+                onClick={() => {
+                  if (editReasonDialog) {
+                    updateReason.mutate({ id: editReasonDialog.id });
+                    setEditReasonDialog(null);
+                  }
+                }}
+              >
+                Excluir
               </Button>
             </div>
           </div>
