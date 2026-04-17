@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Switch } from "@/components/ui/switch";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
 import {
   Plus,
   Zap,
@@ -15,244 +16,167 @@ import {
   Trash2,
   ChevronDown,
   ChevronRight,
-  Mail,
-  Phone,
-  MessageSquare,
-  CheckSquare,
-  Clock,
-  ArrowDown,
-  Copy,
-  Play,
-  Pause,
   GripVertical,
-  Calendar,
+  XCircle,
+  Layers,
 } from "lucide-react";
 
-interface CadenciaStep {
+interface Stage {
   id: string;
-  dia: number;
-  tipo: "email" | "ligacao" | "whatsapp" | "tarefa" | "linkedin";
-  titulo: string;
-  descricao: string;
+  name: string;
+  order: number;
 }
 
-interface Cadencia {
-  id: string;
-  nome: string;
-  descricao: string;
-  gatilho: string;
-  ativa: boolean;
-  steps: CadenciaStep[];
-  totalContatos: number;
-  taxaResposta: number;
+function parseStages(json: string | null | undefined): Stage[] {
+  try { return JSON.parse(json || "[]"); } catch { return []; }
 }
-
-const TIPO_STEP_CONFIG: Record<string, { label: string; icon: React.ReactNode; cor: string }> = {
-  email: { label: "Email", icon: <Mail className="w-4 h-4" />, cor: "bg-primary/20 text-primary border-primary/30" },
-  ligacao: { label: "Ligação", icon: <Phone className="w-4 h-4" />, cor: "bg-green-900/30 text-green-300 border-green-800" },
-  whatsapp: { label: "WhatsApp", icon: <MessageSquare className="w-4 h-4" />, cor: "bg-emerald-900/30 text-emerald-300 border-emerald-800" },
-  tarefa: { label: "Tarefa", icon: <CheckSquare className="w-4 h-4" />, cor: "bg-yellow-900/30 text-yellow-300 border-yellow-800" },
-  linkedin: { label: "LinkedIn", icon: <MessageSquare className="w-4 h-4" />, cor: "bg-indigo-900/30 text-indigo-300 border-indigo-800" },
-};
-
-const GATILHOS = [
-  "Novo lead qualificado",
-  "Deal parado há 7+ dias",
-  "Pós-proposta sem resposta",
-  "Pós-diagnóstico",
-  "Reengajamento de lead frio",
-  "Onboarding de novo cliente",
-  "Renovação próxima (30 dias)",
-  "Upsell/Cross-sell identificado",
-];
-
-const INITIAL_CADENCIAS: Cadencia[] = [
-  {
-    id: "1",
-    nome: "Prospecção Outbound - ICP Tier 1",
-    descricao: "Cadência de 14 dias para prospecção ativa de leads que se encaixam no ICP principal. Foco em gerar agendamento de diagnóstico.",
-    gatilho: "Novo lead qualificado",
-    ativa: true,
-    totalContatos: 45,
-    taxaResposta: 23,
-    steps: [
-      { id: "1a", dia: 1, tipo: "email", titulo: "Email de abertura personalizado", descricao: "Email curto mencionando dor específica do segmento. Usar template 'Abertura ICP Tier 1'." },
-      { id: "1b", dia: 1, tipo: "linkedin", titulo: "Conexão no LinkedIn", descricao: "Enviar convite de conexão com nota personalizada mencionando o email." },
-      { id: "1c", dia: 3, tipo: "ligacao", titulo: "Primeira ligação", descricao: "Ligação de 2min. Objetivo: confirmar recebimento do email e gerar interesse." },
-      { id: "1d", dia: 4, tipo: "whatsapp", titulo: "WhatsApp de follow-up", descricao: "Mensagem curta: 'Vi que não conseguimos falar. Posso te ligar amanhã às X?'" },
-      { id: "1e", dia: 7, tipo: "email", titulo: "Email de valor (case study)", descricao: "Enviar case de sucesso relevante para o segmento do lead." },
-      { id: "1f", dia: 9, tipo: "ligacao", titulo: "Segunda ligação", descricao: "Tentar contato novamente. Se não atender, deixar voicemail." },
-      { id: "1g", dia: 11, tipo: "email", titulo: "Email de breakup", descricao: "Email final: 'Entendo que o timing pode não ser ideal. Fico à disposição quando fizer sentido.'" },
-      { id: "1h", dia: 14, tipo: "tarefa", titulo: "Avaliar resultado da cadência", descricao: "Revisar se houve engajamento. Se sim, mover para próxima etapa. Se não, marcar para reengajamento em 60 dias." },
-    ],
-  },
-  {
-    id: "2",
-    nome: "Follow-up Pós-Proposta",
-    descricao: "Cadência de 10 dias para acompanhar propostas enviadas que ainda não tiveram resposta do decisor.",
-    gatilho: "Pós-proposta sem resposta",
-    ativa: true,
-    totalContatos: 12,
-    taxaResposta: 58,
-    steps: [
-      { id: "2a", dia: 1, tipo: "email", titulo: "Email de acompanhamento", descricao: "Perguntar se a proposta foi recebida e se há dúvidas." },
-      { id: "2b", dia: 3, tipo: "ligacao", titulo: "Ligação de follow-up", descricao: "Ligar para o decisor. Objetivo: entender objeções e timeline." },
-      { id: "2c", dia: 5, tipo: "whatsapp", titulo: "WhatsApp com resumo", descricao: "Enviar resumo dos principais benefícios da proposta." },
-      { id: "2d", dia: 7, tipo: "email", titulo: "Email com novo argumento", descricao: "Enviar ROI calculado ou depoimento de cliente similar." },
-      { id: "2e", dia: 10, tipo: "tarefa", titulo: "Decisão sobre o deal", descricao: "Avaliar: avançar para negociação, renegociar, ou marcar como perdido." },
-    ],
-  },
-  {
-    id: "3",
-    nome: "Reengajamento de Leads Frios",
-    descricao: "Cadência de 21 dias para reativar leads que não responderam há mais de 60 dias.",
-    gatilho: "Reengajamento de lead frio",
-    ativa: false,
-    totalContatos: 78,
-    taxaResposta: 8,
-    steps: [
-      { id: "3a", dia: 1, tipo: "email", titulo: "Email de reconexão", descricao: "Email mencionando novidade relevante (produto novo, case, evento)." },
-      { id: "3b", dia: 7, tipo: "linkedin", titulo: "Interação no LinkedIn", descricao: "Curtir/comentar post recente do lead. Enviar mensagem se conectado." },
-      { id: "3c", dia: 14, tipo: "email", titulo: "Email com conteúdo de valor", descricao: "Enviar artigo, webinar ou material educativo relevante." },
-      { id: "3d", dia: 21, tipo: "tarefa", titulo: "Avaliar engajamento", descricao: "Se abriu emails ou respondeu: requalificar. Se não: arquivar." },
-    ],
-  },
-];
 
 export default function ConfigCadencias() {
-  const [cadencias, setCadencias] = useState<Cadencia[]>(INITIAL_CADENCIAS);
-  const [expandedCadencia, setExpandedCadencia] = useState<string | null>("1");
-  const [showForm, setShowForm] = useState(false);
-  const [editingCadencia, setEditingCadencia] = useState<Cadencia | null>(null);
-  const [showStepForm, setShowStepForm] = useState<string | null>(null);
-  const [editingStep, setEditingStep] = useState<{ cadenciaId: string; step: CadenciaStep } | null>(null);
+  const utils = trpc.useUtils();
 
-  const [form, setForm] = useState({
-    nome: "",
-    descricao: "",
-    gatilho: GATILHOS[0],
+  const cadencesQuery = trpc.crm.cadences.list.useQuery(undefined, {
+    staleTime: 30_000,
+    refetchOnWindowFocus: false,
   });
+  const disqQuery = trpc.crm.disqualifyReasons.list.useQuery(
+    { tipo: "desqualificacao" },
+    { staleTime: 30_000, refetchOnWindowFocus: false }
+  );
+  const apoQuery = trpc.crm.disqualifyReasons.list.useQuery(
+    { tipo: "aposentamento" },
+    { staleTime: 30_000, refetchOnWindowFocus: false }
+  );
 
-  const [stepForm, setStepForm] = useState({
-    dia: 1,
-    tipo: "email" as CadenciaStep["tipo"],
-    titulo: "",
-    descricao: "",
-  });
-
-  const totalAtivas = cadencias.filter((c) => c.ativa).length;
-  const totalSteps = cadencias.reduce((acc, c) => acc + c.steps.length, 0);
-
-  const openForm = (cadencia?: Cadencia) => {
-    if (cadencia) {
-      setForm({ nome: cadencia.nome, descricao: cadencia.descricao, gatilho: cadencia.gatilho });
-      setEditingCadencia(cadencia);
-    } else {
-      setForm({ nome: "", descricao: "", gatilho: GATILHOS[0] });
-      setEditingCadencia(null);
-    }
-    setShowForm(true);
-  };
-
-  const handleSaveCadencia = () => {
-    if (!form.nome.trim()) {
-      toast.error("Nome da cadência é obrigatório");
-      return;
-    }
-    if (editingCadencia) {
-      setCadencias(cadencias.map((c) =>
-        c.id === editingCadencia.id ? { ...c, nome: form.nome, descricao: form.descricao, gatilho: form.gatilho } : c
-      ));
-      toast.success("Cadência atualizada!");
-    } else {
-      const newCad: Cadencia = {
-        id: Date.now().toString(),
-        nome: form.nome,
-        descricao: form.descricao,
-        gatilho: form.gatilho,
-        ativa: true,
-        steps: [],
-        totalContatos: 0,
-        taxaResposta: 0,
-      };
-      setCadencias([...cadencias, newCad]);
-      setExpandedCadencia(newCad.id);
+  const createCadence = trpc.crm.cadences.create.useMutation({
+    onSuccess: () => {
+      utils.crm.cadences.list.invalidate();
       toast.success("Cadência criada!");
-    }
-    setShowForm(false);
-  };
+      setShowCadenceForm(false);
+    },
+    onError: () => toast.error("Erro ao criar cadência"),
+  });
+  const updateCadence = trpc.crm.cadences.update.useMutation({
+    onSuccess: () => {
+      utils.crm.cadences.list.invalidate();
+    },
+    onError: () => toast.error("Erro ao atualizar cadência"),
+  });
+  const deleteCadence = trpc.crm.cadences.delete.useMutation({
+    onSuccess: () => {
+      utils.crm.cadences.list.invalidate();
+      toast.success("Cadência excluída");
+    },
+    onError: () => toast.error("Erro ao excluir cadência"),
+  });
 
-  const handleDeleteCadencia = (id: string) => {
-    setCadencias(cadencias.filter((c) => c.id !== id));
-    toast.success("Cadência excluída");
-  };
+  const createReason = trpc.crm.disqualifyReasons.create.useMutation({
+    onSuccess: () => {
+      utils.crm.disqualifyReasons.list.invalidate();
+      toast.success("Motivo adicionado!");
+      setNewReasonText("");
+      setAddingReasonTipo(null);
+    },
+    onError: () => toast.error("Erro ao adicionar motivo"),
+  });
+  const deleteReason = trpc.crm.disqualifyReasons.delete.useMutation({
+    onSuccess: () => {
+      utils.crm.disqualifyReasons.list.invalidate();
+      toast.success("Motivo removido");
+    },
+    onError: () => toast.error("Erro ao remover motivo"),
+  });
 
-  const handleToggleCadencia = (id: string) => {
-    setCadencias(cadencias.map((c) => c.id === id ? { ...c, ativa: !c.ativa } : c));
-  };
+  const [expandedId, setExpandedId] = useState<number | null>(null);
+  const [localStages, setLocalStages] = useState<Stage[]>([]);
+  const [stageInput, setStageInput] = useState("");
+  const [editingStage, setEditingStage] = useState<Stage | null>(null);
 
-  const handleDuplicateCadencia = (id: string) => {
-    const source = cadencias.find((c) => c.id === id);
-    if (!source) return;
-    const newCad: Cadencia = {
-      ...source,
-      id: Date.now().toString(),
-      nome: `${source.nome} (Cópia)`,
-      totalContatos: 0,
-      taxaResposta: 0,
-      steps: source.steps.map((s) => ({ ...s, id: `${s.id}-copy-${Date.now()}` })),
-    };
-    setCadencias([...cadencias, newCad]);
-    toast.success("Cadência duplicada!");
-  };
+  const [showCadenceForm, setShowCadenceForm] = useState(false);
+  const [editingCadence, setEditingCadence] = useState<any | null>(null);
+  const [cadenceForm, setCadenceForm] = useState({ nome: "", descricao: "" });
 
-  const openStepForm = (cadenciaId: string, step?: CadenciaStep) => {
-    if (step) {
-      setStepForm({ dia: step.dia, tipo: step.tipo, titulo: step.titulo, descricao: step.descricao });
-      setEditingStep({ cadenciaId, step });
+  const [newReasonText, setNewReasonText] = useState("");
+  const [addingReasonTipo, setAddingReasonTipo] = useState<"desqualificacao" | "aposentamento" | null>(null);
+
+  const openCadenceForm = (cadence?: any) => {
+    if (cadence) {
+      setCadenceForm({ nome: cadence.nome, descricao: cadence.descricao || "" });
+      setEditingCadence(cadence);
     } else {
-      const cad = cadencias.find((c) => c.id === cadenciaId);
-      const maxDia = cad ? Math.max(0, ...cad.steps.map((s) => s.dia)) : 0;
-      setStepForm({ dia: maxDia + 2, tipo: "email", titulo: "", descricao: "" });
-      setShowStepForm(cadenciaId);
+      setCadenceForm({ nome: "", descricao: "" });
+      setEditingCadence(null);
+    }
+    setShowCadenceForm(true);
+  };
+
+  const handleSaveCadence = () => {
+    if (!cadenceForm.nome.trim()) { toast.error("Nome é obrigatório"); return; }
+    if (editingCadence) {
+      updateCadence.mutate(
+        { id: editingCadence.id, nome: cadenceForm.nome, descricao: cadenceForm.descricao },
+        { onSuccess: () => { toast.success("Cadência atualizada!"); setShowCadenceForm(false); } }
+      );
+    } else {
+      createCadence.mutate({ nome: cadenceForm.nome, descricao: cadenceForm.descricao, stages: "[]" });
     }
   };
 
-  const handleSaveStep = () => {
-    if (!stepForm.titulo.trim()) {
-      toast.error("Título do step é obrigatório");
-      return;
+  const handleExpand = (cadence: any) => {
+    if (expandedId === cadence.id) {
+      setExpandedId(null);
+      setLocalStages([]);
+    } else {
+      setExpandedId(cadence.id);
+      setLocalStages(parseStages(cadence.stages));
+      setStageInput("");
+      setEditingStage(null);
     }
-    const targetId = editingStep?.cadenciaId || showStepForm;
-    setCadencias(cadencias.map((c) => {
-      if (c.id !== targetId) return c;
-      if (editingStep) {
-        return {
-          ...c,
-          steps: c.steps.map((s) =>
-            s.id === editingStep.step.id ? { ...s, dia: stepForm.dia, tipo: stepForm.tipo, titulo: stepForm.titulo, descricao: stepForm.descricao } : s
-          ).sort((a, b) => a.dia - b.dia),
-        };
-      } else {
-        return {
-          ...c,
-          steps: [...c.steps, { id: Date.now().toString(), dia: stepForm.dia, tipo: stepForm.tipo, titulo: stepForm.titulo, descricao: stepForm.descricao }]
-            .sort((a, b) => a.dia - b.dia),
-        };
-      }
-    }));
-    setEditingStep(null);
-    setShowStepForm(null);
-    toast.success(editingStep ? "Step atualizado!" : "Step adicionado!");
   };
 
-  const handleDeleteStep = (cadenciaId: string, stepId: string) => {
-    setCadencias(cadencias.map((c) => {
-      if (c.id !== cadenciaId) return c;
-      return { ...c, steps: c.steps.filter((s) => s.id !== stepId) };
-    }));
-    toast.success("Step removido");
+  const persistStages = (cadenceId: number, stages: Stage[]) => {
+    const ordered = stages.map((s, i) => ({ ...s, order: i + 1 }));
+    updateCadence.mutate({ id: cadenceId, stages: JSON.stringify(ordered) });
   };
+
+  const handleAddStage = (cadenceId: number) => {
+    if (!stageInput.trim()) return;
+    const newStages: Stage[] = [
+      ...localStages,
+      { id: Date.now().toString(), name: stageInput.trim(), order: localStages.length + 1 },
+    ];
+    setLocalStages(newStages);
+    setStageInput("");
+    persistStages(cadenceId, newStages);
+    toast.success("Etapa adicionada");
+  };
+
+  const handleDeleteStage = (cadenceId: number, stageId: string) => {
+    const newStages = localStages.filter((s) => s.id !== stageId);
+    setLocalStages(newStages);
+    persistStages(cadenceId, newStages);
+    toast.success("Etapa removida");
+  };
+
+  const handleRenameStage = (cadenceId: number) => {
+    if (!editingStage || !editingStage.name.trim()) return;
+    const newStages = localStages.map((s) =>
+      s.id === editingStage.id ? { ...s, name: editingStage.name.trim() } : s
+    );
+    setLocalStages(newStages);
+    setEditingStage(null);
+    persistStages(cadenceId, newStages);
+    toast.success("Etapa renomeada");
+  };
+
+  const handleAddReason = (tipo: "desqualificacao" | "aposentamento") => {
+    if (!newReasonText.trim()) return;
+    createReason.mutate({ nome: newReasonText.trim(), tipo });
+  };
+
+  const cadences = cadencesQuery.data || [];
+  const disqReasons = disqQuery.data || [];
+  const apoReasons = apoQuery.data || [];
+  const totalAtivas = cadences.filter((c) => c.ativa).length;
 
   return (
     <div className="space-y-6">
@@ -264,10 +188,10 @@ export default function ConfigCadencias() {
             <h1 className="text-2xl font-bold">Cadências de Vendas</h1>
           </div>
           <p className="text-muted-foreground mt-1 ml-10">
-            Configure sequências de follow-up automatizadas para cada etapa do processo comercial
+            Configure cadências e etapas para organizar o acompanhamento de leads
           </p>
         </div>
-        <Button onClick={() => openForm()} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
+        <Button onClick={() => openCadenceForm()} className="bg-yellow-500 hover:bg-yellow-600 text-black font-semibold">
           <Plus className="w-4 h-4 mr-2" />
           Nova Cadência
         </Button>
@@ -277,7 +201,7 @@ export default function ConfigCadencias() {
       <div className="grid grid-cols-3 gap-4">
         <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-purple-400">{cadencias.length}</p>
+            <p className="text-2xl font-bold text-purple-400">{cadences.length}</p>
             <p className="text-xs text-muted-foreground">Cadências criadas</p>
           </CardContent>
         </Card>
@@ -289,126 +213,185 @@ export default function ConfigCadencias() {
         </Card>
         <Card className="bg-card/50 border-border">
           <CardContent className="p-4 text-center">
-            <p className="text-2xl font-bold text-primary">{totalSteps}</p>
-            <p className="text-xs text-muted-foreground">Steps totais</p>
+            <p className="text-2xl font-bold text-primary">{disqReasons.length + apoReasons.length}</p>
+            <p className="text-xs text-muted-foreground">Motivos cadastrados</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Cadências List */}
-      <div className="space-y-4">
-        {cadencias.map((cadencia) => {
-          const isExpanded = expandedCadencia === cadencia.id;
-          const duracao = cadencia.steps.length > 0 ? Math.max(...cadencia.steps.map((s) => s.dia)) : 0;
+      {/* Cadences List */}
+      <div className="space-y-3">
+        {cadencesQuery.isLoading && (
+          <div className="text-center py-8 text-muted-foreground text-sm">Carregando cadências...</div>
+        )}
+        {!cadencesQuery.isLoading && cadences.length === 0 && (
+          <Card className="bg-card/50 border-border">
+            <CardContent className="py-12 text-center">
+              <Zap className="w-12 h-12 mx-auto mb-3 text-muted-foreground opacity-30" />
+              <p className="text-muted-foreground">Nenhuma cadência criada</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                Crie a primeira cadência para organizar o Kanban de leads
+              </p>
+            </CardContent>
+          </Card>
+        )}
+        {cadences.map((cadence) => {
+          const stages = expandedId === cadence.id ? localStages : parseStages(cadence.stages);
+          const isExpanded = expandedId === cadence.id;
 
           return (
-            <Card key={cadencia.id} className={`border-border overflow-hidden ${cadencia.ativa ? "bg-card" : "bg-card/50"}`}>
-              {/* Header */}
+            <Card
+              key={cadence.id}
+              className={`border-border overflow-hidden ${cadence.ativa ? "bg-card" : "bg-card/50"}`}
+            >
               <div
-                className="flex items-center justify-between p-4 cursor-pointer hover:bg-[#2f2f2f]"
-                onClick={() => setExpandedCadencia(isExpanded ? null : cadencia.id)}
+                className="flex items-center justify-between p-4 cursor-pointer hover:bg-white/5"
+                onClick={() => handleExpand(cadence)}
               >
                 <div className="flex items-center gap-3">
-                  {isExpanded ? <ChevronDown className="w-5 h-5 text-muted-foreground" /> : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
+                  {isExpanded
+                    ? <ChevronDown className="w-5 h-5 text-muted-foreground" />
+                    : <ChevronRight className="w-5 h-5 text-muted-foreground" />}
                   <div>
                     <div className="flex items-center gap-2">
-                      <h3 className="font-semibold">{cadencia.nome}</h3>
-                      {cadencia.ativa ? (
-                        <Badge className="bg-green-900/30 text-green-300 text-xs">Ativa</Badge>
-                      ) : (
-                        <Badge className="bg-[#444444]/50 text-muted-foreground text-xs">Inativa</Badge>
-                      )}
+                      <h3 className="font-semibold">{cadence.nome}</h3>
+                      <Badge
+                        className={
+                          cadence.ativa
+                            ? "bg-green-900/30 text-green-300 text-xs"
+                            : "bg-zinc-800 text-muted-foreground text-xs"
+                        }
+                      >
+                        {cadence.ativa ? "Ativa" : "Inativa"}
+                      </Badge>
                     </div>
-                    <div className="flex items-center gap-3 mt-1">
-                      <span className="text-xs text-muted-foreground">Gatilho: {cadencia.gatilho}</span>
-                      <span className="text-xs text-muted-foreground">·</span>
-                      <span className="text-xs text-muted-foreground">{cadencia.steps.length} steps</span>
-                      <span className="text-xs text-muted-foreground">·</span>
-                      <span className="text-xs text-muted-foreground">{duracao} dias</span>
-                    </div>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      {stages.length} etapa{stages.length !== 1 ? "s" : ""}
+                      {cadence.descricao ? ` · ${cadence.descricao}` : ""}
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
-                  <div className="text-right text-xs text-muted-foreground">
-                    <p>{cadencia.totalContatos} contatos</p>
-                    <p className="text-green-400">{cadencia.taxaResposta}% resposta</p>
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => handleDuplicateCadencia(cadencia.id)} className="text-muted-foreground hover:text-white" title="Duplicar">
-                    <Copy className="w-4 h-4" />
-                  </Button>
-                  <Switch checked={cadencia.ativa} onCheckedChange={() => handleToggleCadencia(cadencia.id)} />
-                  <Button variant="ghost" size="sm" onClick={() => openForm(cadencia)} className="text-primary hover:text-primary">
+                <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                  <Switch
+                    checked={!!cadence.ativa}
+                    onCheckedChange={() =>
+                      updateCadence.mutate(
+                        { id: cadence.id, ativa: !cadence.ativa },
+                        { onSuccess: () => utils.crm.cadences.list.invalidate() }
+                      )
+                    }
+                  />
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => openCadenceForm(cadence)}
+                    className="text-primary hover:text-primary"
+                  >
                     <Pencil className="w-4 h-4" />
                   </Button>
-                  <Button variant="ghost" size="sm" onClick={() => handleDeleteCadencia(cadencia.id)} className="text-red-400 hover:text-red-300">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deleteCadence.mutate({ id: cadence.id })}
+                    className="text-red-400 hover:text-red-300"
+                  >
                     <Trash2 className="w-4 h-4" />
                   </Button>
                 </div>
               </div>
 
-              {/* Expanded: Timeline */}
               {isExpanded && (
-                <div className="border-t border-border p-4">
-                  <p className="text-sm text-foreground/80 mb-4">{cadencia.descricao}</p>
+                <div className="border-t border-border p-4 space-y-3">
+                  <p className="text-sm font-medium text-foreground/70">
+                    Etapas do Kanban
+                    <span className="ml-2 text-xs text-muted-foreground font-normal">
+                      (estas colunas aparecerão no board de leads)
+                    </span>
+                  </p>
 
-                  {/* Timeline */}
-                  <div className="space-y-0">
-                    {cadencia.steps.map((step, idx) => {
-                      const config = TIPO_STEP_CONFIG[step.tipo];
-                      return (
-                        <div key={step.id} className="flex gap-4">
-                          {/* Timeline Line */}
-                          <div className="flex flex-col items-center w-16 flex-shrink-0">
-                            <div className="text-xs font-bold text-foreground/80 bg-[#333333] px-2 py-1 rounded mb-1">
-                              Dia {step.dia}
-                            </div>
-                            {idx < cadencia.steps.length - 1 && (
-                              <div className="flex-1 w-px bg-[#444444] min-h-[20px]" />
-                            )}
-                          </div>
+                  {localStages.length === 0 && (
+                    <p className="text-xs text-muted-foreground text-center py-3">
+                      Nenhuma etapa. Adicione abaixo para criar as colunas do Kanban.
+                    </p>
+                  )}
 
-                          {/* Step Card */}
-                          <div className={`flex-1 mb-3 p-3 rounded-lg border ${config.cor} bg-opacity-20`}>
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2">
-                                {config.icon}
-                                <Badge className={`text-xs ${config.cor}`}>{config.label}</Badge>
-                                <span className="font-medium text-sm">{step.titulo}</span>
-                              </div>
-                              <div className="flex gap-1">
-                                <Button variant="ghost" size="sm" onClick={() => openStepForm(cadencia.id, step)} className="text-primary hover:text-primary h-6 w-6 p-0">
-                                  <Pencil className="w-3 h-3" />
-                                </Button>
-                                <Button variant="ghost" size="sm" onClick={() => handleDeleteStep(cadencia.id, step.id)} className="text-red-400 hover:text-red-300 h-6 w-6 p-0">
-                                  <Trash2 className="w-3 h-3" />
-                                </Button>
-                              </div>
-                            </div>
-                            <p className="text-xs text-muted-foreground mt-1">{step.descricao}</p>
-                          </div>
-                        </div>
-                      );
-                    })}
+                  <div className="space-y-1.5">
+                    {localStages.map((stage, idx) => (
+                      <div
+                        key={stage.id}
+                        className="flex items-center gap-2 bg-[#2a2a2a] rounded px-3 py-2"
+                      >
+                        <GripVertical className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                        <span className="text-xs text-muted-foreground w-5">{idx + 1}.</span>
+                        {editingStage?.id === stage.id ? (
+                          <>
+                            <Input
+                              value={editingStage.name}
+                              onChange={(e) => setEditingStage({ ...editingStage, name: e.target.value })}
+                              className="h-7 text-sm bg-[#1a1a1a] border-border flex-1"
+                              autoFocus
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") handleRenameStage(cadence.id);
+                                if (e.key === "Escape") setEditingStage(null);
+                              }}
+                            />
+                            <Button
+                              size="sm"
+                              className="h-7 text-xs bg-yellow-500 hover:bg-yellow-600 text-black shrink-0"
+                              onClick={() => handleRenameStage(cadence.id)}
+                            >
+                              Salvar
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              className="h-7 text-xs shrink-0"
+                              onClick={() => setEditingStage(null)}
+                            >
+                              Cancelar
+                            </Button>
+                          </>
+                        ) : (
+                          <>
+                            <span className="flex-1 text-sm">{stage.name}</span>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-primary"
+                              onClick={() => setEditingStage(stage)}
+                            >
+                              <Pencil className="w-3 h-3" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 w-6 p-0 text-red-400"
+                              onClick={() => handleDeleteStage(cadence.id, stage.id)}
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </Button>
+                          </>
+                        )}
+                      </div>
+                    ))}
                   </div>
 
-                  {/* Add Step */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    onClick={() => openStepForm(cadencia.id)}
-                    className="mt-2 border-border border-dashed w-full"
-                  >
-                    <Plus className="w-4 h-4 mr-2" />
-                    Adicionar Step
-                  </Button>
-
-                  {cadencia.steps.length === 0 && (
-                    <div className="text-center py-8 text-muted-foreground">
-                      <Zap className="w-10 h-10 mx-auto mb-3 opacity-30" />
-                      <p>Nenhum step configurado</p>
-                      <p className="text-xs mt-1">Adicione o primeiro step para definir a sequência</p>
-                    </div>
-                  )}
+                  <div className="flex gap-2 pt-1">
+                    <Input
+                      value={stageInput}
+                      onChange={(e) => setStageInput(e.target.value)}
+                      placeholder="Nome da nova etapa (ex: Primeiro Contato)..."
+                      className="bg-[#2a2a2a] border-border text-sm"
+                      onKeyDown={(e) => { if (e.key === "Enter") handleAddStage(cadence.id); }}
+                    />
+                    <Button
+                      onClick={() => handleAddStage(cadence.id)}
+                      className="bg-yellow-500 hover:bg-yellow-600 text-black shrink-0"
+                    >
+                      <Plus className="w-4 h-4 mr-1" />
+                      Adicionar
+                    </Button>
+                  </div>
                 </div>
               )}
             </Card>
@@ -416,111 +399,203 @@ export default function ConfigCadencias() {
         })}
       </div>
 
-      {/* Cadência Form Dialog */}
-      <Dialog open={showForm} onOpenChange={setShowForm}>
+      {/* Motivos */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Desqualificação */}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <XCircle className="w-5 h-5 text-red-400" />
+              Motivos de Desqualificação
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {disqQuery.isLoading && (
+              <p className="text-xs text-muted-foreground">Carregando...</p>
+            )}
+            {disqReasons.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between bg-[#2a2a2a] rounded px-3 py-2"
+              >
+                <span className="text-sm">{r.nome}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
+                  onClick={() => deleteReason.mutate({ id: r.id })}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            ))}
+            {!disqQuery.isLoading && disqReasons.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-2">Nenhum motivo cadastrado</p>
+            )}
+            <Separator className="my-2" />
+            {addingReasonTipo === "desqualificacao" ? (
+              <div className="flex gap-2">
+                <Input
+                  value={newReasonText}
+                  onChange={(e) => setNewReasonText(e.target.value)}
+                  placeholder="Ex: Sem orçamento no momento..."
+                  className="bg-[#2a2a2a] border-border text-sm h-8"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddReason("desqualificacao");
+                    if (e.key === "Escape") { setAddingReasonTipo(null); setNewReasonText(""); }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  className="h-8 bg-yellow-500 hover:bg-yellow-600 text-black shrink-0"
+                  onClick={() => handleAddReason("desqualificacao")}
+                  disabled={createReason.isPending}
+                >
+                  Adicionar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 shrink-0"
+                  onClick={() => { setAddingReasonTipo(null); setNewReasonText(""); }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full border-dashed border-border text-xs"
+                onClick={() => setAddingReasonTipo("desqualificacao")}
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Novo Motivo
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Aposentamento */}
+        <Card className="bg-card border-border">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Layers className="w-5 h-5 text-blue-400" />
+              Motivos de Aposentadoria
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {apoQuery.isLoading && (
+              <p className="text-xs text-muted-foreground">Carregando...</p>
+            )}
+            {apoReasons.map((r) => (
+              <div
+                key={r.id}
+                className="flex items-center justify-between bg-[#2a2a2a] rounded px-3 py-2"
+              >
+                <span className="text-sm">{r.nome}</span>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="h-6 w-6 p-0 text-red-400 hover:text-red-300"
+                  onClick={() => deleteReason.mutate({ id: r.id })}
+                >
+                  <Trash2 className="w-3 h-3" />
+                </Button>
+              </div>
+            ))}
+            {!apoQuery.isLoading && apoReasons.length === 0 && (
+              <p className="text-xs text-muted-foreground text-center py-2">Nenhum motivo cadastrado</p>
+            )}
+            <Separator className="my-2" />
+            {addingReasonTipo === "aposentamento" ? (
+              <div className="flex gap-2">
+                <Input
+                  value={newReasonText}
+                  onChange={(e) => setNewReasonText(e.target.value)}
+                  placeholder="Ex: Cliente comprou concorrente..."
+                  className="bg-[#2a2a2a] border-border text-sm h-8"
+                  autoFocus
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") handleAddReason("aposentamento");
+                    if (e.key === "Escape") { setAddingReasonTipo(null); setNewReasonText(""); }
+                  }}
+                />
+                <Button
+                  size="sm"
+                  className="h-8 bg-yellow-500 hover:bg-yellow-600 text-black shrink-0"
+                  onClick={() => handleAddReason("aposentamento")}
+                  disabled={createReason.isPending}
+                >
+                  Adicionar
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 shrink-0"
+                  onClick={() => { setAddingReasonTipo(null); setNewReasonText(""); }}
+                >
+                  Cancelar
+                </Button>
+              </div>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                className="w-full border-dashed border-border text-xs"
+                onClick={() => setAddingReasonTipo("aposentamento")}
+              >
+                <Plus className="w-3 h-3 mr-1" />
+                Novo Motivo
+              </Button>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Cadence Form Dialog */}
+      <Dialog open={showCadenceForm} onOpenChange={setShowCadenceForm}>
         <DialogContent className="bg-card border-border max-w-lg">
           <DialogHeader>
-            <DialogTitle>{editingCadencia ? "Editar Cadência" : "Nova Cadência"}</DialogTitle>
+            <DialogTitle>{editingCadence ? "Editar Cadência" : "Nova Cadência"}</DialogTitle>
           </DialogHeader>
           <div className="space-y-4 pt-2">
             <div>
               <label className="text-sm font-medium text-foreground/80">Nome *</label>
               <Input
-                value={form.nome}
-                onChange={(e) => setForm({ ...form, nome: e.target.value })}
-                placeholder="Ex: Prospecção Outbound - ICP Tier 1"
+                value={cadenceForm.nome}
+                onChange={(e) => setCadenceForm({ ...cadenceForm, nome: e.target.value })}
+                placeholder="Ex: Cadência para Clientes de Indicação"
                 className="mt-1 bg-[#333333] border-border"
+                autoFocus
+                onKeyDown={(e) => { if (e.key === "Enter") handleSaveCadence(); }}
               />
             </div>
             <div>
               <label className="text-sm font-medium text-foreground/80">Descrição</label>
               <Textarea
-                value={form.descricao}
-                onChange={(e) => setForm({ ...form, descricao: e.target.value })}
-                placeholder="Descreva o objetivo e contexto desta cadência..."
+                value={cadenceForm.descricao}
+                onChange={(e) => setCadenceForm({ ...cadenceForm, descricao: e.target.value })}
+                placeholder="Descreva o objetivo desta cadência..."
                 className="mt-1 bg-[#333333] border-border"
                 rows={3}
               />
             </div>
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Gatilho</label>
-              <select
-                value={form.gatilho}
-                onChange={(e) => setForm({ ...form, gatilho: e.target.value })}
-                className="mt-1 w-full h-10 px-3 rounded-md bg-[#333333] border border-border text-sm text-white"
+            <div className="flex gap-3 justify-end pt-2 border-t border-border">
+              <Button
+                variant="outline"
+                onClick={() => setShowCadenceForm(false)}
+                className="border-border"
               >
-                {GATILHOS.map((g) => (
-                  <option key={g} value={g}>{g}</option>
-                ))}
-              </select>
-            </div>
-            <div className="flex gap-3 justify-end pt-2 border-t border-border">
-              <Button variant="outline" onClick={() => setShowForm(false)} className="border-border">Cancelar</Button>
-              <Button onClick={handleSaveCadencia} className="bg-yellow-500 hover:bg-yellow-600 text-black">
-                {editingCadencia ? "Salvar Alterações" : "Criar Cadência"}
+                Cancelar
               </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
-
-      {/* Step Form Dialog */}
-      <Dialog
-        open={!!showStepForm || !!editingStep}
-        onOpenChange={() => { setShowStepForm(null); setEditingStep(null); }}
-      >
-        <DialogContent className="bg-card border-border max-w-lg">
-          <DialogHeader>
-            <DialogTitle>{editingStep ? "Editar Step" : "Novo Step"}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="text-sm font-medium text-foreground/80">Dia</label>
-                <Input
-                  type="number"
-                  min={1}
-                  value={stepForm.dia}
-                  onChange={(e) => setStepForm({ ...stepForm, dia: parseInt(e.target.value) || 1 })}
-                  className="mt-1 bg-[#333333] border-border"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium text-foreground/80">Tipo de Ação</label>
-                <select
-                  value={stepForm.tipo}
-                  onChange={(e) => setStepForm({ ...stepForm, tipo: e.target.value as CadenciaStep["tipo"] })}
-                  className="mt-1 w-full h-10 px-3 rounded-md bg-[#333333] border border-border text-sm text-white"
-                >
-                  {Object.entries(TIPO_STEP_CONFIG).map(([k, v]) => (
-                    <option key={k} value={k}>{v.label}</option>
-                  ))}
-                </select>
-              </div>
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Título *</label>
-              <Input
-                value={stepForm.titulo}
-                onChange={(e) => setStepForm({ ...stepForm, titulo: e.target.value })}
-                placeholder="Ex: Email de abertura personalizado"
-                className="mt-1 bg-[#333333] border-border"
-              />
-            </div>
-            <div>
-              <label className="text-sm font-medium text-foreground/80">Descrição / Instruções</label>
-              <Textarea
-                value={stepForm.descricao}
-                onChange={(e) => setStepForm({ ...stepForm, descricao: e.target.value })}
-                placeholder="Descreva o que o vendedor deve fazer neste step..."
-                className="mt-1 bg-[#333333] border-border"
-                rows={3}
-              />
-            </div>
-            <div className="flex gap-3 justify-end pt-2 border-t border-border">
-              <Button variant="outline" onClick={() => { setShowStepForm(null); setEditingStep(null); }} className="border-border">Cancelar</Button>
-              <Button onClick={handleSaveStep} className="bg-yellow-500 hover:bg-yellow-600 text-black">
-                {editingStep ? "Salvar" : "Adicionar Step"}
+              <Button
+                onClick={handleSaveCadence}
+                className="bg-yellow-500 hover:bg-yellow-600 text-black"
+                disabled={createCadence.isPending || updateCadence.isPending}
+              >
+                {editingCadence ? "Salvar Alterações" : "Criar Cadência"}
               </Button>
             </div>
           </div>
